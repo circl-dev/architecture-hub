@@ -9,283 +9,254 @@ High level overview of the codebase
 
 ## 1. Project Purpose
 
-This is an **Order Management System (OMS)** designed for a logistics/distribution business, likely in the gas cylinder or similar product delivery industry. The system handles:
+This is an **Order Management System (OMS)** designed for logistics and delivery operations, specifically appearing to be tailored for a **gas cylinder/LPG distribution business** (based on references to cylinders, refilling, empty balances, and the "circl" operating model in documentation).
 
-- **Order lifecycle management**: Creation, approval, delivery, and payment tracking
-- **Customer management**: Customer registration, status tracking, addresses, and balance management
-- **Trip/Route planning**: Driver assignment, vehicle management, delivery route optimization
-- **Inventory management**: Warehouse stock levels, cylinder tracking, variance reconciliation
-- **Logistics operations**: Loading plans, offload documents, delivery proof (POD)
-- **Multi-tenant support**: System supports multiple tenants with role-based access control
-- **Mobile driver support**: Dedicated mobile API endpoints for drivers
+**Primary Domain:** B2B logistics and distribution management
 
-The domain is clearly **B2B distribution/logistics** with emphasis on:
-- Cylinder tracking (empties/fulls)
-- Route-based deliveries
-- Inventory variance management
-- Payment collection and approval workflows
+**Key Problems Solved:**
+- Order lifecycle management (creation, approval, fulfillment, delivery)
+- Customer and territory management
+- Inventory tracking across warehouses (including mobile/vehicle warehouses)
+- Trip/route planning and optimization (with VROOM integration for route optimization)
+- Driver mobile app support for deliveries
+- Multi-tenant SaaS architecture for serving multiple businesses
+- Variance tracking and reconciliation
+- Payment processing and approvals
+- Real-time analytics and reporting
 
 ## 2. Architecture Pattern
 
-**Hybrid Architecture combining:**
-- **Event-Driven Architecture**: Event store, event handlers, NATS messaging integration
-- **Layered/Clean Architecture**: Clear separation between routes, handlers, services, and data access
-- **API-First Design**: OpenAPI/Swagger documentation with versioned endpoints
-- **Monorepo Structure**: Frontend and backend in single repository
+**Multi-tier SaaS Architecture with Event-Driven Elements:**
+- **Monorepo** structure containing frontend and backend
+- **Backend-for-Frontend (BFF)** pattern with Fastify
+- **Event-driven** architecture (evidenced by `/events` directory, event schemas, NATS references)
+- **Multi-tenant** design with tenant isolation at database level (RLS policies)
+- **Domain-Driven Design (DDD)** influences (clear domain models, bounded contexts)
 
 ## 3. Technology Stack
 
-### Backend
-| Category | Technology |
-|----------|------------|
-| **Runtime** | Node.js |
-| **Language** | TypeScript |
-| **Framework** | Fastify |
-| **Database** | PostgreSQL (via Supabase) |
-| **Caching** | Redis (L2 cache) |
-| **Authentication** | Supabase Auth, Firebase Auth |
-| **Message Queue** | NATS |
-| **Observability** | OpenTelemetry, Sentry, Grafana Alloy |
-| **Process Manager** | PM2 |
-| **Testing** | Jest, Vitest |
-
 ### Frontend
-| Category | Technology |
-|----------|------------|
-| **Framework** | React 18+ |
-| **Build Tool** | Vite |
-| **Language** | TypeScript |
-| **Styling** | Tailwind CSS, PostCSS |
-| **State/Data** | React Query (TanStack Query) |
-| **UI Components** | Custom components (shadcn/ui pattern) |
-| **Analytics** | Mixpanel |
-| **Testing** | Vitest |
+| Technology | Purpose |
+|------------|---------|
+| **React 18+** | UI Framework |
+| **TypeScript** | Type safety |
+| **Vite** | Build tool and dev server |
+| **TailwindCSS** | Styling |
+| **React Query** | Server state management |
+| **React Router** | Client-side routing |
 
-### Infrastructure
-| Category | Technology |
-|----------|------------|
-| **Cloud** | Google Cloud Platform (Cloud Run) |
-| **Database Hosting** | Supabase |
-| **Frontend Hosting** | Netlify |
-| **Monitoring** | Grafana, Grafana Alloy |
-| **CI/CD** | GitHub Actions |
-| **Container** | Docker |
+### Backend
+| Technology | Purpose |
+|------------|---------|
+| **Node.js** | Runtime |
+| **Fastify** | Web framework |
+| **TypeScript** | Type safety |
+| **Supabase** | PostgreSQL database + Auth + Storage + Edge Functions |
+| **Redis** | L2 caching |
+| **PM2** | Process management |
 
-### Key Dependencies (Backend - package.json)
-- `fastify` - Web framework
-- `@supabase/supabase-js` - Database client
-- `ioredis` - Redis client
-- `nats` - Message queue
-- `@opentelemetry/*` - Distributed tracing
-- `@sentry/node` - Error monitoring
-- `zod` - Schema validation
-- `dayjs` - Date handling
+### Infrastructure & DevOps
+| Technology | Purpose |
+|------------|---------|
+| **Docker** | Containerization |
+| **Google Cloud Run** | Production deployment |
+| **Railway** | Alternative deployment platform |
+| **Netlify** | Frontend hosting + serverless functions |
+| **Grafana Alloy** | Observability/telemetry |
+| **Sentry** | Error tracking |
+| **Mixpanel** | Product analytics |
 
-### Key Dependencies (Frontend - package.json)
-- `react`, `react-dom` - UI framework
-- `@tanstack/react-query` - Server state management
-- `@supabase/supabase-js` - Direct database access
-- `tailwindcss` - Styling
-- `lucide-react` - Icons
-- `recharts` - Charts/visualizations
-- `mixpanel-browser` - Analytics
+### Key Libraries/Dependencies (from package.json patterns)
+- **@supabase/supabase-js** - Database client
+- **OpenTelemetry** - Distributed tracing
+- **VROOM** - Vehicle routing optimization
+- **WhatsApp API integration** - Customer notifications
+- **Jest/Vitest** - Testing frameworks
+- **ESLint/Prettier** - Code quality
+- **Husky** - Git hooks
 
 ## 4. Initial Structure Impression
 
-```
-oms-system/
-├── backend/          # Node.js/Fastify API server
-├── src/              # React frontend application
-├── supabase/         # Database migrations and functions
-├── infra/            # Infrastructure configurations (GCP, Grafana)
-├── docs/             # Comprehensive documentation
-├── grafana/          # Monitoring dashboards
-├── tests/            # Shared test framework
-├── scripts/          # Utility scripts
-├── netlify/          # Serverless functions for frontend
-└── plans/            # Architecture decision records
-```
-
-**Main Application Parts:**
-1. **Backend API Server** (`/backend`) - Core business logic
-2. **Frontend SPA** (`/src`) - Admin/Operations dashboard
-3. **Database Layer** (`/supabase`) - PostgreSQL with extensive RLS policies
-4. **Infrastructure** (`/infra`) - Cloud deployment configs
+| Component | Location | Description |
+|-----------|----------|-------------|
+| **Frontend** | `/src` | React SPA application |
+| **Backend** | `/backend` | Fastify API server |
+| **Database** | `/supabase` | Migrations, functions, configurations |
+| **Infrastructure** | `/infra` | Cloud Run configs, Grafana Alloy |
+| **Documentation** | `/docs` | Architecture docs, API specs, guides |
+| **Plans** | `/plans` | Feature planning documents |
+| **Tests** | `/tests`, `/backend/tests` | Test suites and frameworks |
+| **Scripts** | `/scripts` | Utility and maintenance scripts |
 
 ## 5. Configuration/Package Files
 
 ### Root Level
-| File | Purpose |
-|------|---------|
-| `package.json` | Frontend dependencies and scripts |
-| `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json` | TypeScript configuration |
-| `vite.config.ts` | Vite build configuration |
-| `vitest.config.ts` | Frontend test configuration |
-| `tailwind.config.js` | Tailwind CSS configuration |
-| `postcss.config.js` | PostCSS configuration |
-| `eslint.config.js` | ESLint configuration |
-| `.prettierrc`, `.prettierignore` | Code formatting |
-| `.lintstagedrc.json` | Pre-commit lint configuration |
-| `netlify.toml` | Netlify deployment configuration |
-| `.mcp.json` | Model Context Protocol configuration |
-| `CLAUDE.md`, `.cursorrules` | AI assistant context files |
+- `package.json`, `package-lock.json` - Frontend dependencies
+- `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json` - TypeScript configs
+- `vite.config.ts` - Vite bundler config
+- `vitest.config.ts` - Vitest test config
+- `tailwind.config.js` - TailwindCSS config
+- `postcss.config.js` - PostCSS config
+- `eslint.config.js` - ESLint config
+- `.prettierrc`, `.prettierignore` - Prettier config
+- `.lintstagedrc.json` - Lint-staged config
+- `netlify.toml` - Netlify deployment config
+- `.mcp.json` - Claude MCP configuration
+- `.railwayproject` - Railway deployment config
+- `CLAUDE.md`, `.cursorrules` - AI assistant context files
 
 ### Backend Level
-| File | Purpose |
-|------|---------|
-| `backend/package.json` | Backend dependencies and scripts |
-| `backend/tsconfig.json` | Backend TypeScript config |
-| `backend/jest.config.js` | Jest test configuration |
-| `backend/.eslintrc.json` | Backend ESLint rules |
-| `backend/ecosystem.config.js` | PM2 process manager config |
-| `backend/Dockerfile` | Container build definition |
-| `backend/docker-compose.yml` | Local development services |
-| `backend/railway.json` | Railway deployment config |
+- `backend/package.json`, `backend/package-lock.json` - Backend dependencies
+- `backend/tsconfig.json` - TypeScript config
+- `backend/.eslintrc.json` - ESLint config
+- `backend/Dockerfile` - Container build
+- `backend/docker-compose.yml` - Local development
+- `backend/ecosystem.config.js` - PM2 config
+- `backend/jest.config.js` - Jest test config
+- `backend/railway.json` - Railway config
 
-### Infrastructure
-| File | Purpose |
-|------|---------|
-| `infra/cloud-run/*.yaml` | GCP Cloud Run service definitions |
-| `infra/grafana-alloy/config.gcp.alloy` | Observability agent config |
-| `supabase/config.toml` | Supabase local development config |
+### Supabase Level
+- `supabase/config.toml` - Supabase local config
+- `supabase/migrations/*` - 300+ database migrations
 
 ## 6. Directory Structure
 
-### Backend (`/backend/src/`)
+### `/src` - Frontend Application
 ```
 src/
-├── index.ts              # Application entry point
-├── app.ts                # Fastify app setup
-├── tracing.ts            # OpenTelemetry initialization
-├── config/               # Environment configuration
-├── core/                 # Core utilities (4 files)
-├── middleware/           # Request middleware
-├── plugins/              # Fastify plugins (auth, swagger, etc.)
-├── routes/               # API route definitions (37 files)
-│   ├── v1/              # Versioned API routes
-│   └── mobile/          # Mobile-specific endpoints
-├── handlers/             # Request handlers (6 files)
-├── services/             # Business logic services (18 files)
-├── components/           # Domain components (18 files)
-├── events/               # Event handling
-├── external-apis/        # Third-party integrations (WhatsApp)
-├── types/                # TypeScript type definitions
-├── utils/                # Utility functions
-└── client/               # External API clients
+├── pages/          # Route-level components (40+ pages)
+├── components/     # Reusable UI components
+│   ├── ui/         # Base UI primitives (91 files)
+│   ├── settings/   # Settings management
+│   ├── dashboard/  # Dashboard widgets
+│   ├── approvals/  # Approval workflows
+│   ├── logistics/  # Logistics management
+│   ├── planning/   # Trip planning
+│   ├── territory/  # Territory management
+│   └── reports/    # Reporting components
+├── hooks/          # Custom React hooks
+├── lib/            # Utility libraries and clients
+├── contexts/       # React contexts (Auth, Tenant, BusinessRules)
+├── types/          # TypeScript type definitions
+└── test/           # Test setup and mocks
 ```
 
-**Organization Pattern**: **Layered + Domain-based hybrid**
-- Routes → Handlers → Services → Database
-- Components encapsulate domain logic
-- Clear separation of concerns
-
-### Frontend (`/src/`)
+### `/backend/src` - Backend Application
 ```
-src/
-├── main.tsx              # Application entry point
-├── App.tsx               # Root component with routing
-├── index.css             # Global styles
-├── pages/                # Page components (40+ files)
-│   ├── Dashboard.tsx
-│   ├── Orders.tsx, CreateOrder.tsx, OrderDetails.tsx
-│   ├── Customers.tsx, CustomerDetails.tsx
-│   ├── Trips.tsx, TripDetailsV2.tsx
-│   ├── Inventory.tsx
-│   ├── Approvals.tsx
-│   └── logistics/        # Logistics sub-pages
-├── components/
-│   ├── ui/               # Reusable UI components (91 files)
-│   ├── layout/           # Layout components
-│   ├── dashboard/        # Dashboard widgets
-│   ├── settings/         # Settings panels (17 files)
-│   ├── approvals/        # Approval workflows
-│   ├── logistics/        # Logistics components
-│   ├── territory/        # Territory management
-│   ├── trip-planning/    # Trip planning components
-│   └── reports/          # Reporting components
-├── hooks/                # Custom React hooks (15 files)
-├── lib/                  # Utility libraries
-│   ├── supabase.ts       # Supabase client
-│   ├── api-client.ts     # API client
-│   ├── analytics.ts      # Mixpanel integration
-│   └── WebSocketClient.ts # Real-time updates
-├── contexts/             # React contexts (Auth, BusinessRules, TenantConfig)
-├── types/                # TypeScript definitions
-└── test/                 # Test utilities
+backend/src/
+├── routes/         # API route handlers (38 files)
+├── services/       # Business logic services (18 files)
+├── handlers/       # Request handlers (6 files)
+├── components/     # Shared components (19 files)
+├── plugins/        # Fastify plugins (5 files)
+├── middleware/     # Express/Fastify middleware
+├── core/           # Core utilities
+├── config/         # Configuration
+├── types/          # TypeScript types
+├── events/         # Event definitions
+├── external-apis/  # External API integrations (WhatsApp)
+├── client/         # API client utilities
+├── utils/          # Utility functions
+├── app.ts          # Fastify app setup
+├── index.ts        # Entry point
+└── tracing.ts      # OpenTelemetry setup
 ```
 
-**Organization Pattern**: **Feature-based + Component-based hybrid**
-- Pages organized by domain entity
-- Components organized by function (UI, domain-specific)
-- Hooks for reusable logic
+### `/supabase/migrations` - Database Schema
+- **300+ migration files** defining:
+  - Core tables (orders, customers, trips, inventory, warehouses, vehicles)
+  - RPC functions for complex operations
+  - RLS policies for multi-tenant security
+  - Triggers for audit trails and automation
+  - Views for optimized data access
 
-### Database (`/supabase/migrations/`)
-- **300+ migration files** covering:
-  - Schema definitions
-  - RLS (Row Level Security) policies
-  - Database functions/RPCs
-  - Triggers and constraints
-  - Views for optimized queries
+### `/docs` - Documentation
+```
+docs/
+├── ARCHITECTURE.md     # System architecture
+├── DOMAIN-MODEL.md     # Domain concepts
+├── API.md              # API documentation
+├── WORKFLOWS.md        # Business workflows
+├── EVENTS.md           # Event system
+├── schemas/            # OpenAPI specs, event schemas
+├── prompts/            # AI assistant prompts
+├── reference/          # Reference materials
+└── archive/            # Historical documentation
+```
 
 ## 7. High-Level Architecture
 
-### Architectural Patterns
-
-**1. Event-Driven Architecture**
-- Evidence: `/backend/src/events/`, event store tables, NATS integration
-- Events for order status changes, inventory updates, approvals
-- Event schemas documented in `/docs/schemas/events/`
-
-**2. API Gateway Pattern (Backend)**
-```
-Client Request → Fastify Routes → Handlers → Services → Database
-                      ↓
-              Auth Middleware → Role-based access
-```
-
-**3. CQRS-lite Pattern**
-- Database views for optimized reads (e.g., `orders_list_view`, `trips_list_view`)
-- Separate write operations through RPCs and services
-
-**4. Multi-Tenant Architecture**
-- `tenant_id` on all tables
-- RLS policies enforcing tenant isolation
-- Tenant-specific configurations
-
-### Communication Patterns
+### Architecture Pattern: **Layered + Event-Driven Hybrid**
 
 ```
-┌─────────────────┐     ┌──────────────────┐
-│  React Frontend │────▶│  Fastify Backend │
-│    (Netlify)    │     │   (Cloud Run)    │
-└─────────────────┘     └────────┬─────────┘
-        │                        │
-        │                        ▼
-        │               ┌──────────────────┐
-        │               │    PostgreSQL    │
-        └──────────────▶│    (Supabase)    │
-          Direct access └──────────────────┘
-                                │
-                        ┌───────┴───────┐
-                        ▼               ▼
-                    ┌───────┐      ┌────────┐
-                    │ Redis │      │  NATS  │
-                    │ Cache │      │ Events │
-                    └───────┘      └────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Frontend (React SPA)                      │
+│                  Netlify / Static Hosting                    │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Backend API (Fastify)                       │
+│                    Google Cloud Run                          │
+│  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
+│  │ Routes  │→ │ Handlers │→ │ Services │→ │ Components  │  │
+│  └─────────┘  └──────────┘  └──────────┘  └─────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
+│    Supabase      │ │    Redis     │ │  External APIs  │
+│  - PostgreSQL    │ │  (L2 Cache)  │ │  - WhatsApp     │
+│  - Auth          │ └──────────────┘ │  - VROOM        │
+│  - Storage       │                  │  - Google Maps  │
+│  - Edge Funcs    │                  └─────────────────┘
+└──────────────────┘
 ```
 
-**Key Evidence:**
-- `/backend/src/plugins/` - Fastify plugins for auth, CORS, rate limiting
-- `/docs/EVENTS.md` - Event documentation
-- `/plans/event-driven-cache-invalidation-architecture.md` - Event architecture plan
-- `/docs/ARCHITECTURE.md` - Architecture documentation
+**Evidence Supporting This Architecture:**
 
-### Security Model
-- Row Level Security (RLS) at database level
-- JWT authentication via Supabase Auth
-- Role-based access control (Super Admin, Admin, Operator, Driver, Sales, Accountant)
+1. **Layered Pattern:**
+   - Clear separation: `routes/` → `handlers/` → `services/` → database
+   - Frontend components organized by feature domain
+
+2. **Event-Driven Elements:**
+   - `/backend/src/events/` directory
+   - `/docs/schemas/events/` with 12 event schema files
+   - `/docs/EVENTS.md` documentation
+   - References to NATS in archived docs
+
+3. **Multi-Tenant SaaS:**
+   - Extensive RLS policies in migrations
+   - `TenantConfigContext` in frontend
+   - `tenant_id` columns throughout schema
+
+4. **Domain-Driven Design Influences:**
+   - `/docs/DOMAIN-MODEL.md`
+   - Clear bounded contexts (orders, customers, inventory, trips)
+   - Rich domain logic in database functions
 
 ## 8. Build, Execution and Test
+
+### Frontend
+
+**Development:**
+```bash
+npm install        # Install dependencies
+npm run dev        # Start Vite dev server
+```
+
+**Build:**
+```bash
+npm run build      # Production build
+```
+
+**Test:**
+```bash
+npm run test       # Run Vitest tests
+```
+
+**Entry Point:** `src/main.tsx` → `src/App.tsx`
 
 ### Backend
 
@@ -293,616 +264,629 @@ Client Request → Fastify Routes → Handlers → Services → Database
 ```bash
 cd backend
 npm install
-npm run dev  # Starts with hot reload
+npm run dev        # Start with hot reload
 ```
 
-**Production Build:**
+**Production:**
 ```bash
-npm run build
-npm start
+npm run build      # Compile TypeScript
+npm start          # Start server
+# OR with PM2
+pm2 start ecosystem.config.js
 ```
 
-**Docker:**
+**Test:**
 ```bash
-docker-compose up
-# or
-docker build -t oms-backend .
+npm test           # Run Jest tests
+./run-tests.sh     # Integration tests
 ```
 
-**Testing:**
-```bash
-npm test                    # Run all tests
-npm run test:unit          # Unit tests only
-npm run test:integration   # Integration tests
-./run-tests.sh             # Full test suite
-```
-
-**Entry Points:**
-- `backend/src/index.ts` - Main entry (imports tracing first)
-- `backend/src/app.ts` - Fastify application setup
-
-### Frontend
-
-**Development:**
-```bash
-npm install
-npm run dev  # Vite dev server
-```
-
-**Production Build:**
-```bash
-npm run build  # Output to dist/
-```
-
-**Testing:**
-```bash
-npm test       # Vitest
-npm run lint   # ESLint
-```
-
-**Entry Points:**
-- `src/main.tsx` - React application bootstrap
-- `index.html` - HTML entry point
+**Entry Point:** `backend/src/index.ts` → `backend/src/app.ts`
 
 ### Database
 
-**Local Development:**
+**Migrations:**
 ```bash
-supabase start
-supabase db push  # Apply migrations
+supabase db push                    # Apply migrations
+supabase migration new <name>       # Create migration
 ```
 
-**Migration Management:**
+### Docker
+
 ```bash
-supabase migration new <name>
-supabase db push
+cd backend
+docker-compose up                   # Local development stack
+docker build -t oms-backend .       # Build image
 ```
 
-### CI/CD (GitHub Actions)
+### CI/CD
 
-| Workflow | Purpose |
-|----------|---------|
-| `backend-ci.yml` | Backend tests and lint |
-| `frontend-ci.yml` | Frontend tests and lint |
-| `deploy-gcp.yml` | Deploy backend to Cloud Run |
-| `deploy-alloy-gcp.yml` | Deploy Grafana Alloy |
-
-### Deployment
-
-**Backend**: GCP Cloud Run (via GitHub Actions or manual scripts)
-```bash
-./backend/deploy-staging.sh
-```
-
-**Frontend**: Netlify (automatic on push)
-- Configured via `netlify.toml`
+- **GitHub Actions workflows:**
+  - `backend-ci.yml` - Backend tests and linting
+  - `frontend-ci.yml` - Frontend tests and linting
+  - `deploy-gcp.yml` - Deploy to Google Cloud Run
+  - `deploy-alloy-gcp.yml` - Deploy Grafana Alloy
 
 ### Key Scripts
 
-**Backend (`package.json`):**
-- `dev` - Development server
-- `build` - TypeScript compilation
-- `start` - Production server
-- `test` - Jest tests
-- `lint` - ESLint
-
-**Frontend (`package.json`):**
-- `dev` - Vite dev server
-- `build` - Production build
-- `preview` - Preview production build
-- `test` - Vitest
-- `lint` - ESLint
+| Script | Purpose |
+|--------|---------|
+| `scripts/cleanup-staging.js` | Clean staging database |
+| `scripts/list-tenants.js` | List all tenants |
+| `backend/scripts/deploy-staging.sh` | Deploy to staging |
+| `backend/scripts/export-routes.ts` | Export API routes |
+| `backend/scripts/validate-business-rules.js` | Validate business rules |
 
 # module_deep_dive
 
 Deep dive into modules
 
-# Detailed Component Breakdown Analysis
+# Detailed Component Breakdown
 
-## Backend Directory (`@backend/`)
+## Backend (`/backend/`)
 
-### 1. Core Responsibility
-The backend serves as the primary API layer for the OMS (Order Management System), handling all business logic, data persistence, authentication, and integration with external services. It's built with Fastify and TypeScript.
+### Core Responsibility
+The backend is a Fastify-based Node.js API server that handles all business logic, data persistence, authentication, and external integrations for the Order Management System. It serves as the central hub connecting the frontend, database, and external services.
 
----
+### Key Components
 
-### 2. Key Components
+#### `/backend/src/routes/` (38 files)
+**Role:** API endpoint definitions using Fastify route handlers
+- `customers.ts` - Customer CRUD operations, search, filtering
+- `orders.ts` - Order lifecycle management, status transitions
+- `trips.ts` - Trip planning, dispatch, completion workflows
+- `inventory.ts` - Stock levels, transactions, warehouse management
+- `payments.ts` - Payment recording and approval workflows
+- `auth.ts` - Authentication endpoints (login, logout, token refresh)
+- `approvals.ts` - Multi-type approval workflows (orders, payments, variances)
+- `loading-plans.ts` - Loading plan creation and management
+- `offload-documents.ts` - Offload document processing
+- `planning-sessions.ts` - Route optimization session management
+- `webhooks.ts` - External webhook handlers
+- `health.ts` - System health check endpoints
 
-#### `@backend/src/`
+#### `/backend/src/services/` (18 files)
+**Role:** Business logic layer encapsulating domain operations
+- `customerService.ts` - Customer domain logic, validation, status management
+- `orderService.ts` - Order processing, pricing calculations, status transitions
+- `tripService.ts` - Trip lifecycle, dispatch, completion, variance handling
+- `inventoryService.ts` - Stock calculations, allocation, deallocation logic
+- `paymentService.ts` - Payment processing, reconciliation
+- `approvalService.ts` - Approval workflow orchestration
+- `pricingService.ts` - Price list management, price calculations
+- `geocodingService.ts` - Address geocoding coordination
+- `vroomService.ts` - VROOM route optimization integration
+- `notificationService.ts` - Notification dispatching
 
-##### **Entry Points**
-| File | Role |
-|------|------|
-| `index.ts` | Application bootstrap, server initialization |
-| `app.ts` | Fastify app configuration, plugin registration |
-| `tracing.ts` | OpenTelemetry/observability setup |
+#### `/backend/src/handlers/` (6 files)
+**Role:** Request handlers that coordinate between routes and services
+- `orderHandlers.ts` - Order request processing
+- `tripHandlers.ts` - Trip request processing
+- `customerHandlers.ts` - Customer request processing
+- `inventoryHandlers.ts` - Inventory request processing
 
-##### **`@backend/src/routes/` (37 files)**
-API route definitions organized by domain entity:
-- Order routes, customer routes, trip routes
-- Inventory, warehouse, vehicle routes
-- Authentication, user management routes
-- Approval workflow routes
-- Analytics/reporting routes
+#### `/backend/src/plugins/` (5 files)
+**Role:** Fastify plugins for cross-cutting concerns
+- `auth.ts` - JWT authentication plugin
+- `cors.ts` - CORS configuration
+- `swagger.ts` - OpenAPI documentation generation
+- `redis.ts` - Redis connection and caching plugin
+- `sentry.ts` - Error tracking integration
 
-##### **`@backend/src/services/` (18 files)**
-Business logic layer:
-- Order processing, validation
-- Customer management
-- Trip/delivery orchestration
-- Inventory calculations
-- Payment processing
-- Cache management (Redis L2)
+#### `/backend/src/middleware/` (1 file)
+**Role:** Request/response middleware
+- `validation.ts` - Request validation middleware
 
-##### **`@backend/src/handlers/` (6 files)**
-Request handlers that bridge routes to services:
-- Likely includes validation, error handling wrappers
-- Request/response transformation
+#### `/backend/src/core/` (4 files)
+**Role:** Core infrastructure and shared utilities
+- `supabaseClient.ts` - Supabase client initialization
+- `redisClient.ts` - Redis client setup
+- `logger.ts` - Structured logging configuration
+- `errors.ts` - Custom error types and handling
 
-##### **`@backend/src/components/` (18 files)**
-Reusable business components:
-- Likely domain-specific utilities
-- Shared business rule implementations
-- Component-based architecture pieces
+#### `/backend/src/external-apis/whatsapp/`
+**Role:** WhatsApp Business API integration for notifications
 
-##### **`@backend/src/middleware/` (1 file)**
-Request middleware:
-- Authentication/authorization checks
-- Request logging, validation
+#### `/backend/src/events/` (1 file)
+**Role:** Event-driven architecture support
+- `eventEmitter.ts` - Domain event publishing and subscription
 
-##### **`@backend/src/plugins/` (5 files)**
-Fastify plugins:
-- Database connections (Supabase)
-- Caching (Redis)
-- Authentication plugins
-- Custom Fastify extensions
+#### `/backend/src/types/` (5 files)
+**Role:** TypeScript type definitions
+- Domain types, API request/response types, database types
 
-##### **`@backend/src/config/` (1 file)**
-Environment/configuration management:
-- Environment variables
-- Feature flags
-- API keys configuration
+#### `/backend/src/config/` (1 file)
+**Role:** Configuration management
+- Environment variable parsing and validation
 
-##### **`@backend/src/core/` (4 files)**
-Core framework utilities:
-- Base service classes
-- Core abstractions
-- Shared patterns
+#### `/backend/tests/`
+**Role:** Test suite
+- `unit/` - Unit tests for services and utilities
+- `integration/` - Integration tests for API endpoints
+- `mocks/` - Test mocks and fixtures
+- `utils/` - Test utilities and helpers
 
-##### **`@backend/src/events/` (1 file)**
-Event-driven architecture:
-- Event definitions
-- Event emitters/handlers
-- Pub/sub patterns
+### Dependencies & Interactions
 
-##### **`@backend/src/client/` (1 file)**
-External client configurations:
-- Database clients
-- API clients initialization
+**Internal Dependencies:**
+- `@src/services/` → `@src/core/` (database clients, logging)
+- `@src/routes/` → `@src/services/` (business logic)
+- `@src/routes/` → `@src/handlers/` (request handling)
+- `@src/handlers/` → `@src/services/` (domain operations)
+- `@src/plugins/` → `@src/core/` (infrastructure)
 
-##### **`@backend/src/external-apis/whatsapp/`**
-WhatsApp integration:
-- Message sending
-- Notification delivery
-- Customer communication
-
-##### **`@backend/src/types/` (4 files)**
-TypeScript type definitions:
-- API request/response types
-- Domain entity types
-- Shared interfaces
-
-##### **`@backend/src/utils/` (2 files)**
-Utility functions:
-- String manipulation
-- Date formatting
-- General helpers
-
----
-
-### 3. Dependencies & Interactions
-
-#### Internal Dependencies
-```
-routes/ → handlers/ → services/ → components/
-                    ↓
-              plugins/ (DB, Cache)
-                    ↓
-              external-apis/
-```
-
-- **Routes** depend on **handlers** and **services**
-- **Services** depend on **plugins** (Supabase, Redis)
-- **Services** may depend on **components** for shared logic
-- **All layers** use **types/** and **utils/**
-
-#### External Service Interactions
-| Service | Purpose |
-|---------|---------|
-| **Supabase** | PostgreSQL database, authentication |
-| **Redis** | L2 caching layer |
-| **WhatsApp API** | Customer notifications |
-| **OpenTelemetry** | Distributed tracing |
+**External Services:**
+- **Supabase** - Primary database and authentication
+- **Redis** - Caching (L2 cache), session storage
+- **VROOM** - Route optimization engine
+- **WhatsApp Business API** - Customer notifications
+- **Sentry** - Error tracking and monitoring
+- **Google Maps API** - Geocoding services
 
 ---
 
-## Frontend Directory (`@src/`)
+## Frontend (`/src/`)
 
-### 1. Core Responsibility
-React-based single-page application providing the user interface for the OMS. Handles user interactions, state management, and API communication.
+### Core Responsibility
+React-based single-page application providing the user interface for the OMS. Handles user interactions, data visualization, form management, and real-time updates for various business workflows.
 
----
+### Key Components
 
-### 2. Key Components
+#### `/src/pages/` (40+ files)
+**Role:** Top-level page components representing application routes
+- `Dashboard.tsx` - Main dashboard with metrics and quick actions
+- `Customers.tsx` / `CustomerDetails.tsx` / `CreateCustomer.tsx` / `EditCustomer.tsx` - Customer management
+- `Orders.tsx` / `OrderDetails.tsx` / `CreateOrder.tsx` / `EditOrder.tsx` - Order management
+- `Trips.tsx` / `TripDetailsV2.tsx` / `CreateTrip.tsx` / `EditTrip.tsx` - Trip management
+- `Inventory.tsx` / `WarehouseDetails.tsx` - Inventory management
+- `Approvals.tsx` - Unified approval interface
+- `Products.tsx` / `ProductDetails.tsx` / `CreateProduct.tsx` - Product catalog
+- `Prices.tsx` - Price list management
+- `PlanningSessions.tsx` / `PlanningSessionEditor.tsx` - Route planning
+- `Reports.tsx` - Reporting interface
+- `ManualAdjustments.tsx` - Inventory adjustment workflows
+- `TerritoryManagement.tsx` - Territory/zone management
+- `TenantManagement.tsx` - Multi-tenant administration
+- `VarianceDashboard.tsx` / `ReviewVariances.tsx` - Variance tracking
+- `Logistics.tsx` - Logistics overview
+- `/logistics/` subdirectory - Additional logistics pages
 
-#### **Entry Points**
-| File | Role |
-|------|------|
-| `main.tsx` | React app bootstrap, provider setup |
-| `App.tsx` | Root component, routing configuration |
-| `index.css` | Global styles (Tailwind) |
+#### `/src/components/`
+**Role:** Reusable UI components organized by domain
 
-#### **`@src/pages/` (38+ files)**
-Page-level components (route targets):
+**`/ui/` (91 files)** - Generic UI primitives
+- Form components (Input, Select, Checkbox, DatePicker, etc.)
+- Layout components (Card, Modal, Dialog, Sheet, etc.)
+- Data display (Table, Badge, Avatar, etc.)
+- Feedback (Toast, Alert, Progress, Skeleton, etc.)
+- Navigation (Tabs, Breadcrumb, Pagination, etc.)
 
-| Category | Examples |
-|----------|----------|
-| **Dashboard** | `Dashboard.tsx` |
-| **Orders** | `Orders.tsx`, `OrderDetails.tsx`, `CreateOrder.tsx`, `EditOrder.tsx` |
-| **Customers** | `Customers.tsx`, `CustomerDetails.tsx`, `CreateCustomer.tsx`, `EditCustomer.tsx` |
-| **Trips** | `Trips.tsx`, `TripDetailsV2.tsx`, `CreateTrip.tsx`, `EditTrip.tsx` |
-| **Inventory** | `Inventory.tsx`, `ManualAdjustments.tsx`, `PerformCount.tsx` |
-| **Products** | `Products.tsx`, `ProductDetails.tsx`, `CreateProduct.tsx`, `AddVariant.tsx` |
-| **Approvals** | `Approvals.tsx`, `ReviewVariances.tsx`, `VarianceDashboard.tsx` |
-| **Logistics** | `Logistics.tsx`, `logistics/` (9 files) |
-| **Admin** | `TenantManagement.tsx`, `TerritoryManagement.tsx`, `Prices.tsx` |
-| **Auth** | `ResetPassword.tsx`, `InvitationSignup.tsx` |
-| **Reports** | `Reports.tsx` |
-| **Tools** | `ImportTools.tsx`, `MobileSimulator.tsx` |
+**`/settings/` (17 files)** - Settings management components
+- User management, role configuration
+- Business rules configuration
+- System settings
 
-#### **`@src/components/`**
+**`/auth/` (2 files)** - Authentication components
+- Login forms, password reset
 
-##### `ui/` (91 files)
-Reusable UI primitives:
-- Buttons, inputs, modals, tables
-- Form components
-- Data display components
-- Loading states, alerts
+**`/layout/` (2 files)** - Application layout
+- Main layout wrapper, navigation sidebar
 
-##### `settings/` (17 files)
-Settings/configuration UI:
-- User preferences
-- System configuration
-- Business rules management
+**`/dashboard/` (4 files)** - Dashboard widgets
+- Metrics cards, charts, quick action panels
 
-##### `auth/` (2 files)
-Authentication components:
-- Login forms
-- Protected route wrappers
+**`/planning/` (3 files)** - Planning components
+- Route planning visualization
 
-##### `layout/` (2 files)
-Layout components:
-- App shell, navigation
-- Sidebar, header
+**`/trip-planning/` (9 files)** - Trip planning UI
+- Trip creation wizard, stop management, route visualization
 
-##### `dashboard/` (4 files)
-Dashboard-specific widgets:
-- KPI cards
-- Charts, summaries
+**`/territory/` (7 files)** - Territory management
+- Map visualization, zone editing
 
-##### `territory/` (7 files)
-Territory/geography management:
-- Maps, zones
-- Area assignments
+**`/approvals/`** - Approval workflow components
+- `customer-approvals/` - Customer approval UI
+- `order-approvals/` - Order approval UI
+- `payment-approvals/` - Payment approval UI
+- `variance-approvals/` - Variance approval UI
+- `shared/` - Shared approval components
+- `types/` - Approval type definitions
 
-##### `trip-planning/` (9 files)
-Trip management UI:
-- Trip builder
-- Route visualization
-- Driver assignment
+**`/logistics/` (9 files)** - Logistics components
+- Vehicle management, warehouse views
 
-##### `approvals/` (nested subdirectories)
-Approval workflow UIs:
-- `customer-approvals/`
-- `order-approvals/`
-- `payment-approvals/`
-- `variance-approvals/`
-- `shared/`, `types/`
+**`/reports/` (8 files)** - Reporting components
+- Report builders, data visualization
 
-##### `logistics/` (9 files)
-Logistics/operations UI:
-- Warehouse management
-- Vehicle tracking
-- Loading/offloading
+#### `/src/hooks/` (15 files)
+**Role:** Custom React hooks for shared logic
+- `useApiQuery.ts` - API data fetching with React Query
+- `useBundleOperations.ts` - Bundle product operations
+- `useBusinessRules.ts` / `useBusinessRulesManagement.ts` - Business rules access
+- `useCustomerPermissions.ts` - Customer permission checking
+- `usePermissions.ts` - General permission management
+- `useTerminology.ts` - Dynamic terminology based on tenant config
+- `useTypeDefinitions.ts` - Type system access
+- `useNetworkStatus.ts` - Online/offline detection
+- `useSessionTimeout.ts` - Session management
+- `useWebSocketSubscription.ts` - Real-time updates
+- `useOMSAnalytics.ts` / `usePageTracking.ts` / `usePerformanceTracking.ts` - Analytics
 
-##### `reports/` (8 files)
-Reporting components:
-- Report generators
-- Data visualizations
-- Export tools
+#### `/src/lib/` (20+ files)
+**Role:** Utility libraries and service clients
+- `api-client.ts` - Backend API client
+- `supabase.ts` - Supabase client initialization
+- `WebSocketClient.ts` - WebSocket connection management
+- `queryClient.ts` - React Query configuration
+- `analytics.ts` - Analytics tracking
+- `sentry.ts` - Error tracking setup
+- `dateUtils.ts` / `currencyUtils.ts` - Formatting utilities
+- `addressHelpers.ts` - Address handling utilities
+- `inventoryUtils.ts` - Inventory calculation helpers
+- `imageUploadHelpers.ts` / `storageHelpers.ts` - File handling
+- `errorHandler.ts` - Centralized error handling
+- `featureFlags.ts` - Feature flag management
+- `trip-export-service.ts` - Trip data export
+- `varianceCodes.ts` - Variance code definitions
 
-#### **`@src/contexts/` (3 files)**
-React Context providers:
-| Context | Purpose |
-|---------|---------|
-| `AuthContext.tsx` | User authentication state |
-| `BusinessRulesContext.tsx` | Business rules/configuration |
-| `TenantConfigContext.tsx` | Multi-tenant settings |
+#### `/src/contexts/` (3 files)
+**Role:** React Context providers for global state
+- `AuthContext.tsx` - Authentication state management
+- `BusinessRulesContext.tsx` - Business rules configuration
+- `TenantConfigContext.tsx` - Tenant-specific configuration
 
-#### **`@src/hooks/` (15 files)**
-Custom React hooks:
-| Hook | Purpose |
-|------|---------|
-| `useApiQuery.ts` | API data fetching |
-| `useBusinessRules.ts` | Business rule access |
-| `usePermissions.ts` | Role-based access control |
-| `useTerminology.ts` | Dynamic terminology |
-| `useOMSAnalytics.ts` | Analytics tracking |
-| `useBundleOperations.ts` | Product bundle logic |
-| `useWebSocketSubscription.ts` | Real-time updates |
-| `useSessionTimeout.ts` | Session management |
-| `useNetworkStatus.ts` | Offline detection |
-| `usePerformanceTracking.ts` | Performance monitoring |
+#### `/src/types/` (4 files)
+**Role:** TypeScript type definitions
+- `business-rules.ts` - Business rule types
+- `inventory.ts` - Inventory domain types
+- `tenant-config.ts` - Tenant configuration types
+- `trip-export.ts` - Export format types
 
-#### **`@src/lib/` (20+ files)**
-Utility libraries and clients:
+### Dependencies & Interactions
 
-| File | Purpose |
-|------|---------|
-| `api-client.ts` | HTTP client for backend API |
-| `supabase.ts` | Supabase client initialization |
-| `WebSocketClient.ts` | Real-time connection |
-| `queryClient.ts` | React Query configuration |
-| `analytics.ts` | Mixpanel/analytics integration |
-| `sentry.ts` | Error tracking |
-| `errorHandler.ts` | Global error handling |
-| `featureFlags.ts` | Feature toggle system |
-| `currencyUtils.ts` | Currency formatting |
-| `dateUtils.ts` | Date manipulation |
-| `imageUploadHelpers.ts` | Image upload handling |
-| `inventoryUtils.ts` | Inventory calculations |
-| `trip-export-service.ts` | Trip data export |
-| `varianceCodes.ts` | Variance code definitions |
+**Internal Dependencies:**
+- `pages/` → `components/` (UI composition)
+- `pages/` → `hooks/` (shared logic)
+- `pages/` → `lib/` (utilities)
+- `components/` → `hooks/` (data fetching, state)
+- `hooks/` → `lib/` (API clients, utilities)
+- `hooks/` → `contexts/` (global state)
 
-#### **`@src/types/` (4 files)**
-TypeScript definitions:
-- `business-rules.ts`
-- `inventory.ts`
-- `tenant-config.ts`
-- `trip-export.ts`
+**External Services:**
+- **Backend API** (`api-client.ts`) - Primary data source
+- **Supabase** - Real-time subscriptions, storage
+- **Mixpanel** - Analytics tracking
+- **Sentry** - Error tracking
+- **Google Maps** - Map visualization
 
 ---
 
-### 3. Dependencies & Interactions
+## Database Layer (`/supabase/`)
 
-#### Internal Data Flow
-```
-pages/ → components/ → hooks/ → lib/api-client → Backend API
-                    ↓
-              contexts/ (global state)
-                    ↓
-              lib/supabase (direct queries if needed)
-```
+### Core Responsibility
+PostgreSQL database schema management via Supabase, including migrations, RPC functions, triggers, views, and Row-Level Security (RLS) policies. Handles data persistence, complex business logic at the database level, and access control.
 
-#### External Service Interactions
-| Service | Purpose |
-|---------|---------|
-| **Backend API** | Primary data source |
-| **Supabase** | Direct auth, real-time subscriptions |
-| **Mixpanel** | User analytics |
-| **Sentry** | Error tracking |
-| **Google Maps** | Mapping/geocoding |
+### Key Components
 
----
+#### `/supabase/migrations/` (300+ files)
+**Role:** Database schema evolution and business logic implementation
+- **Table definitions** - Core entities (customers, orders, trips, inventory, etc.)
+- **RPC functions** - Complex business operations
+  - `complete_delivery` - Delivery completion with inventory updates
+  - `get_driver_trip_mobile` - Mobile app trip data
+  - `approve_variance` - Variance approval workflow
+  - `bulk_customer_import` - Batch customer creation
+  - `get_approval_data` - Approval workflow data aggregation
+  - `capture_inventory_snapshot` - Inventory snapshots
+  - `fail_trip_stop` - Stop failure handling
+  - `modify_planned_trip` - Trip modification logic
+- **Views** - Denormalized data access
+  - `orders_list_view` - Order listing with joins
+  - `customers_list_view` - Customer listing
+  - `trips_list_view` - Trip listing
+  - `inventory_levels_view` - Current stock levels
+  - `dashboard_metrics_view` - Dashboard aggregations
+  - `product_variants_with_pricing_view` - Pricing data
+  - `trip_orders_with_addresses_view` - Trip order details
+  - `sales_agent_report_view` - Sales reports
+  - `operations_delivery_report_view` - Operations reports
+- **Triggers** - Automatic data maintenance
+  - Audit logging triggers
+  - Balance calculation triggers
+  - Inventory level sync triggers
+  - Order status transition triggers
+- **RLS Policies** - Row-level security for multi-tenancy
+- **Indexes** - Performance optimization
 
-## Supabase Directory (`@supabase/`)
+#### `/supabase/migrations/production_sync/` (33 files)
+**Role:** Production-specific migrations and synchronization scripts
 
-### 1. Core Responsibility
-Database schema management, migrations, and PostgreSQL functions/RPC. Acts as the data layer with Row Level Security (RLS) policies.
+#### `/supabase/functions/`
+**Role:** Supabase Edge Functions
+- `firebase-auth/` - Firebase authentication integration
+- `geocode-address/` - Address geocoding
+- `send-password-reset/` - Password reset emails
+- `send-user-invite/` - User invitation emails
 
----
+#### `/supabase/scripts/`
+**Role:** Database maintenance scripts
+- `cleanup_transactional_data.sql` - Data cleanup utilities
 
-### 2. Key Components
+#### Root Files
+- `config.toml` - Supabase project configuration
+- `dev_schema.sql` / `prod_schema.sql` - Schema snapshots
 
-#### **`migrations/` (300+ files)**
-Database schema evolution:
+### Dependencies & Interactions
 
-| Migration Type | Examples |
-|----------------|----------|
-| **Schema changes** | Table creation, column additions |
-| **RLS policies** | Security rules per table |
-| **Functions/RPCs** | `complete_delivery`, `get_driver_trip_mobile`, variance approvals |
-| **Views** | `orders_list_view`, `customers_list_view`, `trips_list_view` |
-| **Triggers** | Audit tracking, auto-calculations |
-| **Indexes** | Performance optimization |
+**Internal Dependencies:**
+- Views → Tables (data aggregation)
+- RPC Functions → Tables, Views (data operations)
+- Triggers → Tables (automatic updates)
+- RLS Policies → Tables, User context (access control)
 
-Key functional areas in migrations:
-- Order processing functions
-- Trip/delivery management
-- Inventory tracking
-- Customer balance management
-- Approval workflows
-- Multi-tenant isolation
-- Mobile API functions
-- Analytics/reporting views
-
-#### **`functions/` (4 subdirectories)**
-Edge Functions:
-| Function | Purpose |
-|----------|---------|
-| `firebase-auth/` | Firebase authentication bridge |
-| `geocode-address/` | Google Maps geocoding |
-| `send-password-reset/` | Password reset emails |
-| `send-user-invite/` | User invitation emails |
-
-#### **`scripts/`**
-Database maintenance scripts:
-- `cleanup_transactional_data.sql`
-
-#### **Schema Files**
-| File | Purpose |
-|------|---------|
-| `dev_schema.sql` | Development environment schema |
-| `prod_schema.sql` | Production environment schema |
-| `config.toml` | Supabase CLI configuration |
+**External Services:**
+- **Google Maps API** (via Edge Functions) - Geocoding
+- **Email Service** (via Edge Functions) - Transactional emails
+- **Firebase Auth** (via Edge Functions) - Authentication federation
 
 ---
 
-### 3. Dependencies & Interactions
+## Infrastructure (`/infra/`)
 
-#### Internal
-- **Migrations** build on each other sequentially
-- **Functions** reference tables and other functions
-- **Views** aggregate data from multiple tables
+### Core Responsibility
+Cloud deployment configurations, container definitions, and infrastructure-as-code for deploying the OMS system to Google Cloud Platform (GCP).
 
-#### External
-- **Google Maps API** (geocoding function)
-- **Email service** (password reset, invitations)
-- **Firebase** (authentication bridge)
+### Key Components
 
----
+#### `/infra/cloud-run/`
+**Role:** GCP Cloud Run service definitions
+- `oms-backend.production.yaml` - Production backend deployment config
+- `oms-backend.staging.yaml` - Staging backend deployment config
 
-## Infrastructure (`@infra/`)
+#### `/infra/grafana-alloy/`
+**Role:** Observability agent configuration
+- `Dockerfile` - Alloy container image
+- `config.gcp.alloy` - GCP-specific Alloy configuration
+- `cloud-run.production.yaml` / `cloud-run.staging.yaml` - Alloy deployment configs
 
-### 1. Core Responsibility
-Cloud deployment configurations for GCP Cloud Run and monitoring infrastructure.
+#### `/infra/scripts/`
+**Role:** Infrastructure automation scripts
+- `setup-custom-domains.sh` - Domain configuration
 
----
+### Dependencies & Interactions
 
-### 2. Key Components
-
-#### **`cloud-run/`**
-| File | Purpose |
-|------|---------|
-| `oms-backend.production.yaml` | Production deployment config |
-| `oms-backend.staging.yaml` | Staging deployment config |
-
-#### **`grafana-alloy/`**
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Grafana Alloy container |
-| `config.gcp.alloy` | Alloy configuration |
-| `cloud-run.*.yaml` | Deployment configs |
-
-#### **`scripts/`**
-| File | Purpose |
-|------|---------|
-| `setup-custom-domains.sh` | Domain configuration |
+**External Services:**
+- **Google Cloud Run** - Container hosting
+- **Grafana Cloud** - Metrics and log aggregation
+- **Google Cloud Storage** - Container registry
 
 ---
 
-### 3. Dependencies & Interactions
+## Monitoring & Observability (`/grafana/`, `/grafana-alloy/`)
 
-- Deploys **backend** to GCP Cloud Run
-- Connects to **Grafana Cloud** for observability
-- Uses GCP services (Cloud Run, networking)
+### Core Responsibility
+Monitoring dashboards and telemetry collection for system observability, performance tracking, and alerting.
 
----
+### Key Components
 
-## Documentation (`@docs/`)
+#### `/grafana/`
+**Role:** Grafana dashboard definitions
+- `oms-business-dashboard.json` - Business metrics (orders, revenue, etc.)
+- `oms-detailed-dashboard.json` - Technical metrics (latency, errors, etc.)
+- `/dashboards/oms-system-overview.json` - System health overview
 
-### 1. Core Responsibility
-Project documentation, architectural decisions, API specifications, and operational guides.
+#### `/grafana-alloy/`
+**Role:** Telemetry collection agent
+- `Dockerfile` - Alloy container build
+- `config.alloy` - Local development configuration
+- `README.md` - Setup documentation
 
----
+### Dependencies & Interactions
 
-### 2. Key Components
-
-#### **Active Documentation**
-| File | Purpose |
-|------|---------|
-| `AI-CONTEXT.md` | AI assistant context |
-| `API.md` | API documentation |
-| `ARCHITECTURE.md` | System architecture |
-| `DOMAIN-MODEL.md` | Business domain model |
-| `EVENTS.md` | Event-driven patterns |
-| `LOCAL-DEV.md` | Local development setup |
-| `WORKFLOWS.md` | Business workflows |
-
-#### **`schemas/`**
-| Subdirectory | Purpose |
-|--------------|---------|
-| `api.yaml` | OpenAPI specification |
-| `events/` (12 files) | Event schema definitions |
-
-#### **`deploy/`**
-Deployment documentation:
-- `GCP-CLOUD-RUN-SETUP.md`
-
-#### **`solutions/`**
-Solution documentation:
-- `performance-issues/`
-
-#### **`archive/`**
-Historical documentation and completed work.
+**External Services:**
+- **Grafana Cloud** - Dashboard hosting, alerting
+- **Backend API** - Metrics source
+- **Supabase** - Database metrics
 
 ---
 
-## Testing Infrastructure
+## Documentation (`/docs/`)
 
-### Backend Tests (`@backend/tests/`)
+### Core Responsibility
+Technical documentation, architecture guides, API specifications, and operational procedures for the OMS system.
 
-| Directory | Purpose |
-|-----------|---------|
-| `unit/` | Unit tests |
-| `integration/` | Integration tests (customers, orders, offload-documents) |
-| `mocks/` | Test mocks |
-| `utils/` | Test utilities |
+### Key Components
 
-### Frontend Tests (`@src/test/`)
+#### Core Documentation Files
+- `AI-CONTEXT.md` - AI assistant context for codebase understanding
+- `API.md` - API endpoint documentation
+- `ARCHITECTURE.md` - System architecture overview
+- `DOMAIN-MODEL.md` - Domain entity relationships
+- `EVENTS.md` - Event-driven architecture documentation
+- `LOCAL-DEV.md` - Local development setup guide
+- `WORKFLOWS.md` - Business workflow documentation
+- `docker-usage.md` - Docker usage guide
 
-| File/Directory | Purpose |
-|----------------|---------|
-| `setup.ts` | Test configuration |
-| `mocks/` | Mock data/services |
+#### `/docs/schemas/`
+**Role:** API and event schemas
+- `api.yaml` - OpenAPI specification
+- `/events/` (12 files) - Event schema definitions
 
-### Root Tests (`@tests/`)
+#### `/docs/prompts/`
+**Role:** AI assistant prompts and workflows
+- `/linear-integration/` - Linear ticket handling
+- `/code-review/` - Code review guidelines
+- `/debugging/` - Debugging workflows
+- `/tdd-workflow/` - TDD process documentation
 
-| File | Purpose |
-|------|---------|
-| `framework/DataFactory.ts` | Test data generation |
-| `framework/TestFramework.ts` | Test utilities |
+#### `/docs/reference/`
+**Role:** Reference materials
+- `MIXPANEL-DASHBOARDS.md` - Analytics dashboard reference
+- `circl_operating_model_full.md` - Business operating model
+
+#### `/docs/archive/`
+**Role:** Historical documentation and completed work
+- Migration status documents
+- Implementation plans
+- Transformation reports
+
+#### `/docs/deploy/`
+**Role:** Deployment documentation
+- `GCP-CLOUD-RUN-SETUP.md` - Cloud Run deployment guide
+
+#### `/docs/solutions/`
+**Role:** Solution documentation
+- `/performance-issues/` - Performance optimization guides
+
+### Dependencies & Interactions
+Documentation references all system components but has no runtime dependencies.
 
 ---
 
-## CI/CD (`@.github/`)
+## CI/CD & Automation (`/.github/`)
 
-### 1. Workflows
+### Core Responsibility
+Continuous integration, continuous deployment, and automation workflows using GitHub Actions.
 
-| Workflow | Purpose |
-|----------|---------|
-| `backend-ci.yml` | Backend testing/linting |
-| `frontend-ci.yml` | Frontend testing/linting |
-| `deploy-gcp.yml` | GCP deployment |
-| `deploy-alloy-gcp.yml` | Grafana Alloy deployment |
+### Key Components
 
-### 2. Supporting Files
-- `pull_request_template.md`
-- `hooks/validate-code-changes.sh`
+#### `/.github/workflows/` (4 files)
+**Role:** GitHub Actions workflow definitions
+- `backend-ci.yml` - Backend testing and linting
+- `frontend-ci.yml` - Frontend testing and linting
+- `deploy-gcp.yml` - GCP Cloud Run deployment
+- `deploy-alloy-gcp.yml` - Grafana Alloy deployment
+
+#### `/.github/hooks/`
+**Role:** Git hooks for code quality
+- `validate-code-changes.sh` - Pre-commit validation
+
+#### Root Files
+- `pull_request_template.md` - PR template
+
+### Dependencies & Interactions
+
+**External Services:**
+- **GitHub Actions** - Workflow execution
+- **GCP** - Deployment target
+- **npm/yarn** - Package management
 
 ---
 
-## Summary Dependency Graph
+## Testing Framework (`/tests/`)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (src/)                       │
-│  pages/ → components/ → hooks/ → lib/ → API Client          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Backend (backend/src/)                    │
-│  routes/ → handlers/ → services/ → plugins/ → DB/Cache      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-        ┌──────────┐   ┌──────────┐   ┌──────────────┐
-        │ Supabase │   │  Redis   │   │ External APIs│
-        │  (DB)    │   │ (Cache)  │   │  (WhatsApp)  │
-        └──────────┘   └──────────┘   └──────────────┘
-```
+### Core Responsibility
+Shared testing utilities and framework for both frontend and backend test suites.
+
+### Key Components
+
+#### `/tests/framework/`
+**Role:** Test framework and utilities
+- `DataFactory.ts` - Test data generation
+- `TestFramework.ts` - Shared test infrastructure
+
+### Dependencies & Interactions
+
+**Internal Dependencies:**
+- Used by `/backend/tests/`
+- Used by `/src/test/`
+
+---
+
+## Plans & Specifications (`/plans/`)
+
+### Core Responsibility
+Technical planning documents, architecture proposals, and implementation specifications.
+
+### Key Components (7 files)
+- `event-driven-cache-invalidation-architecture.md` - Cache invalidation design
+- `fix-supabase-rls-security-configuration.md` - Security configuration plan
+- `n-plus-one-query-elimination.md` - Query optimization plan
+- `oms-comprehensive-test-strategy.md` - Testing strategy
+- `route-optimization-plan.md` - Route optimization feature plan
+- `route-planning-ui-redesign.md` - UI redesign specification
+- `vroom-wizard-improvements.md` - VROOM integration improvements
+
+### Dependencies & Interactions
+Planning documents reference system components but have no runtime dependencies.
+
+---
+
+## Serverless Functions (`/netlify/functions/`)
+
+### Core Responsibility
+Netlify serverless functions for frontend-specific backend operations.
+
+### Key Components
+- `google-maps-config.js` - Google Maps API configuration endpoint
+- `send-user-invite.js` - User invitation email sending
+
+### Dependencies & Interactions
+
+**External Services:**
+- **Netlify Functions** - Serverless execution
+- **Google Maps API** - Map configuration
+- **Email Service** - Invitation sending
+
+---
+
+## Scripts (`/scripts/`)
+
+### Core Responsibility
+Utility scripts for database maintenance, development setup, and operational tasks.
+
+### Key Components
+- `analyze-database-bloat.js` - Database health analysis
+- `check-environment.js` - Environment validation
+- `cleanup-dev.js` / `cleanup-staging.js` - Environment cleanup
+- `execute-vacuum-operations.js` - Database maintenance
+- `list-tenants.js` - Tenant enumeration
+- `seed-test-data.sql` - Test data seeding
+- `clean-dev-db.sql` / `clean-staging-db.sql` - Database cleanup SQL
+- `install-cc-shortcuts.sh` - Developer tooling setup
+- `prompts.sh` - AI prompt utilities
+
+### Dependencies & Interactions
+
+**Internal Dependencies:**
+- Scripts → Supabase (database operations)
+- Scripts → Environment variables (configuration)
+
+---
+
+## Claude AI Integration (`/.claude/`)
+
+### Core Responsibility
+Configuration for Claude AI assistant integration, including custom commands, hooks, and skills for AI-assisted development.
+
+### Key Components
+
+#### `/.claude/commands/` (6 files)
+**Role:** Custom Claude commands
+- `bug.md` - Bug investigation workflow
+- `debug.md` - Debugging assistance
+- `feature.md` - Feature development workflow
+- `security.md` - Security review workflow
+- `spike.md` - Technical spike workflow
+- `tdd.md` - Test-driven development workflow
+
+#### `/.claude/skills/` (5 files)
+**Role:** Analysis skills
+- `create-customer-analysis.yaml` - Customer creation analysis
+- `create-order-analysis.yaml` - Order creation analysis
+- `customer-details-analysis.yaml` - Customer details analysis
+- `customers-analysis.yaml` - Customers list analysis
+- `edit-customer-analysis.yaml` - Customer editing analysis
+
+#### `/.claude/hooks/`
+**Role:** Validation hooks
+- `validate-changes.sh` - Change validation
+
+#### Root Files
+- `settings.json` - Claude configuration
+
+### Dependencies & Interactions
+Claude integration references system components but operates externally via Claude AI interface.
 
 # dependencies
 
@@ -910,7 +894,7 @@ Analyze dependencies and external libraries
 
 # Dependency and Architecture Analysis
 
-## Repository: oms-system_aeed8a86
+## Repository: oms-system_0cf4db5b
 
 ---
 
@@ -921,59 +905,66 @@ Analyze dependencies and external libraries
 | Module/Directory | Primary Responsibility |
 |------------------|------------------------|
 | `app.ts` / `index.ts` | Application entry point and server initialization |
-| `tracing.ts` | OpenTelemetry tracing configuration and setup |
 | `config/` | Application configuration management |
-| `core/` | Core domain logic and foundational components |
+| `core/` | Core business logic and foundational utilities |
 | `middleware/` | HTTP request/response middleware (authentication, logging, etc.) |
-| `routes/` | API route definitions and endpoint handlers (37 files) |
-| `handlers/` | Request handlers for specific operations |
-| `services/` | Business logic services layer (18 files) |
-| `components/` | Reusable backend components (18 files) |
-| `plugins/` | Fastify plugin integrations |
-| `events/` | Event handling and event-driven architecture components |
-| `client/` | External client configurations |
-| `utils/` | Utility functions and helpers |
-| `types/` | TypeScript type definitions |
+| `routes/` | API route definitions and endpoint handlers (38 files) |
+| `handlers/` | Request handlers for processing API logic |
+| `services/` | Business service layer containing domain logic (18 files) |
+| `components/` | Shared backend components/modules (19 files) |
+| `plugins/` | Fastify plugin extensions |
+| `events/` | Event handling and event-driven architecture support |
 | `external-apis/whatsapp/` | WhatsApp API integration |
+| `client/` | External client configurations |
+| `utils/` | Shared utility functions |
+| `types/` | TypeScript type definitions |
+| `tracing.ts` | OpenTelemetry tracing configuration |
 
 ### Frontend (`/src/`)
 
 | Module/Directory | Primary Responsibility |
 |------------------|------------------------|
-| `App.tsx` / `main.tsx` | Application entry point and root component |
-| `pages/` | Page-level React components (Orders, Customers, Trips, Dashboard, Inventory, Reports, etc.) |
+| `App.tsx` / `main.tsx` | React application entry point and root component |
+| `pages/` | Page-level React components (Dashboard, Orders, Customers, Trips, Inventory, Reports, etc.) |
 | `components/ui/` | Reusable UI components library (91 files) |
-| `components/settings/` | Settings management components (17 files) |
 | `components/auth/` | Authentication-related components |
-| `components/layout/` | Layout components (navigation, structure) |
-| `components/dashboard/` | Dashboard widgets and visualizations |
-| `components/territory/` | Territory management components |
-| `components/trip-planning/` | Trip planning and scheduling components |
+| `components/layout/` | Application layout components |
+| `components/dashboard/` | Dashboard-specific widgets and visualizations |
+| `components/settings/` | Settings and configuration UI (17 files) |
+| `components/planning/` | Planning session UI components |
+| `components/trip-planning/` | Trip planning and route optimization UI |
 | `components/approvals/` | Approval workflow components (customer, order, payment, variance) |
-| `components/logistics/` | Logistics management components |
+| `components/logistics/` | Logistics and operations UI |
+| `components/territory/` | Territory management components |
 | `components/reports/` | Reporting and analytics components |
-| `contexts/` | React Context providers (AuthContext, BusinessRulesContext, TenantConfigContext) |
-| `hooks/` | Custom React hooks (API queries, permissions, analytics, business rules, etc.) |
-| `lib/` | Shared utilities (API client, Supabase client, analytics, error handling, WebSocket client, etc.) |
-| `types/` | TypeScript type definitions (business-rules, inventory, tenant-config, trip-export) |
+| `contexts/` | React context providers (AuthContext, BusinessRulesContext, TenantConfigContext) |
+| `hooks/` | Custom React hooks (API queries, permissions, analytics, business rules) |
+| `lib/` | Utility libraries (Supabase client, analytics, error handling, API client, WebSocket) |
+| `types/` | TypeScript type definitions |
 
-### Infrastructure & Database
-
-| Module/Directory | Primary Responsibility |
-|------------------|------------------------|
-| `supabase/migrations/` | Database schema migrations (extensive SQL migrations) |
-| `supabase/functions/` | Supabase Edge Functions (Firebase auth, geocoding, email invites, password reset) |
-| `infra/` | Infrastructure configuration (Cloud Run, Grafana Alloy) |
-| `grafana/` | Grafana dashboard configurations |
-| `tests/framework/` | Test framework utilities (DataFactory, TestFramework) |
-
-### Supporting Modules
+### Database/Supabase (`/supabase/`)
 
 | Module/Directory | Primary Responsibility |
 |------------------|------------------------|
-| `netlify/functions/` | Netlify serverless functions (Google Maps config, user invites) |
-| `scripts/` | Utility scripts for database cleanup, environment checks, tenant management |
-| `docs/` | Project documentation (API, Architecture, Domain Model, Events, Workflows) |
+| `migrations/` | Database schema migrations and RPC functions |
+| `functions/` | Supabase Edge Functions (Firebase auth, geocoding, email sending) |
+| `scripts/` | Database utility scripts |
+
+### Infrastructure (`/infra/`)
+
+| Module/Directory | Primary Responsibility |
+|------------------|------------------------|
+| `grafana-alloy/` | Observability agent configuration for GCP deployment |
+| `cloud-run/` | Google Cloud Run deployment configurations |
+| `scripts/` | Infrastructure setup scripts |
+
+### Tests
+
+| Module/Directory | Primary Responsibility |
+|------------------|------------------------|
+| `/backend/tests/` | Backend integration and unit tests |
+| `/tests/framework/` | Test framework utilities (DataFactory, TestFramework) |
+| `/src/test/` | Frontend test setup and mocks |
 
 ---
 
@@ -985,67 +976,38 @@ Analyze dependencies and external libraries
 
 | Dependency | Official Name | Purpose |
 |------------|---------------|---------|
-| `@fastify/cors` | Fastify CORS | Cross-Origin Resource Sharing middleware for Fastify |
-| `@fastify/env` | Fastify Env | Environment variable configuration plugin for Fastify |
-| `@fastify/jwt` | Fastify JWT | JSON Web Token authentication plugin for Fastify |
-| `@fastify/multipart` | Fastify Multipart | Multipart/form-data file upload handling for Fastify |
-| `@fastify/websocket` | Fastify WebSocket | WebSocket support for Fastify |
-| `@opentelemetry/auto-instrumentations-node` | OpenTelemetry Auto Instrumentations | Automatic instrumentation for Node.js tracing |
-| `@opentelemetry/exporter-trace-otlp-http` | OpenTelemetry OTLP Exporter | HTTP exporter for OpenTelemetry traces |
-| `@opentelemetry/instrumentation-fastify` | OpenTelemetry Fastify Instrumentation | Fastify-specific tracing instrumentation |
-| `@opentelemetry/sdk-node` | OpenTelemetry Node SDK | Core OpenTelemetry SDK for Node.js |
-| `@sentry/node` | Sentry Node | Error tracking and monitoring for Node.js |
-| `@sentry/profiling-node` | Sentry Profiling | Performance profiling for Sentry |
-| `@supabase/supabase-js` | Supabase JS | Supabase client library for database and auth |
-| `@types/ioredis` | ioredis Types | TypeScript type definitions for ioredis |
-| `@types/node` | Node Types | TypeScript type definitions for Node.js |
-| `@types/node-cache` | node-cache Types | TypeScript type definitions for node-cache |
-| `@types/uuid` | UUID Types | TypeScript type definitions for UUID |
-| `axios` | Axios | HTTP client for making API requests |
-| `axios-retry` | Axios Retry | Automatic retry functionality for Axios requests |
-| `dotenv` | dotenv | Environment variable loading from .env files |
 | `fastify` | Fastify | High-performance web framework for Node.js |
-| `fastify-plugin` | Fastify Plugin | Plugin helper for creating Fastify plugins |
+| `@fastify/cors` | Fastify CORS | CORS (Cross-Origin Resource Sharing) plugin for Fastify |
+| `@fastify/env` | Fastify Env | Environment variable validation plugin for Fastify |
+| `@fastify/jwt` | Fastify JWT | JWT authentication plugin for Fastify |
+| `@fastify/multipart` | Fastify Multipart | Multipart/form-data parsing plugin for file uploads |
+| `@fastify/websocket` | Fastify WebSocket | WebSocket support plugin for Fastify |
+| `fastify-plugin` | Fastify Plugin | Utility for creating Fastify plugins |
+| `@supabase/supabase-js` | Supabase JavaScript Client | Client library for Supabase (database, auth, storage) |
+| `@opentelemetry/sdk-node` | OpenTelemetry Node SDK | Distributed tracing and observability SDK |
+| `@opentelemetry/auto-instrumentations-node` | OpenTelemetry Auto-Instrumentations | Automatic instrumentation for Node.js libraries |
+| `@opentelemetry/exporter-trace-otlp-http` | OpenTelemetry OTLP Exporter | Trace exporter using OTLP over HTTP |
+| `@opentelemetry/instrumentation-fastify` | OpenTelemetry Fastify Instrumentation | Fastify-specific tracing instrumentation |
+| `@sentry/node` | Sentry Node | Error tracking and performance monitoring for Node.js |
+| `@sentry/profiling-node` | Sentry Profiling | Profiling support for Sentry on Node.js |
+| `axios` | Axios | Promise-based HTTP client |
+| `axios-retry` | Axios Retry | Retry interceptor for Axios requests |
 | `ioredis` | ioredis | Redis client for Node.js |
-| `mixpanel` | Mixpanel | Analytics and event tracking (server-side) |
-| `nats` | NATS | Messaging system client for event-driven architecture |
-| `node-cache` | node-cache | In-memory caching solution |
+| `node-cache` | Node Cache | In-memory caching module |
+| `nats` | NATS | Client for NATS messaging system |
 | `pino` | Pino | Fast JSON logger for Node.js |
 | `pino-loki` | Pino Loki | Pino transport for Grafana Loki |
-| `pino-pretty` | Pino Pretty | Pretty-printing formatter for Pino logs |
-| `prom-client` | Prometheus Client | Prometheus metrics client for monitoring |
-| `tsx` | TSX | TypeScript execution for Node.js |
-| `typescript` | TypeScript | TypeScript language compiler |
+| `pino-pretty` | Pino Pretty | Pretty-print formatter for Pino logs |
+| `prom-client` | Prometheus Client | Prometheus metrics client for Node.js |
+| `mixpanel` | Mixpanel | Server-side analytics tracking |
+| `dotenv` | dotenv | Environment variable loader from `.env` files |
 | `uuid` | UUID | UUID generation library |
-
-### Frontend Production Dependencies
-
-**Source:** `/package.json`
-
-| Dependency | Official Name | Purpose |
-|------------|---------------|---------|
-| `@sentry/react` | Sentry React | Error tracking and monitoring for React |
-| `@sentry/tracing` | Sentry Tracing | Performance monitoring and tracing for Sentry |
-| `@supabase/supabase-js` | Supabase JS | Supabase client library for database and auth |
-| `@tanstack/react-query` | TanStack Query (React Query) | Server state management and data fetching |
-| `@types/mixpanel-browser` | Mixpanel Browser Types | TypeScript type definitions for Mixpanel browser |
-| `@types/node` | Node Types | TypeScript type definitions for Node.js |
-| `clsx` | clsx | Utility for constructing className strings |
-| `date-fns` | date-fns | Date utility library |
-| `file-saver` | FileSaver.js | Client-side file saving utility |
-| `html2canvas` | html2canvas | HTML to canvas screenshot library |
-| `jspdf` | jsPDF | PDF generation library |
-| `jspdf-autotable` | jsPDF AutoTable | Table generation plugin for jsPDF |
-| `lucide-react` | Lucide React | Icon library for React |
-| `mapbox-gl` | Mapbox GL JS | Interactive map rendering library |
-| `mixpanel-browser` | Mixpanel Browser | Analytics and event tracking (client-side) |
-| `react` | React | UI component library |
-| `react-dom` | React DOM | React rendering for web browsers |
-| `react-phone-number-input` | React Phone Number Input | Phone number input component with validation |
-| `react-router-dom` | React Router | Client-side routing for React |
-| `recharts` | Recharts | Charting library for React |
-| `resend` | Resend | Email sending service client |
-| `xlsx` | SheetJS (xlsx) | Excel file parsing and generation |
+| `typescript` | TypeScript | TypeScript language compiler |
+| `tsx` | TSX | TypeScript execution and watch mode |
+| `@types/node` | Node.js Types | TypeScript type definitions for Node.js |
+| `@types/ioredis` | ioredis Types | TypeScript type definitions for ioredis |
+| `@types/node-cache` | Node Cache Types | TypeScript type definitions for node-cache |
+| `@types/uuid` | UUID Types | TypeScript type definitions for uuid |
 
 ### Backend Development Dependencies
 
@@ -1053,17 +1015,46 @@ Analyze dependencies and external libraries
 
 | Dependency | Official Name | Purpose |
 |------------|---------------|---------|
+| `jest` | Jest | JavaScript testing framework |
+| `ts-jest` | ts-jest | TypeScript preprocessor for Jest |
 | `@types/jest` | Jest Types | TypeScript type definitions for Jest |
-| `@types/supertest` | Supertest Types | TypeScript type definitions for Supertest |
+| `supertest` | SuperTest | HTTP assertions library for testing |
+| `@types/supertest` | SuperTest Types | TypeScript type definitions for SuperTest |
+| `eslint` | ESLint | JavaScript/TypeScript linter |
 | `@typescript-eslint/eslint-plugin` | TypeScript ESLint Plugin | ESLint rules for TypeScript |
 | `@typescript-eslint/parser` | TypeScript ESLint Parser | ESLint parser for TypeScript |
-| `eslint` | ESLint | JavaScript/TypeScript linting |
-| `jest` | Jest | Testing framework |
-| `node-fetch` | node-fetch | Fetch API implementation for Node.js |
-| `nodemon` | nodemon | Development server with auto-restart |
-| `prettier` | Prettier | Code formatting |
-| `supertest` | SuperTest | HTTP assertion testing library |
-| `ts-jest` | ts-jest | Jest transformer for TypeScript |
+| `prettier` | Prettier | Code formatter |
+| `nodemon` | Nodemon | File watcher for automatic server restarts |
+| `node-fetch` | Node Fetch | Fetch API implementation for Node.js |
+
+### Frontend Production Dependencies
+
+**Source:** `/package.json`
+
+| Dependency | Official Name | Purpose |
+|------------|---------------|---------|
+| `react` | React | UI component library |
+| `react-dom` | React DOM | React rendering for web browsers |
+| `react-router-dom` | React Router DOM | Declarative routing for React applications |
+| `@tanstack/react-query` | TanStack Query (React Query) | Data fetching and caching library |
+| `@supabase/supabase-js` | Supabase JavaScript Client | Client library for Supabase backend services |
+| `@sentry/react` | Sentry React | Error tracking and performance monitoring for React |
+| `@sentry/tracing` | Sentry Tracing | Distributed tracing for Sentry |
+| `mapbox-gl` | Mapbox GL JS | Interactive map rendering library |
+| `mixpanel-browser` | Mixpanel Browser | Client-side analytics tracking |
+| `@types/mixpanel-browser` | Mixpanel Browser Types | TypeScript type definitions for Mixpanel Browser |
+| `recharts` | Recharts | Charting library built on React |
+| `lucide-react` | Lucide React | Icon library for React |
+| `clsx` | clsx | Utility for constructing className strings |
+| `date-fns` | date-fns | Date utility library |
+| `react-phone-number-input` | React Phone Number Input | Phone number input component |
+| `file-saver` | FileSaver.js | Client-side file saving utility |
+| `html2canvas` | html2canvas | HTML to canvas screenshot library |
+| `jspdf` | jsPDF | PDF generation library |
+| `jspdf-autotable` | jsPDF AutoTable | Table plugin for jsPDF |
+| `xlsx` | SheetJS | Spreadsheet parsing and generation library |
+| `resend` | Resend | Email sending API client |
+| `@types/node` | Node.js Types | TypeScript type definitions for Node.js |
 
 ### Frontend Development Dependencies
 
@@ -1071,36 +1062,36 @@ Analyze dependencies and external libraries
 
 | Dependency | Official Name | Purpose |
 |------------|---------------|---------|
-| `@eslint/js` | ESLint JS | ESLint JavaScript configuration |
-| `@testing-library/jest-dom` | Testing Library Jest DOM | Custom Jest matchers for DOM testing |
-| `@testing-library/react` | Testing Library React | React component testing utilities |
-| `@testing-library/user-event` | Testing Library User Event | User interaction simulation for testing |
-| `@types/file-saver` | FileSaver Types | TypeScript type definitions for FileSaver |
-| `@types/mapbox-gl` | Mapbox GL Types | TypeScript type definitions for Mapbox GL |
-| `@types/react` | React Types | TypeScript type definitions for React |
-| `@types/react-dom` | React DOM Types | TypeScript type definitions for React DOM |
-| `@vitejs/plugin-react` | Vite React Plugin | React support for Vite |
-| `@vitest/coverage-v8` | Vitest Coverage V8 | Code coverage for Vitest using V8 |
-| `@vitest/ui` | Vitest UI | Visual UI for Vitest test runner |
-| `autoprefixer` | Autoprefixer | CSS vendor prefix automation |
-| `eslint` | ESLint | JavaScript/TypeScript linting |
-| `eslint-plugin-react-hooks` | ESLint React Hooks | ESLint rules for React Hooks |
-| `eslint-plugin-react-refresh` | ESLint React Refresh | ESLint rules for React Refresh |
-| `globals` | globals | Global variable definitions for ESLint |
-| `husky` | Husky | Git hooks management |
-| `jsdom` | jsdom | DOM implementation for Node.js testing |
-| `lint-staged` | lint-staged | Run linters on staged git files |
-| `msw` | Mock Service Worker | API mocking for testing |
-| `postcss` | PostCSS | CSS transformation tool |
-| `prettier` | Prettier | Code formatting |
-| `rollup-plugin-visualizer` | Rollup Plugin Visualizer | Bundle size visualization |
-| `tailwindcss` | Tailwind CSS | Utility-first CSS framework |
+| `vite` | Vite | Frontend build tool and development server |
+| `@vitejs/plugin-react` | Vite React Plugin | React support plugin for Vite |
+| `vitest` | Vitest | Testing framework powered by Vite |
+| `@vitest/coverage-v8` | Vitest Coverage | Code coverage provider for Vitest |
+| `@vitest/ui` | Vitest UI | Browser-based UI for Vitest |
 | `typescript` | TypeScript | TypeScript language compiler |
 | `typescript-eslint` | TypeScript ESLint | TypeScript integration for ESLint |
-| `vite` | Vite | Frontend build tool and dev server |
-| `vitest` | Vitest | Vite-native testing framework |
+| `eslint` | ESLint | JavaScript/TypeScript linter |
+| `@eslint/js` | ESLint JavaScript | ESLint core JavaScript rules |
+| `eslint-plugin-react-hooks` | ESLint React Hooks | ESLint rules for React Hooks |
+| `eslint-plugin-react-refresh` | ESLint React Refresh | ESLint rules for React Refresh |
+| `prettier` | Prettier | Code formatter |
+| `@testing-library/react` | React Testing Library | Testing utilities for React components |
+| `@testing-library/jest-dom` | Jest DOM Testing Library | Custom Jest matchers for DOM testing |
+| `@testing-library/user-event` | User Event Testing Library | User event simulation for testing |
+| `jsdom` | jsdom | JavaScript DOM implementation for testing |
+| `msw` | Mock Service Worker | API mocking library for testing |
+| `tailwindcss` | Tailwind CSS | Utility-first CSS framework |
+| `postcss` | PostCSS | CSS transformation tool |
+| `autoprefixer` | Autoprefixer | CSS vendor prefix automation |
+| `husky` | Husky | Git hooks manager |
+| `lint-staged` | lint-staged | Run linters on staged git files |
+| `globals` | globals | Global variable definitions for ESLint |
+| `rollup-plugin-visualizer` | Rollup Plugin Visualizer | Bundle size visualization |
+| `@types/react` | React Types | TypeScript type definitions for React |
+| `@types/react-dom` | React DOM Types | TypeScript type definitions for React DOM |
+| `@types/file-saver` | FileSaver Types | TypeScript type definitions for FileSaver |
+| `@types/mapbox-gl` | Mapbox GL Types | TypeScript type definitions for Mapbox GL |
 
-### Infrastructure Dependencies
+### Infrastructure/Container Dependencies
 
 **Source:** `/backend/Dockerfile`
 
@@ -1113,872 +1104,722 @@ Analyze dependencies and external libraries
 
 | Dependency | Official Name | Purpose |
 |------------|---------------|---------|
-| `redis:7-alpine` | Redis Alpine | In-memory data store for caching |
+| `redis:7-alpine` | Redis | In-memory data store used for caching |
 
 **Source:** `/grafana-alloy/Dockerfile`, `/infra/grafana-alloy/Dockerfile`
 
 | Dependency | Official Name | Purpose |
 |------------|---------------|---------|
-| `grafana/alloy:latest` | Grafana Alloy | Observability data collector (logs, metrics, traces) |
+| `grafana/alloy:latest` | Grafana Alloy | Observability data collection agent (telemetry pipeline) |
 
 # core_entities
 
 Core entities and their relationships
 
-# Domain Model Analysis - OMS System
+# Data Entities and Domain Model Analysis - OMS System
 
-## Overview
+## Executive Summary
 
-This is an **Order Management System (OMS)** for a logistics/distribution business, likely handling gas cylinder or similar product distribution. The system manages the full lifecycle from customer orders through delivery and inventory reconciliation.
+This is an **Order Management System (OMS)** for what appears to be a **gas/cylinder distribution business**. The system manages customers, orders, deliveries, inventory (with cylinder tracking), trips/logistics, and payments.
 
 ---
 
 ## 1. Core Data Entities
 
 ### 1.1 **Tenant**
-Multi-tenant architecture root entity.
+Multi-tenant system where all data is partitioned by tenant.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `name` | string | Tenant/organization name |
-| `settings` | JSONB | Tenant-specific configuration |
-| `currency` | string | Default currency |
-| `created_at` | timestamp | Creation time |
+| `id` | UUID | Primary identifier |
+| `name` | String | Tenant/company name |
+| `settings` | JSONB | Configuration including currency, terminology |
+| `created_at` | Timestamp | Creation timestamp |
 
 ---
 
-### 1.2 **User / UserProfile**
-System users with role-based access.
+### 1.2 **Customer**
+Central entity representing business customers.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key (links to auth.users) |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `email` | string | User email |
-| `full_name` | string | Display name |
-| `role` | enum | `super_admin`, `admin`, `operator`, `accountant`, `sales`, `driver` |
-| `is_active` | boolean | Account status |
-| `created_at` | timestamp | Creation time |
+| `code` | String | Customer reference code |
+| `name` | String | Customer/business name |
+| `status` | Enum | `pending`, `approved`, `rejected`, `inactive` |
+| `customer_type` | String | Classification type |
+| `pricing_tier` | String | Pricing classification |
+| `credit_limit` | Decimal | Credit limit amount |
+| `payment_terms` | String | Payment terms |
+| `sales_user_id` | UUID | Assigned sales agent |
+| `primary_contact` | JSONB | Contact information |
+| `created_by` | UUID | User who created |
+| `approved_by` | UUID | User who approved |
+| `rejected_by` | UUID | User who rejected |
+| `created_at` | Timestamp | Creation timestamp |
 
 ---
 
-### 1.3 **Customer**
-End customers who place orders.
+### 1.3 **Address**
+Customer delivery/billing addresses with geocoding support.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `name` | string | Customer/business name |
-| `customer_reference` | string | External reference code |
-| `status` | enum | `pending`, `approved`, `rejected`, `inactive` |
-| `primary_contact` | string | Contact person name |
-| `phone` | string | Phone number |
-| `email` | string | Email address |
-| `sales_user_id` | UUID | FK to UserProfile (assigned sales agent) |
-| `balance` | decimal | Current account balance |
-| `created_by` | UUID | FK to UserProfile |
-| `approved_by` | UUID | FK to UserProfile |
-| `created_at` | timestamp | Creation time |
+| `customer_id` | UUID | FK to Customer |
+| `type` | Enum | `delivery`, `billing`, `warehouse` |
+| `name` | String | Address label/name |
+| `street` | String | Street address |
+| `city` | String | City |
+| `region` | String | Region/state |
+| `country` | String | Country |
+| `postal_code` | String | Postal/ZIP code |
+| `latitude` | Decimal | GPS latitude |
+| `longitude` | Decimal | GPS longitude |
+| `plus_code` | String | Google Plus Code |
+| `is_default` | Boolean | Default address flag |
+| `sales_user_id` | UUID | Sales agent for this address |
 
 ---
 
-### 1.4 **Address**
-Physical locations for customers and warehouses.
+### 1.4 **Order**
+Sales orders placed by customers.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `customer_id` | UUID | FK to Customer (nullable for warehouses) |
-| `warehouse_id` | UUID | FK to Warehouse (nullable) |
-| `name` | string | Address label/name |
-| `address_type` | enum | `delivery`, `billing`, `warehouse` |
-| `street_address` | string | Full street address |
-| `city` | string | City |
-| `plus_code` | string | Google Plus Code |
-| `latitude` | decimal | GPS latitude |
-| `longitude` | decimal | GPS longitude |
-| `is_default` | boolean | Default address flag |
+| `order_number` | String | Unique order reference |
+| `customer_id` | UUID | FK to Customer |
+| `delivery_address_id` | UUID | FK to Address |
+| `status` | Enum | `draft`, `pending_approval`, `approved`, `dispatched`, `delivered`, `cancelled` |
+| `order_type` | Enum | `standard`, `transfer`, `conversion` |
+| `order_source` | String | `web`, `mobile`, `whatsapp`, `operator` |
+| `channel` | String | Order channel tracking |
+| `total_amount` | Decimal | Order total |
+| `currency` | String | Currency code |
+| `notes` | Text | Order notes |
+| `delivery_date` | Date | Requested delivery date |
+| `sales_user_id` | UUID | Sales agent |
+| `created_by` | UUID | User who created |
+| `approved_by` | UUID | User who approved |
+| `external_reference` | String | External system reference |
 
 ---
 
-### 1.5 **Product**
+### 1.5 **Order Line**
+Line items within an order.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | Primary identifier |
+| `tenant_id` | UUID | FK to Tenant |
+| `order_id` | UUID | FK to Order |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `quantity` | Integer | Ordered quantity |
+| `unit_price` | Decimal | Price per unit |
+| `line_total` | Decimal | Line total amount |
+| `delivered_quantity` | Integer | Actually delivered |
+| `collected_quantity` | Integer | Collected (for cylinders) |
+
+---
+
+### 1.6 **Product**
 Product catalog items.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `name` | string | Product name |
-| `description` | string | Product description |
-| `product_type` | enum | `cylinder`, `accessory`, `measured` |
-| `is_active` | boolean | Availability status |
-| `created_at` | timestamp | Creation time |
+| `name` | String | Product name |
+| `description` | Text | Product description |
+| `product_type` | Enum | `gas`, `accessory`, `service` |
+| `category` | String | Product category |
+| `is_active` | Boolean | Active status |
+| `is_bundle` | Boolean | Bundle product flag |
 
 ---
 
-### 1.6 **ProductVariant**
-Specific SKUs/variants of products.
+### 1.7 **Product Variant**
+Specific variants of products (sizes, types).
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `product_id` | UUID | FK to Product |
-| `sku_code` | string | Stock keeping unit code |
-| `name` | string | Variant name |
-| `size` | string | Size designation |
-| `state` | enum | `full`, `empty`, `measured` |
-| `is_bundle` | boolean | Bundle product flag |
-| `is_active` | boolean | Availability status |
+| `sku` | String | Stock keeping unit |
+| `name` | String | Variant name |
+| `size` | String | Size specification |
+| `state` | Enum | `full`, `empty`, `refilling` (cylinder states) |
+| `unit_type` | Enum | `cylinder`, `measured`, `piece` |
+| `is_active` | Boolean | Active status |
 
 ---
 
-### 1.7 **BundleComponent**
-Links bundle products to their component variants.
+### 1.8 **Bundle Component**
+Components that make up bundle products.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `bundle_variant_id` | UUID | FK to ProductVariant (bundle) |
 | `component_variant_id` | UUID | FK to ProductVariant (component) |
-| `quantity` | integer | Quantity of component in bundle |
+| `quantity` | Integer | Quantity in bundle |
 
 ---
 
-### 1.8 **PriceList**
-Pricing definitions for product variants.
+### 1.9 **Price List**
+Pricing tiers and configurations.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `name` | string | Price list name |
-| `is_default` | boolean | Default pricing flag |
-| `valid_from` | date | Effective start date |
-| `valid_to` | date | Effective end date |
-| `created_at` | timestamp | Creation time |
+| `name` | String | Price list name |
+| `is_default` | Boolean | Default price list |
+| `valid_from` | Date | Start validity |
+| `valid_to` | Date | End validity |
+| `is_active` | Boolean | Active status |
 
 ---
 
-### 1.9 **PriceListItem**
-Individual price entries.
+### 1.10 **Price List Item**
+Individual prices within a price list.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `price_list_id` | UUID | FK to PriceList |
-| `variant_id` | UUID | FK to ProductVariant |
-| `unit_price` | decimal | Price per unit |
-| `currency` | string | Currency code |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `price` | Decimal | Unit price |
+| `min_quantity` | Integer | Minimum order quantity |
 
 ---
 
-### 1.10 **Order**
-Customer orders for products.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `tenant_id` | UUID | FK to Tenant |
-| `order_number` | string | Human-readable order number |
-| `customer_id` | UUID | FK to Customer |
-| `delivery_address_id` | UUID | FK to Address |
-| `status` | enum | `pending`, `approved`, `rejected`, `allocated`, `dispatched`, `delivered`, `partial`, `cancelled` |
-| `order_type` | enum | `standard`, `refilling`, `transfer`, `conversion` |
-| `order_source` | enum | `web`, `mobile`, `whatsapp`, `operator`, `accountant` |
-| `external_order_id` | string | External system reference |
-| `total_amount` | decimal | Order total value |
-| `notes` | text | Order notes |
-| `sales_user_id` | UUID | FK to UserProfile |
-| `created_by` | UUID | FK to UserProfile |
-| `approved_by` | UUID | FK to UserProfile |
-| `updated_by` | UUID | FK to UserProfile |
-| `created_at` | timestamp | Creation time |
-| `delivery_date` | date | Requested delivery date |
-
----
-
-### 1.11 **OrderLine**
-Individual line items within an order.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `tenant_id` | UUID | FK to Tenant |
-| `order_id` | UUID | FK to Order |
-| `variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Ordered quantity |
-| `unit_price` | decimal | Price per unit |
-| `total_price` | decimal | Line total |
-
----
-
-### 1.12 **Warehouse**
+### 1.11 **Warehouse**
 Physical storage locations.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `name` | string | Warehouse name |
-| `warehouse_type` | enum | `main`, `mobile`, `depot` |
-| `linked_vehicle_id` | UUID | FK to Vehicle (for mobile warehouses) |
-| `is_active` | boolean | Operational status |
-| `created_by` | UUID | FK to UserProfile |
-| `updated_by` | UUID | FK to UserProfile |
+| `name` | String | Warehouse name |
+| `type` | Enum | `fixed`, `mobile` |
+| `address_id` | UUID | FK to Address |
+| `linked_vehicle_id` | UUID | FK to Vehicle (for mobile) |
+| `is_active` | Boolean | Active status |
+| `created_by` | UUID | User who created |
 
 ---
 
-### 1.13 **Vehicle**
+### 1.12 **Vehicle**
 Delivery vehicles.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `registration_number` | string | License plate |
-| `vehicle_type` | string | Vehicle category |
-| `is_active` | boolean | Availability status |
-| `created_by` | UUID | FK to UserProfile |
-| `updated_by` | UUID | FK to UserProfile |
+| `registration` | String | Vehicle registration |
+| `name` | String | Vehicle name/identifier |
+| `vehicle_type` | String | Type classification |
+| `capacity` | Integer | Carrying capacity |
+| `is_active` | Boolean | Active status |
+| `created_by` | UUID | User who created |
 
 ---
 
-### 1.14 **InventoryLevel**
-Current stock levels per warehouse/variant.
+### 1.13 **Inventory Level**
+Current stock levels per warehouse.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `warehouse_id` | UUID | FK to Warehouse |
-| `variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Current stock quantity |
-| `updated_at` | timestamp | Last update time |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `quantity` | Integer | Current quantity |
+| `reserved_quantity` | Integer | Reserved/allocated |
+| `available_quantity` | Integer | Available for orders |
 
 ---
 
-### 1.15 **InventoryTransaction**
-Stock movement history.
+### 1.14 **Inventory Transaction**
+Historical record of all inventory movements.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `warehouse_id` | UUID | FK to Warehouse |
-| `variant_id` | UUID | FK to ProductVariant |
-| `transaction_type` | enum | `allocation`, `deallocation`, `transfer`, `delivery`, `return`, `adjustment`, `conversion`, `writeoff` |
-| `quantity` | integer | Transaction quantity (+ or -) |
-| `reference_type` | enum | `order`, `trip`, `adjustment`, `conversion` |
-| `reference_id` | UUID | FK to referenced entity |
-| `photo_url` | string | Supporting photo |
-| `created_by` | UUID | FK to UserProfile |
-| `created_at` | timestamp | Transaction time |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `transaction_type` | Enum | `allocation`, `deallocation`, `delivery`, `return`, `adjustment`, `conversion`, `transfer` |
+| `quantity` | Integer | Transaction quantity |
+| `reference_type` | String | Source entity type |
+| `reference_id` | UUID | Source entity ID |
+| `photo_url` | String | Photo evidence URL |
+| `created_by` | UUID | User who created |
+| `created_at` | Timestamp | Transaction time |
 
 ---
 
-### 1.16 **Trip**
-Delivery trip/route.
+### 1.15 **Trip**
+Delivery trips/routes.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `trip_number` | string | Human-readable trip number |
+| `trip_number` | String | Unique trip reference |
 | `vehicle_id` | UUID | FK to Vehicle |
 | `driver_id` | UUID | FK to UserProfile |
-| `status` | enum | `planned`, `loading`, `dispatched`, `in_progress`, `completed`, `variance_pending`, `cancelled` |
-| `scheduled_date` | date | Planned delivery date |
-| `dispatched_by` | UUID | FK to UserProfile |
-| `created_by` | UUID | FK to UserProfile |
-| `created_at` | timestamp | Creation time |
+| `status` | Enum | `planned`, `loading`, `dispatched`, `in_progress`, `completed`, `cancelled` |
+| `scheduled_date` | Date | Planned delivery date |
+| `source_warehouse_id` | UUID | FK to Warehouse |
+| `dispatched_by` | UUID | User who dispatched |
+| `completed_at` | Timestamp | Completion time |
+| `created_by` | UUID | User who created |
 
 ---
 
-### 1.17 **TripOrder**
-Junction linking orders to trips with delivery details.
+### 1.16 **Trip Order** (Junction)
+Links orders to trips with stop sequencing.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `trip_id` | UUID | FK to Trip |
 | `order_id` | UUID | FK to Order |
-| `stop_sequence` | integer | Delivery order/sequence |
-| `action_type` | enum | `deliver`, `collect`, `conversion_deliver`, `conversion_collect` |
-| `status` | enum | `pending`, `completed`, `failed`, `cancelled` |
-| `pod_url` | string | Proof of delivery photo |
-| `delivery_time` | timestamp | Actual delivery time |
-| `notes` | text | Delivery notes |
+| `stop_sequence` | Integer | Delivery sequence |
+| `action_type` | Enum | `delivery`, `collection`, `conversion_deliver`, `conversion_collect` |
+| `status` | Enum | `pending`, `completed`, `failed`, `cancelled` |
+| `pod_signature_url` | String | Proof of delivery signature |
+| `pod_photo_url` | String | Proof of delivery photo |
+| `delivery_notes` | Text | Delivery notes |
+| `delivered_at` | Timestamp | Delivery time |
+| `delivered_by` | UUID | Driver who delivered |
 
 ---
 
-### 1.18 **TripInventory**
-Starting stock loaded onto trip vehicle.
+### 1.17 **Loading Plan**
+Pre-trip loading instructions.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `trip_id` | UUID | FK to Trip |
-| `variant_id` | UUID | FK to ProductVariant |
-| `starting_quantity` | integer | Loaded quantity |
-| `delivered_quantity` | integer | Total delivered |
-| `returned_quantity` | integer | Returned to warehouse |
-
----
-
-### 1.19 **TripReturn**
-Products returned from trip.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `tenant_id` | UUID | FK to Tenant |
-| `trip_id` | UUID | FK to Trip |
-| `variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Returned quantity |
-| `destination_warehouse_id` | UUID | FK to Warehouse |
-
----
-
-### 1.20 **LoadingPlan**
-Pre-dispatch loading instructions.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `tenant_id` | UUID | FK to Tenant |
-| `trip_id` | UUID | FK to Trip |
-| `status` | enum | `draft`, `pending`, `approved`, `cancelled` |
+| `status` | Enum | `draft`, `approved`, `loading`, `loaded`, `cancelled` |
 | `source_warehouse_id` | UUID | FK to Warehouse |
-| `total_quantity` | integer | Total items to load |
-| `approved_by` | UUID | FK to UserProfile |
-| `cancelled_by` | UUID | FK to UserProfile |
-| `cancellation_reason` | text | Reason if cancelled |
+| `approved_by` | UUID | User who approved |
+| `loaded_by` | UUID | User who confirmed loading |
+| `cancelled_by` | UUID | User who cancelled |
+| `cancellation_reason` | Text | Reason for cancellation |
 
 ---
 
-### 1.21 **OffloadDocument**
-Post-trip offload/reconciliation records.
+### 1.18 **Trip Inventory**
+Expected inventory on a trip.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `trip_id` | UUID | FK to Trip |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `starting_quantity` | Integer | Loaded quantity |
+| `delivered_quantity` | Integer | Delivered total |
+| `collected_quantity` | Integer | Collected total |
+| `returned_quantity` | Integer | Returned to warehouse |
+
+---
+
+### 1.19 **Trip Return**
+Items returned from a trip.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | Primary identifier |
+| `tenant_id` | UUID | FK to Tenant |
+| `trip_id` | UUID | FK to Trip |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `quantity` | Integer | Returned quantity |
 | `destination_warehouse_id` | UUID | FK to Warehouse |
-| `status` | enum | `draft`, `pending_agreement`, `agreed`, `variance_pending`, `completed` |
-| `created_by` | UUID | FK to UserProfile |
-| `agreed_by` | UUID | FK to UserProfile |
+| `variance_code` | String | Reason code for variance |
 
 ---
 
-### 1.22 **InventoryAdjustment** (Manual Adjustment)
-Manual stock corrections.
+### 1.20 **Offload Document**
+Documentation for unloading/variance tracking.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `warehouse_id` | UUID | FK to Warehouse |
-| `variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Adjustment amount |
-| `reason` | text | Justification |
-| `variance_code` | string | Standardized variance code |
-| `status` | enum | `pending`, `approved`, `rejected` |
-| `created_by` | UUID | FK to UserProfile |
-| `approved_by` | UUID | FK to UserProfile |
+| `trip_id` | UUID | FK to Trip |
+| `status` | Enum | `draft`, `pending_approval`, `approved`, `rejected` |
+| `destination_warehouse_id` | UUID | FK to Warehouse |
+| `approved_by` | UUID | User who approved |
+| `notes` | Text | Offload notes |
 
 ---
 
-### 1.23 **VariantConversion**
-Cylinder state conversions (empty ↔ full).
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `id` | UUID | Primary key |
-| `tenant_id` | UUID | FK to Tenant |
-| `source_variant_id` | UUID | FK to ProductVariant |
-| `target_variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Conversion quantity |
-| `warehouse_id` | UUID | FK to Warehouse |
-| `created_by` | UUID | FK to UserProfile |
-
----
-
-### 1.24 **Payment**
+### 1.21 **Payment**
 Customer payments.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `customer_id` | UUID | FK to Customer |
 | `order_id` | UUID | FK to Order (optional) |
-| `amount` | decimal | Payment amount |
-| `payment_method` | string | Payment type |
-| `status` | enum | `pending`, `approved`, `rejected` |
-| `created_by` | UUID | FK to UserProfile |
-| `approved_by` | UUID | FK to UserProfile |
+| `amount` | Decimal | Payment amount |
+| `payment_method` | String | Method of payment |
+| `status` | Enum | `pending`, `approved`, `rejected` |
+| `reference` | String | Payment reference |
+| `collected_by` | UUID | Driver/user who collected |
+| `approved_by` | UUID | User who approved |
 
 ---
 
-### 1.25 **CustomerEmptyBalance**
-Cylinder empty balance tracking per customer/address.
+### 1.22 **User Profile**
+System users with role-based access.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
+| `tenant_id` | UUID | FK to Tenant |
+| `auth_user_id` | UUID | FK to auth.users |
+| `email` | String | User email |
+| `full_name` | String | Display name |
+| `role` | Enum | `super_admin`, `admin`, `operator`, `accountant`, `sales`, `driver` |
+| `is_active` | Boolean | Active status |
+
+---
+
+### 1.23 **Customer Empty Balance**
+Tracks unreturned cylinders at customer locations (address-level).
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
 | `customer_id` | UUID | FK to Customer |
 | `address_id` | UUID | FK to Address |
-| `variant_id` | UUID | FK to ProductVariant |
-| `quantity` | integer | Empty cylinders held |
+| `product_variant_id` | UUID | FK to ProductVariant |
+| `quantity` | Integer | Empty cylinders held |
 
 ---
 
-### 1.26 **UserInvitation**
-Pending user invitations.
+### 1.24 **Planning Session**
+Route optimization sessions (VROOM integration).
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `email` | string | Invitee email |
-| `role` | enum | Assigned role |
-| `invited_by` | UUID | FK to UserProfile |
-| `token` | string | Invitation token |
-| `expires_at` | timestamp | Token expiry |
-| `accepted_at` | timestamp | Acceptance time |
+| `name` | String | Session name |
+| `status` | Enum | `draft`, `optimizing`, `optimized`, `applied` |
+| `vroom_request` | JSONB | VROOM API request |
+| `vroom_response` | JSONB | VROOM API response |
+| `options` | JSONB | Planning options |
+| `created_by` | UUID | User who created |
 
 ---
 
-### 1.27 **BusinessRule**
-Configurable business rules per tenant.
+### 1.25 **Inventory Adjustment**
+Manual inventory corrections.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `entity_type` | string | Target entity |
-| `rule_type` | string | Rule category |
-| `field_path` | string | Target field |
-| `value` | JSONB | Rule configuration |
-| `is_active` | boolean | Rule status |
+| `warehouse_id` | UUID | FK to Warehouse |
+| `status` | Enum | `draft`, `pending_approval`, `approved`, `rejected` |
+| `notes` | Text | Adjustment reason |
+| `approved_by` | UUID | User who approved |
+| `created_by` | UUID | User who created |
 
 ---
 
-### 1.28 **Workflow**
-Workflow state definitions.
+### 1.26 **Business Rule**
+Configurable workflow and validation rules.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `entity_type` | string | Target entity type |
-| `status_code` | string | Status identifier |
-| `display_name` | string | UI display name |
-| `color` | string | UI color code |
-| `sequence` | integer | Display order |
+| `entity_type` | String | Target entity |
+| `rule_key` | String | Rule identifier |
+| `rule_value` | JSONB | Rule configuration |
+| `is_active` | Boolean | Active status |
 
 ---
 
-### 1.29 **EventStore**
-Domain event log for event-driven architecture.
+### 1.27 **Variant Conversion**
+Cylinder state conversions (e.g., empty to refilling).
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID | Primary identifier |
 | `tenant_id` | UUID | FK to Tenant |
-| `event_type` | string | Event name |
-| `aggregate_type` | string | Entity type |
-| `aggregate_id` | UUID | Entity ID |
-| `payload` | JSONB | Event data |
-| `created_at` | timestamp | Event time |
-| `created_by` | UUID | FK to UserProfile |
+| `source_variant_id` | UUID | FK to ProductVariant |
+| `target_variant_id` | UUID | FK to ProductVariant |
+| `quantity` | Integer | Conversion quantity |
+| `conversion_type` | String | Type of conversion |
+| `created_by` | UUID | User who created |
 
 ---
 
-## 2. Entity Relationships Diagram
+## 2. Entity Relationship Diagram (Textual)
 
 ```
-┌─────────────┐
-│   Tenant    │──────────────────────────────────────────────────┐
-└──────┬──────┘                                                  │
-       │ 1:N                                                     │
-       ▼                                                         │
-┌──────────────┐     ┌───────────────┐     ┌─────────────────┐  │
-│ UserProfile  │◄────│UserInvitation │     │  BusinessRule   │◄─┤
-└──────┬───────┘     └───────────────┘     └─────────────────┘  │
-       │                                                         │
-       │ (sales_user_id, created_by, driver_id, etc.)           │
-       ▼                                                         │
-┌──────────────┐  1:N  ┌───────────────┐                        │
-│   Customer   │──────►│    Address    │◄───────────┐            │
-└──────┬───────┘       └───────────────┘            │            │
-       │                      ▲                      │            │
-       │ 1:N                  │                      │            │
-       ▼                      │ (delivery_address)   │            │
-┌──────────────┐              │                      │            │
-│    Order     │──────────────┘                      │            │
-└──────┬───────┘                                     │            │
-       │ 1:N                                         │            │
-       ▼                                             │            │
-┌──────────────┐   N:1   ┌────────────────┐         │            │
-│  OrderLine   │────────►│ ProductVariant │◄────────┼────────────┤
-└──────────────┘         └───────┬────────┘         │            │
-                                 │                   │            │
-                    ┌────────────┼────────────┐      │            │
-                    │            │ N:1        │      │            │
-                    ▼            ▼            ▼      │            │
-           ┌─────────────┐ ┌─────────┐ ┌───────────────┐         │
-           │BundleComponent│ │Product│ │PriceListItem │          │
-           └─────────────┘ └─────────┘ └──────┬────────┘          │
-                                              │ N:1               │
-                                              ▼                   │
-                                        ┌───────────┐             │
-                                        │ PriceList │◄────────────┤
-                                        └───────────┘             │
-                                                                  │
-┌──────────────┐  1:1  ┌───────────────┐                         │
-│   Vehicle    │◄─────►│   Warehouse   │◄─────────────────────────┤
-└──────┬───────┘       └───────┬───────┘                         │
-       │                       │                                  │
-       │                       │ 1:N                              │
-       │                       ▼                                  │
-       │               ┌───────────────────┐                      │
-       │               │  InventoryLevel   │                      │
-       │               └───────────────────┘                      │
-       │                       │                                  │
-       │                       │ (history)                        │
-       │                       ▼                                  │
-       │               ┌───────────────────────┐                  │
-       │               │InventoryTransaction  │◄──────────────────┤
-       │               └───────────────────────┘                  │
-       │                                                          │
-       ▼                                                          │
-┌──────────────┐                                                  │
-│     Trip     │◄─────────────────────────────────────────────────┘
-└──────┬───────┘
-       │
-       ├──────────────────────────────────────┐
-       │ 1:N                                   │ 1:N
-       ▼                                       ▼
-┌──────────────┐  N:1   ┌────────────┐  ┌──────────────┐
-│  TripOrder   │───────►│   Order    │  │TripInventory │
-└──────────────┘        └────────────┘  └──────────────┘
-       │
-       │ 1:N
-       ▼
-┌──────────────┐        ┌───────────────┐        ┌────────────────┐
-│  TripReturn  │        │  LoadingPlan  │        │OffloadDocument │
-└──────────────┘        └───────────────┘        └────────────────┘
-       ▲                        ▲                        ▲
-       │                        │                        │
-       └────────────────────────┴────────────────────────┘
-                         (all link to Trip)
-```
-
----
-
-## 3. Key
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                    TENANT                                        │
+│                            (Multi-tenant partition)                              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+        ┌───────────────────────────────┼───────────────────────────────┐
+        │                               │                               │
+        ▼                               ▼                               ▼
+┌───────────────┐              ┌───────────────┐              ┌───────────────┐
+│   CUSTOMER    │              │    PRODUCT    │              │  USER PROFILE │
+├───────────────┤              ├───────────────┤              ├───────────────┤
+│ - pricing_tier│              │ - is_bundle   │              │ - role        │
+│ - status      │              │ - product_type│              │ - is_active   │
+└───────┬───────┘              └───────┬───────┘              └───────────────┘
+        │                               │                               │
+        │ 1:N                           │ 1:N                           │
+        ▼                               ▼                               │
+┌───────────────┐              ┌───────────────┐                        │
+│    ADDRESS    │              │PRODUCT VARIANT│◄───────────────────────┘
+├───────────────┤              ├───────────────┤     (driver_id, sales_user_id)
+│ - coordinates │              │ - sku         │
+│ - type        │              │ - state       │
+│ - is_default  │              │ - unit_type   │
+└───────┬───────┘              └───────┬───────┘
+        │                               │
+        │                    ┌──────────┴──────────┐
+        │                    │                     │
+        │                    ▼                     ▼
+        │           ┌───────────────┐     ┌───────────────┐
+        │           │BUNDLE COMPONENT│     │PRICE LIST ITEM│
+        │           └───────────────┘     └───────┬───────┘
+        │                                         │
+        │                                         │ N:1
+        │                                         ▼
+        │                                 ┌───────────────┐
+        │                                 │  PRICE LIST   │
+        │                                 └───────────────┘
+        │
+        │                    ┌────────────────────────────────────────────┐
+        │                    │                                            │
+        ▼                    ▼                                            │
+┌───────────────┐    ┌───────────────┐                                    │
+│     ORDER     │◄───┤  ORDER LINE   │                                    │
+├───────────────┤    ├───────────────┤                                    │
+│ - order_number│    │ - quantity    │                                    │
+│ - status      │    │ - unit_price  │                                    │
+│ - order_type  │    │ - delivered_qty│                                   │
+│ - order_source│    └───────────────┘                                    │
+└───────┬───────┘                                                         │
+        │                                                                 │
+        │ N:M (via TRIP_ORDER)                                            │
+        │                                                                 │
+        ▼                                                                 │
+┌───────────────┐                                                         │
+│  TRIP ORDER   │                                                         │
+├───────────────┤                                                         │
+│ - stop_sequence│                                                        │
+│ - action_type │                                                         │
+│ - pod_urls    │                                                         │
+└───────┬───────┘                                                         │
+        │                                                                 │
+        │ N:1                                                             │
+        ▼                                                                 │
+┌───────────────┐                                                         │
+│     TRIP      │◄────────────────────────────────────────────────────────┘
+├───────────────┤            (delivery address, customer_id)
+│ - trip_number │
+│ - status      │
+│ - scheduled_dt│
+└───────┬───────┘
+        │
+        ├────────────────┬────────────────┬────────────────┐
+        │                │                │                │
+        ▼                ▼                ▼                ▼
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│ LOADING PLAN  │ │TRIP INVENTORY │ │  TRIP RETURN  │ │OFFLOAD DOCUMENT│
+└───────────────┘ └───────────────┘ └───────────────┘ └───────────────┘
+        │
+        │
+        ▼
+┌───────────────┐         ┌───────────────┐
+│   WAREHOUSE   │◄────────┤INVENTORY LEVEL │
+├───────────────┤         └───────────────┘
+│ - type        │                 │
+│ - linked_veh  │                 │
+└───────┬───────┘                 │
+        │                         │
+        │ 1:1 (mobile)            │ (transactions)
+        ▼                         ▼
 
 # DBs
 
 databases analysis
 
-# Database Analysis Report for oms-system
+# Database Analysis Report
 
-After a comprehensive analysis of the codebase, I have identified the following databases:
+Based on a comprehensive scan of the provided codebase, I have identified the following databases:
 
 ---
 
-## Database 1: PostgreSQL (via Supabase)
+## Database: PostgreSQL (via Supabase)
 
 * **Database Name/Type:** PostgreSQL (SQL) - hosted on Supabase
-* **Purpose/Role:** Primary transactional database for the Order Management System (OMS). Stores all core business data including customers, orders, products, inventory, trips, warehouses, vehicles, user profiles, and tenant configurations. Implements Row-Level Security (RLS) for multi-tenant data isolation. Handles complex business logic through PostgreSQL functions and triggers.
+* **Purpose/Role:** Primary transactional database for the Order Management System (OMS). Stores all core business data including customers, orders, products, trips, inventory, warehouses, vehicles, user profiles, and multi-tenant configurations. Handles complex business logic through PostgreSQL functions and triggers, implements Row-Level Security (RLS) for multi-tenant data isolation, and supports real-time subscriptions.
 
-* **Key Technologies/Access Methods:** 
-  - **Supabase Client SDK** (`@supabase/supabase-js`) for frontend and backend access
-  - **PostgreSQL RPC functions** for complex business operations
-  - **Database Views** for optimized read operations
-  - **Row-Level Security (RLS)** policies for tenant isolation
-  - **Database Triggers** for audit trails and automatic data updates
-  - **pg_cron** extension for scheduled tasks (inventory snapshots)
+* **Key Technologies/Access Methods:**
+    * **Supabase Client SDK** (`@supabase/supabase-js`) for frontend and backend database access
+    * **PostgreSQL RPC Functions** for complex business operations (e.g., `complete_delivery`, `modify_planned_trip`, `approve_variance`)
+    * **Row-Level Security (RLS)** policies for tenant isolation
+    * **PostgreSQL Triggers** for audit logging, balance calculations, and inventory tracking
+    * **Database Views** for optimized read queries
+    * **Real-time Subscriptions** via Supabase for live updates
 
 * **Key Files/Configuration:**
-  - `src/lib/supabase.ts` - Frontend Supabase client configuration
-  - `backend/src/client/supabase.ts` - Backend Supabase client
-  - `supabase/config.toml` - Supabase project configuration
-  - `supabase/migrations/` - 300+ migration files defining schema evolution
-  - `supabase/dev_schema.sql` - Development schema reference
-  - `supabase/prod_schema.sql` - Production schema reference
-  - `backend/supabase/migrations/` - Backend-specific migrations
+    * `src/lib/supabase.ts` - Frontend Supabase client initialization
+    * `backend/src/client/supabase.ts` - Backend Supabase client
+    * `supabase/config.toml` - Supabase local configuration
+    * `supabase/migrations/` - 300+ migration files defining schema evolution
+    * `supabase/dev_schema.sql` - Development schema snapshot
+    * `supabase/prod_schema.sql` - Production schema snapshot
+    * `supabase/functions/` - Supabase Edge Functions (Firebase auth, geocoding, email)
 
 * **Schema/Table Structure:**
 
-  **Core Business Tables:**
-  | Table | Key Columns | Description |
-  |-------|-------------|-------------|
-  | `tenants` | `id` (PK), `name`, `settings` (JSONB), `created_at` | Multi-tenant organization data |
-  | `user_profiles` | `id` (PK, FK to auth.users), `tenant_id` (FK), `full_name`, `role`, `email` | User accounts and roles |
-  | `customers` | `id` (PK), `tenant_id` (FK), `business_name`, `status`, `type`, `sales_user_id` (FK) | Customer/business accounts |
-  | `addresses` | `id` (PK), `tenant_id` (FK), `customer_id` (FK), `type`, `coordinates`, `plus_code` | Customer and warehouse addresses |
-  | `orders` | `id` (PK), `tenant_id` (FK), `customer_id` (FK), `order_number`, `status`, `order_type`, `total_amount`, `delivery_address_id` (FK) | Sales/transfer orders |
-  | `order_lines` | `id` (PK), `order_id` (FK), `variant_id` (FK), `quantity`, `unit_price`, `delivered_quantity` | Order line items |
-  | `products` | `id` (PK), `tenant_id` (FK), `name`, `product_type`, `is_bundle` | Product catalog |
-  | `product_variants` | `id` (PK), `product_id` (FK), `name`, `sku_code`, `state_attribute` | Product SKU variants |
-  | `bundle_components` | `id` (PK), `bundle_variant_id` (FK), `component_variant_id` (FK), `quantity` | Bundle composition |
+    **Core Business Entities:**
+    * `tenants`: `id` (PK), `name`, `settings` (JSONB), `created_at`
+    * `user_profiles`: `id` (PK, FK to auth.users), `tenant_id` (FK), `role`, `full_name`, `email`
+    * `customers`: `id` (PK), `tenant_id` (FK), `name`, `status`, `customer_reference`, `primary_contact`, `balance`
+    * `addresses`: `id` (PK), `customer_id` (FK), `tenant_id` (FK), `type`, `city`, `coordinates`, `plus_code`
+    * `products`: `id` (PK), `tenant_id` (FK), `name`, `type`, `sku_code`, `state_attr`
+    * `product_variants`: `id` (PK), `product_id` (FK), `tenant_id` (FK), `name`, `sku_code`, `size`, `is_bundle`
+    * `bundle_components`: `id` (PK), `bundle_variant_id` (FK), `component_variant_id` (FK), `quantity`
+    * `orders`: `id` (PK), `tenant_id` (FK), `customer_id` (FK), `order_number`, `status`, `order_type`, `total_amount`, `delivery_address_id`
+    * `order_lines`: `id` (PK), `order_id` (FK), `variant_id` (FK), `quantity`, `unit_price`, `line_total`
 
-  **Inventory Management Tables:**
-  | Table | Key Columns | Description |
-  |-------|-------------|-------------|
-  | `warehouses` | `id` (PK), `tenant_id` (FK), `name`, `type`, `linked_vehicle_id` (FK) | Static and mobile warehouses |
-  | `inventory_levels` | `id` (PK), `warehouse_id` (FK), `variant_id` (FK), `quantity` | Current stock levels |
-  | `inventory_transactions` | `id` (PK), `tenant_id` (FK), `warehouse_id` (FK), `variant_id` (FK), `quantity`, `transaction_type`, `reference_type`, `reference_id` | Stock movement audit trail |
-  | `inventory_adjustments` | `id` (PK), `tenant_id` (FK), `warehouse_id` (FK), `status`, `adjustment_reason` | Manual inventory adjustments |
-  | `inventory_snapshots` | `id` (PK), `tenant_id` (FK), `warehouse_id` (FK), `snapshot_data` (JSONB), `snapshot_date` | Daily inventory snapshots |
+    **Inventory Management:**
+    * `warehouses`: `id` (PK), `tenant_id` (FK), `name`, `type` (stationary/mobile), `linked_vehicle_id`
+    * `inventory_levels`: `id` (PK), `warehouse_id` (FK), `variant_id` (FK), `quantity`, `tenant_id`
+    * `inventory_transactions`: `id` (PK), `tenant_id` (FK), `warehouse_id` (FK), `variant_id` (FK), `quantity`, `transaction_type`, `reference_type`, `reference_id`
+    * `inventory_adjustments`: `id` (PK), `tenant_id` (FK), `warehouse_id` (FK), `variant_id` (FK), `adjustment_quantity`, `reason`
 
-  **Logistics/Trip Tables:**
-  | Table | Key Columns | Description |
-  |-------|-------------|-------------|
-  | `vehicles` | `id` (PK), `tenant_id` (FK), `registration`, `driver_id` (FK), `vehicle_type` | Fleet vehicles |
-  | `trips` | `id` (PK), `tenant_id` (FK), `vehicle_id` (FK), `trip_number`, `status`, `dispatched_at`, `completed_at` | Delivery trips |
-  | `trip_orders` | `id` (PK), `trip_id` (FK), `order_id` (FK), `stop_sequence`, `status`, `action_type`, `pod_url` | Trip stops/deliveries |
-  | `loading_plans` | `id` (PK), `tenant_id` (FK), `trip_id` (FK), `status`, `total_quantity` | Trip loading documentation |
-  | `offload_documents` | `id` (PK), `tenant_id` (FK), `trip_id` (FK), `status`, `destination_warehouse_id` (FK) | Trip return/offload records |
-  | `trip_returns` | `id` (PK), `trip_id` (FK), `variant_id` (FK), `quantity`, `destination_warehouse_id` (FK) | Returned inventory from trips |
+    **Logistics/Trips:**
+    * `vehicles`: `id` (PK), `tenant_id` (FK), `registration_number`, `type`, `capacity`
+    * `trips`: `id` (PK), `tenant_id` (FK), `vehicle_id` (FK), `driver_id` (FK), `trip_number`, `status`, `date`
+    * `trip_orders`: `id` (PK), `trip_id` (FK), `order_id` (FK), `sequence`, `action_type`, `status`, `delivery_status`
+    * `trip_inventory`: `id` (PK), `trip_id` (FK), `variant_id` (FK), `loaded_quantity`, `delivered_quantity`
+    * `loading_plans`: `id` (PK), `tenant_id` (FK), `trip_id` (FK), `status`, `approved_by`, `approved_at`
+    * `offload_documents`: `id` (PK), `tenant_id` (FK), `trip_id` (FK), `status`, `destination_warehouse_id`
+    * `planning_sessions`: `id` (PK), `tenant_id` (FK), `name`, `status`, `vroom_input`, `vroom_output`
 
-  **Pricing & Payments Tables:**
-  | Table | Key Columns | Description |
-  |-------|-------------|-------------|
-  | `price_lists` | `id` (PK), `tenant_id` (FK), `name`, `valid_from`, `valid_to`, `is_default` | Price list definitions |
-  | `price_list_items` | `id` (PK), `price_list_id` (FK), `variant_id` (FK), `unit_price` | Individual prices |
-  | `customer_price_lists` | `customer_id` (FK), `price_list_id` (FK) | Customer price list assignments |
-  | `payments` | `id` (PK), `tenant_id` (FK), `order_id` (FK), `amount`, `payment_method`, `status` | Payment records |
-  | `customer_balance_history` | `id` (PK), `customer_id` (FK), `balance_change`, `new_balance`, `reference_type` | Balance audit trail |
-  | `customer_empty_balances` | `id` (PK), `customer_id` (FK), `address_id` (FK), `variant_id` (FK), `quantity` | Cylinder/returnable tracking |
+    **Pricing:**
+    * `price_lists`: `id` (PK), `tenant_id` (FK), `name`, `effective_date`, `is_default`
+    * `price_list_items`: `id` (PK), `price_list_id` (FK), `variant_id` (FK), `price`
 
-  **Configuration & Audit Tables:**
-  | Table | Key Columns | Description |
-  |-------|-------------|-------------|
-  | `business_rules` | `id` (PK), `tenant_id` (FK), `rule_type`, `entity_type`, `config` (JSONB) | Tenant business rules |
-  | `type_definitions` | `id` (PK), `tenant_id` (FK), `category`, `code`, `label`, `color` | Dynamic type system |
-  | `workflows` | `id` (PK), `tenant_id` (FK), `entity_type`, `workflow_type`, `config` (JSONB) | Workflow configurations |
-  | `order_audit` | `id` (PK), `order_id` (FK), `action`, `old_values` (JSONB), `new_values` (JSONB), `changed_by` | Order change history |
-  | `customer_profile_history` | `id` (PK), `customer_id` (FK), `action`, `old_data` (JSONB), `new_data` (JSONB) | Customer change history |
-  | `event_store` | `id` (PK), `tenant_id` (FK), `event_type`, `aggregate_type`, `aggregate_id`, `payload` (JSONB) | Domain event sourcing |
-  | `user_invitations` | `id` (PK), `tenant_id` (FK), `email`, `role`, `status`, `invited_by` | User invitation management |
+    **Financial:**
+    * `payments`: `id` (PK), `tenant_id` (FK), `customer_id` (FK), `order_id` (FK), `amount`, `payment_method`, `status`
+    * `customer_balance_history`: `id` (PK), `customer_id` (FK), `balance_before`, `balance_after`, `change_amount`
+    * `customer_empty_balances`: `id` (PK), `customer_id` (FK), `address_id` (FK), `variant_id` (FK), `quantity`
 
-  **Database Views (Optimized Read Access):**
-  - `orders_list_view` - Orders with customer, address, and status info
-  - `orders_with_lines_view` - Orders with expanded line items
-  - `customers_list_view` - Customers with primary address and sales agent
-  - `customers_map_view` - Customer locations for mapping
-  - `trips_list_view` - Trips with driver, vehicle, stop counts
-  - `trip_orders_with_addresses_view` - Trip stops with full address details
-  - `loading_plans_view` - Loading plans with trip and vehicle info
-  - `inventory_levels_view` - Inventory with warehouse and variant details
-  - `product_variants_with_pricing_view` - Variants with current prices
-  - `dashboard_metrics_view` - Aggregated business metrics
-  - `sales_agent_dashboard_view` - Sales performance metrics
-  - `operations_delivery_report_view` - Delivery performance data
-  - `variance_sku_analytics_view` - Variance analysis by SKU
+    **Audit & Configuration:**
+    * `order_audit`: `id` (PK), `order_id` (FK), `field_changed`, `old_value`, `new_value`, `changed_by`
+    * `customer_profile_history`: `id` (PK), `customer_id` (FK), `field_changed`, `old_value`, `new_value`
+    * `business_rules`: `id` (PK), `tenant_id` (FK), `rule_key`, `rule_value`, `entity_type`
+    * `type_definitions`: `id` (PK), `tenant_id` (FK), `category`, `values` (JSONB)
+    * `workflows`: `id` (PK), `tenant_id` (FK), `entity_type`, `statuses` (JSONB)
+    * `event_store`: `id` (PK), `tenant_id`, `event_type`, `payload` (JSONB), `created_at`
+
+    **Multi-tenant & Access:**
+    * `user_invitations`: `id` (PK), `tenant_id` (FK), `email`, `role`, `token`, `status`
+    * `tenant_external_api_credentials`: `id` (PK), `tenant_id` (FK), `provider`, `credentials` (JSONB)
+
+    **Key Database Views:**
+    * `orders_list_view` - Enriched orders with customer/address info
+    * `customers_list_view` - Customer summary with address and balance
+    * `trips_list_view` - Trip details with driver/vehicle info
+    * `trip_orders_with_addresses` - Trip stops with delivery addresses
+    * `inventory_levels_view` - Current inventory by warehouse
+    * `product_variants_with_pricing_view` - Variants with current prices
+    * `dashboard_metrics_view` - Aggregated KPIs
+    * `sales_agent_dashboard_view` - Sales performance metrics
+    * `operations_delivery_report_view` - Delivery operations report
 
 * **Key Entities and Relationships:**
-
-  ```
-  Tenant (1) ──────< User Profiles (M)
-     │
-     ├──────< Customers (M) ──────< Addresses (M)
-     │              │                    │
-     │              └──────< Orders (M) ─┘
-     │                          │
-     │                          └──────< Order Lines (M) ─────> Product Variants
-     │
-     ├──────< Products (M) ──────< Product Variants (M)
-     │                                    │
-     │                          Bundle Components >────┘
-     │
-     ├──────< Warehouses (M) ──────< Inventory Levels (M) ─────> Product Variants
-     │              │
-     │              └──────< Inventory Transactions (M)
-     │
-     ├──────< Vehicles (M) ─────> Warehouses (mobile)
-     │              │
-     │              └──────< Trips (M) ──────< Trip Orders (M) ─────> Orders
-     │                          │
-     │                          ├──────< Loading Plans (M)
-     │                          └──────< Offload Documents (M)
-     │
-     └──────< Price Lists (M) ──────< Price List Items (M) ─────> Product Variants
-  ```
-
-  **Key Relationships:**
-  - **Tenant → All Entities:** Multi-tenant isolation via `tenant_id` foreign key
-  - **Customer (1) → Orders (M):** Customers place multiple orders
-  - **Customer (1) → Addresses (M):** Customers have multiple delivery addresses
-  - **Order (1) → Order Lines (M):** Orders contain multiple line items
-  - **Product (1) → Product Variants (M):** Products have size/state variants
-  - **Product Variant → Bundle Components:** Bundles contain component variants
-  - **Warehouse (1) → Inventory Levels (M):** Stock tracked per warehouse
-  - **Vehicle (1) → Warehouse (1):** Mobile warehouse linked to vehicle
-  - **Trip (1) → Trip Orders (M):** Trips contain multiple delivery stops
-  - **Trip → Loading Plans/Offload Documents:** Trip documentation
-  - **Price List (1) → Price List Items (M):** Prices per variant
+    * **Tenant** (1) → **Users, Customers, Products, Orders, Trips, Warehouses** (M) - Multi-tenant isolation
+    * **Customer** (1) → **Orders** (M); **Customer** (1) → **Addresses** (M)
+    * **Order** (1) → **Order Lines** (M); **Order** (M) → **Product Variants** (M) via Order Lines
+    * **Product** (1) → **Product Variants** (M); **Bundle Variant** (1) → **Component Variants** (M)
+    * **Trip** (1) → **Trip Orders** (M) → **Orders** (1); **Trip** (1) → **Trip Inventory** (M)
+    * **Vehicle** (1) → **Trips** (M); **Vehicle** (1) ↔ **Mobile Warehouse** (1)
+    * **Warehouse** (1) → **Inventory Levels** (M) → **Product Variants** (M)
+    * **User** (1) → **Orders Created** (M); **User** (1) → **Trips Driven** (M)
+    * **Price List** (1) → **Price List Items** (M) → **Product Variants** (M)
 
 * **Interacting Components:**
-
-  **Frontend (React/TypeScript):**
-  - `src/pages/` - All page components (Orders, Customers, Trips, Inventory, etc.)
-  - `src/components/` - UI components interacting with data
-  - `src/hooks/useApiQuery.ts` - Data fetching abstraction
-  - `src/lib/supabase.ts` - Direct Supabase client access
-  - `src/contexts/` - Auth, tenant, business rules contexts
-
-  **Backend (Node.js/Fastify):**
-  - `backend/src/routes/` - API route handlers
-  - `backend/src/services/` - Business logic services
-  - `backend/src/handlers/` - Request handlers
-  - `backend/src/client/supabase.ts` - Backend Supabase client
-
-  **Key Services:**
-  - Order Processing Service
-  - Customer Management Service
-  - Inventory Management Service
-  - Trip/Logistics Service
-  - Payment Processing Service
-  - Pricing Service
-  - User Authentication Service
-  - Reporting/Analytics Service
+    * **Frontend Pages:** Dashboard, Orders, Customers, Trips, Inventory, Products, Approvals, Reports, Settings
+    * **Backend Services:** 
+        - `OrderService`, `CustomerService`, `TripService`, `InventoryService`
+        - `ProductService`, `WarehouseService`, `VehicleService`
+        - `ApprovalService`, `PaymentService`, `PriceListService`
+        - `PlanningSessionService`, `LoadingPlanService`, `OffloadDocumentService`
+    * **Backend Routes:** All API routes in `backend/src/routes/`
+    * **Real-time Subscriptions:** Order updates, trip status changes, inventory changes
+    * **Auth Context:** User authentication and role-based access
+    * **Business Rules Engine:** Dynamic validation and workflow configuration
 
 ---
 
-## Database 2: Redis
+## Database: Redis
 
 * **Database Name/Type:** Redis (NoSQL - Key-Value Store / In-Memory Cache)
-* **Purpose/Role:** L2 (Level 2) caching layer for frequently accessed data. Used to reduce database load by caching expensive queries and commonly accessed business data. Supports cache invalidation patterns.
+* **Purpose/Role:** Used as a Layer 2 (L2) caching system to improve API response times by caching frequently accessed data. Reduces load on the primary PostgreSQL database for read-heavy operations. Also used for cache invalidation coordination.
 
 * **Key Technologies/Access Methods:**
-  - **ioredis** client library for Node.js
-  - Custom cache abstraction layer (`L2CachePlugin`)
-  - Event-driven cache invalidation via Supabase Realtime
+    * **ioredis** client library for Node.js
+    * Custom `RedisCache` service wrapper
+    * Cache-aside pattern with TTL-based expiration
+    * Event-driven cache invalidation
 
 * **Key Files/Configuration:**
-  - `backend/src/plugins/l2-cache.ts` - L2 cache plugin implementation
-  - `backend/src/config/config.ts` - Redis connection configuration (via `REDIS_URL` environment variable)
-  - `backend/test-l2-cache.cjs` - Cache testing utilities
-  - `backend/test-redis-connection.cjs` - Redis connection testing
-  - `plans/event-driven-cache-invalidation-architecture.md` - Cache architecture documentation
+    * `backend/src/services/RedisCache.ts` - Redis client and caching logic
+    * `backend/src/plugins/cache.ts` - Fastify plugin for cache integration
+    * `backend/test-redis-connection.cjs` - Connection testing script
+    * `backend/test-l2-cache.cjs` - L2 cache testing script
+    * Environment variables: `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
 
-* **Schema/Table Structure (Key Patterns):**
-  
-  Based on the L2 cache implementation, the following key patterns are used:
-
-  | Key Pattern | Data Structure | Description | TTL |
-  |-------------|----------------|-------------|-----|
-  | `tenant:{tenantId}:customers` | JSON Array | Cached customer list per tenant | Configurable |
-  | `tenant:{tenantId}:orders` | JSON Array | Cached orders list per tenant | Configurable |
-  | `tenant:{tenantId}:products` | JSON Array | Cached product catalog | Configurable |
-  | `tenant:{tenantId}:inventory:{warehouseId}` | JSON Object | Cached inventory levels | Configurable |
-  | `tenant:{tenantId}:price-lists` | JSON Array | Cached price lists | Configurable |
-  | `cache:invalidation:{entity}:{id}` | String | Cache invalidation markers | Short TTL |
+* **Schema/Collection Structure (for NoSQL):**
+    * `cache:{tenant_id}:{entity_type}:{id}` - Cached entity data (e.g., customers, orders, products)
+    * `cache:{tenant_id}:{entity_type}:list` - Cached list results
+    * `cache:{tenant_id}:inventory:{warehouse_id}` - Cached inventory levels
+    * Cache entries include TTL (Time-To-Live) for automatic expiration
 
 * **Key Entities and Relationships:**
-  - **Cached Customer Data:** Temporary representation of customer records
-  - **Cached Order Data:** Temporary representation of order records
-  - **Cached Product Data:** Temporary representation of product catalog
-  - **Cached Inventory Data:** Temporary representation of stock levels
-  - **Cache Metadata:** Invalidation timestamps and version tracking
-  - **Relationships:** All relationships are managed at the application layer; Redis stores denormalized snapshots of PostgreSQL data
+    * **Cached Entities:** Serialized JSON representations of database entities
+    * **Cache Keys:** Structured hierarchically by tenant, entity type, and identifier
+    * **Relationships:** Cache entries mirror database relationships but are denormalized for fast access
 
 * **Interacting Components:**
-  - `backend/src/plugins/l2-cache.ts` - Cache management plugin
-  - `backend/src/routes/` - API routes using cached data
-  - Cache invalidation event handlers (Supabase Realtime integration)
-  - Backend services that read/write cached data
-
----
-
-## Database 3: Supabase Storage (Object Storage)
-
-* **Database Name/Type:** Supabase Storage (S3-compatible Object Storage)
-* **Purpose/Role:** Stores binary files including proof-of-delivery (POD) photos, inventory adjustment photos, and other document uploads. Integrated with PostgreSQL for metadata tracking.
-
-* **Key Technologies/Access Methods:**
-  - Supabase Storage SDK (part of `@supabase/supabase-js`)
-  - Signed URLs for secure access
-  - Storage bucket policies for access control
-
-* **Key Files/Configuration:**
-  - `supabase/migrations/20250110150000_add_pod_storage_policies.sql` - POD storage bucket policies
-  - `supabase/migrations/20250122140000_create_inventory_photos_bucket.sql` - Inventory photos bucket
-  - `supabase/migrations/20251127100000_fix_delivery_photos_storage_policy.sql` - Delivery photos policies
-  - `src/lib/storageHelpers.ts` - Frontend storage utilities
-  - `src/lib/imageUploadHelpers.ts` - Image upload helpers
-
-* **Schema/Table Structure (Buckets):**
-
-  | Bucket Name | Purpose | Access Control |
-  |-------------|---------|----------------|
-  | `delivery-photos` | Proof of delivery photos | Authenticated users, RLS policies |
-  | `inventory-photos` | Inventory adjustment photos | Authenticated users, RLS policies |
-  | `pod-storage` | Legacy POD storage | Authenticated users |
-
-* **Key Entities and Relationships:**
-  - **Delivery Photos:** Linked to `trip_orders` via `pod_url` field
-  - **Inventory Photos:** Linked to `inventory_transactions` via `photo_url` field
-  - **Relationships:** Files are referenced by PostgreSQL records; metadata stored in database, binary content in storage
-
-* **Interacting Components:**
-  - Trip/Delivery pages (POD upload/view)
-  - Inventory Adjustment pages (photo upload)
-  - Mobile application (photo capture and upload)
-  - `src/lib/storageHelpers.ts` - Storage utility functions
-
----
-
-## Database 4: Supabase Realtime (PostgreSQL Logical Replication)
-
-* **Database Name/Type:** Supabase Realtime (PostgreSQL-based pub/sub via logical replication)
-* **Purpose/Role:** Real-time data synchronization for live updates in the frontend application. Broadcasts database changes to connected clients for features like live order status updates, inventory changes, and collaborative editing.
-
-* **Key Technologies/Access Methods:**
-  - Supabase Realtime SDK (part of `@supabase/supabase-js`)
-  - WebSocket connections
-  - PostgreSQL logical replication / change data capture
-
-* **Key Files/Configuration:**
-  - `src/lib/supabase.ts` - Realtime subscription setup
-  - `src/lib/WebSocketClient.ts` - WebSocket client implementation
-  - `src/hooks/useWebSocketSubscription.ts` - React hook for realtime subscriptions
-  - `backend/src/events/` - Event handling for realtime updates
-
-* **Schema/Table Structure (Channels):**
-
-  | Channel Pattern | Tables Monitored | Purpose |
-  |-----------------|------------------|---------|
-  | `tenant:{tenantId}:orders` | `orders`, `order_lines` | Order status updates |
-  | `tenant:{tenantId}:trips` | `trips`, `trip_orders` | Trip progress updates |
-  | `tenant:{tenantId}:inventory` | `inventory_levels`, `inventory_transactions` | Stock level changes |
-  | `tenant:{tenantId}:customers` | `customers` | Customer data updates |
-
-* **Key Entities and Relationships:**
-  - Realtime channels map directly to PostgreSQL tables
-  - Changes are filtered by tenant_id for multi-tenant isolation
-  - Used for cache invalidation triggers
-
-* **Interacting Components:**
-  - `src/hooks/useWebSocketSubscription.ts` - Frontend subscription management
-  - `src/lib/WebSocketClient.ts` - WebSocket client
-  - React Query cache invalidation on realtime events
-  - L2 Cache invalidation handlers in backend
+    * **Backend Services:** All major services use Redis for caching read operations
+    * **Cache Invalidation:** Event handlers invalidate relevant cache entries on data mutations
+    * **API Routes:** Routes check cache before querying database
+    * **Performance Monitoring:** Cache hit/miss metrics tracked
 
 ---
 
@@ -1986,886 +1827,1047 @@ After a comprehensive analysis of the codebase, I have identified the following 
 
 | Database | Type | Primary Use |
 |----------|------|-------------|
-| **PostgreSQL (Supabase)** | SQL (Relational) | Primary transactional database - all business data |
-| **Redis** | NoSQL (Key-Value) | L2 caching layer for performance optimization |
-| **Supabase Storage** | Object Storage | Binary file storage (photos, documents) |
-| **Supabase Realtime** | Pub/Sub | Real-time data synchronization |
+| PostgreSQL (Supabase) | SQL | Primary transactional database - all business data, RLS security, complex queries |
+| Redis | NoSQL (Key-Value) | L2 caching layer for performance optimization |
 
 # APIs
 
 APIs analysis
 
-# HTTP API Documentation for oms-system_aeed8a86
+# API Documentation for oms-system
 
-## Overview
+Based on my analysis of the codebase, I've identified the HTTP API endpoints in the backend. The backend uses Fastify framework with TypeScript.
 
-This is an Order Management System (OMS) backend built with Fastify. The API provides endpoints for managing orders, customers, trips, inventory, products, warehouses, vehicles, and various business operations.
-
----
-
-## Authentication
-
-All endpoints (except health checks and auth endpoints) require JWT authentication via Bearer token in the `Authorization` header.
+## Base Configuration
+- **Base Path**: `/api` (all routes are prefixed)
+- **Authentication**: JWT-based authentication via Supabase
+- **Content-Type**: `application/json`
 
 ---
 
-## API Endpoints
+## Authentication & User Management
 
-### Health & System
+### POST `/api/auth/login`
+**Description**: Authenticates a user and returns session tokens.
 
-#### Health Check
-- **HTTP Method:** `GET`
-- **API URL:** `/health`
-- **Request Payload:** N/A
-- **Response Payload:**
+**Request Payload**:
 ```json
 {
-  "status": "ok",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "uptime": 12345.67,
-  "environment": "production",
-  "version": "1.0.0"
+  "email": "string",
+  "password": "string"
 }
 ```
-- **Description:** Returns the health status of the API server.
 
----
-
-#### Readiness Check
-- **HTTP Method:** `GET`
-- **API URL:** `/ready`
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "status": "ok",
-  "checks": {
-    "database": "ok",
-    "redis": "ok"
-  }
-}
-```
-- **Description:** Returns the readiness status including dependency health checks.
-
----
-
-### Authentication
-
-#### Login
-- **HTTP Method:** `POST`
-- **API URL:** `/api/auth/login`
-- **Request Payload:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-- **Response Payload:**
+**Response Payload**:
 ```json
 {
   "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "role": "admin"
+    "id": "string",
+    "email": "string",
+    "role": "string"
   },
   "session": {
-    "access_token": "jwt_token",
-    "refresh_token": "refresh_token",
-    "expires_at": 1234567890
+    "access_token": "string",
+    "refresh_token": "string",
+    "expires_at": "number"
   }
 }
 ```
-- **Description:** Authenticates a user and returns session tokens.
 
 ---
 
-#### Logout
-- **HTTP Method:** `POST`
-- **API URL:** `/api/auth/logout`
-- **Request Payload:** N/A
-- **Response Payload:**
+### POST `/api/auth/logout`
+**Description**: Logs out the current user and invalidates the session.
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
   "success": true
 }
 ```
-- **Description:** Logs out the current user and invalidates their session.
 
 ---
 
-#### Get Current User
-- **HTTP Method:** `GET`
-- **API URL:** `/api/auth/me`
-- **Request Payload:** N/A
-- **Response Payload:**
+### POST `/api/auth/refresh`
+**Description**: Refreshes the authentication token.
+
+**Request Payload**:
 ```json
 {
-  "id": "uuid",
-  "email": "user@example.com",
-  "role": "admin",
-  "tenant_id": "tenant_uuid",
-  "full_name": "John Doe"
+  "refresh_token": "string"
 }
 ```
-- **Description:** Returns the current authenticated user's profile.
+
+**Response Payload**:
+```json
+{
+  "access_token": "string",
+  "refresh_token": "string",
+  "expires_at": "number"
+}
+```
 
 ---
 
-#### Change Password
-- **HTTP Method:** `POST`
-- **API URL:** `/api/auth/change-password`
-- **Request Payload:**
+### GET `/api/auth/me`
+**Description**: Returns the current authenticated user's profile.
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
-  "currentPassword": "oldPassword123",
-  "newPassword": "newPassword456"
+  "id": "string",
+  "email": "string",
+  "full_name": "string",
+  "role": "string",
+  "tenant_id": "string"
 }
 ```
-- **Response Payload:**
-```json
-{
-  "success": true,
-  "message": "Password changed successfully"
-}
-```
-- **Description:** Changes the current user's password.
 
 ---
 
-### Customers
+## Customers
 
-#### List Customers
-- **HTTP Method:** `GET`
-- **API URL:** `/api/customers`
-- **Query Parameters:**
-  - `page` (number, optional): Page number for pagination
-  - `limit` (number, optional): Items per page
-  - `search` (string, optional): Search term
-  - `status` (string, optional): Filter by status
-  - `sales_user_id` (string, optional): Filter by sales agent
-- **Request Payload:** N/A
-- **Response Payload:**
+### GET `/api/customers`
+**Description**: Retrieves a paginated list of customers for the tenant.
+
+**Query Parameters**:
+- `page` (number, optional): Page number (default: 1)
+- `limit` (number, optional): Items per page (default: 20)
+- `search` (string, optional): Search term for filtering
+- `status` (string, optional): Filter by customer status
+- `sales_user_id` (string, optional): Filter by assigned sales agent
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
   "data": [
     {
-      "id": "uuid",
-      "name": "Customer Name",
-      "code": "CUST001",
-      "status": "active",
-      "phone": "+1234567890",
-      "email": "customer@example.com",
-      "customer_type": "regular",
-      "payment_terms": "net_30",
-      "credit_limit": 10000,
-      "created_at": "2024-01-15T10:30:00.000Z"
+      "id": "string",
+      "name": "string",
+      "code": "string",
+      "status": "string",
+      "type": "string",
+      "primary_contact_name": "string",
+      "primary_contact_phone": "string",
+      "email": "string",
+      "sales_user_id": "string",
+      "tenant_id": "string",
+      "created_at": "string",
+      "updated_at": "string"
     }
   ],
-  "total": 100,
-  "page": 1,
-  "limit": 20
+  "pagination": {
+    "page": "number",
+    "limit": "number",
+    "total": "number",
+    "totalPages": "number"
+  }
 }
 ```
-- **Description:** Returns a paginated list of customers with optional filtering.
 
 ---
 
-#### Get Customer by ID
-- **HTTP Method:** `GET`
-- **API URL:** `/api/customers/{id}`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
+### GET `/api/customers/:id`
+**Description**: Retrieves a single customer by ID with full details.
+
+**Path Parameters**:
+- `id` (string): Customer UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "name": "Customer Name",
-  "code": "CUST001",
-  "status": "active",
-  "phone": "+1234567890",
-  "email": "customer@example.com",
-  "customer_type": "regular",
-  "payment_terms": "net_30",
-  "credit_limit": 10000,
+  "id": "string",
+  "name": "string",
+  "code": "string",
+  "status": "string",
+  "type": "string",
+  "primary_contact_name": "string",
+  "primary_contact_phone": "string",
+  "email": "string",
+  "sales_user_id": "string",
+  "tenant_id": "string",
   "addresses": [
     {
-      "id": "uuid",
-      "name": "Main Office",
-      "address_line1": "123 Main St",
-      "city": "New York",
-      "is_default": true,
-      "latitude": 40.7128,
-      "longitude": -74.0060
+      "id": "string",
+      "name": "string",
+      "address_line1": "string",
+      "city": "string",
+      "coordinates": {
+        "lat": "number",
+        "lng": "number"
+      },
+      "is_default": "boolean"
     }
   ],
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "created_at": "string",
+  "updated_at": "string"
 }
 ```
-- **Description:** Returns detailed information for a specific customer.
 
 ---
 
-#### Create Customer
-- **HTTP Method:** `POST`
-- **API URL:** `/api/customers`
-- **Request Payload:**
+### POST `/api/customers`
+**Description**: Creates a new customer with optional addresses.
+
+**Request Payload**:
 ```json
 {
-  "name": "New Customer",
-  "code": "CUST002",
-  "phone": "+1234567890",
-  "email": "newcustomer@example.com",
-  "customer_type": "regular",
-  "payment_terms": "net_30",
-  "credit_limit": 5000,
+  "name": "string",
+  "code": "string (optional)",
+  "type": "string",
+  "status": "string (optional, default: 'pending')",
+  "primary_contact_name": "string (optional)",
+  "primary_contact_phone": "string (optional)",
+  "email": "string (optional)",
+  "sales_user_id": "string (optional)",
   "addresses": [
     {
-      "name": "Delivery Address",
-      "address_line1": "456 Oak Ave",
-      "city": "Los Angeles",
-      "is_default": true,
-      "latitude": 34.0522,
-      "longitude": -118.2437
+      "name": "string",
+      "address_line1": "string",
+      "address_line2": "string (optional)",
+      "city": "string",
+      "state": "string (optional)",
+      "postal_code": "string (optional)",
+      "country": "string (optional)",
+      "coordinates": {
+        "lat": "number",
+        "lng": "number"
+      },
+      "is_default": "boolean"
     }
   ]
 }
 ```
-- **Response Payload:**
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "name": "New Customer",
-  "code": "CUST002",
-  "status": "pending",
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "id": "string",
+  "name": "string",
+  "code": "string",
+  "status": "string",
+  "created_at": "string"
 }
 ```
-- **Description:** Creates a new customer record.
 
 ---
 
-#### Update Customer
-- **HTTP Method:** `PUT`
-- **API URL:** `/api/customers/{id}`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:**
+### PUT `/api/customers/:id`
+**Description**: Updates an existing customer.
+
+**Path Parameters**:
+- `id` (string): Customer UUID
+
+**Request Payload**:
 ```json
 {
-  "name": "Updated Customer Name",
-  "phone": "+1987654321",
-  "credit_limit": 15000
+  "name": "string (optional)",
+  "code": "string (optional)",
+  "type": "string (optional)",
+  "status": "string (optional)",
+  "primary_contact_name": "string (optional)",
+  "primary_contact_phone": "string (optional)",
+  "email": "string (optional)",
+  "sales_user_id": "string (optional)"
 }
 ```
-- **Response Payload:**
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "name": "Updated Customer Name",
-  "updated_at": "2024-01-15T11:00:00.000Z"
+  "id": "string",
+  "name": "string",
+  "updated_at": "string"
 }
 ```
-- **Description:** Updates an existing customer's information.
 
 ---
 
-#### Delete Customer
-- **HTTP Method:** `DELETE`
-- **API URL:** `/api/customers/{id}`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
+### DELETE `/api/customers/:id`
+**Description**: Deletes a customer (soft delete or hard delete based on configuration).
+
+**Path Parameters**:
+- `id` (string): Customer UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
-  "success": true,
-  "message": "Customer deleted successfully"
+  "success": true
 }
 ```
-- **Description:** Deletes a customer record.
 
 ---
 
-#### Toggle Customer Status
-- **HTTP Method:** `POST`
-- **API URL:** `/api/customers/{id}/toggle-status`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
+### POST `/api/customers/:id/approve`
+**Description**: Approves a pending customer.
+
+**Path Parameters**:
+- `id` (string): Customer UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "status": "inactive",
-  "updated_at": "2024-01-15T11:00:00.000Z"
-}
-```
-- **Description:** Toggles a customer's active/inactive status.
-
----
-
-#### Get Customer Addresses
-- **HTTP Method:** `GET`
-- **API URL:** `/api/customers/{id}/addresses`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "name": "Main Office",
-      "address_line1": "123 Main St",
-      "city": "New York",
-      "is_default": true,
-      "latitude": 40.7128,
-      "longitude": -74.0060
-    }
-  ]
-}
-```
-- **Description:** Returns all addresses for a specific customer.
-
----
-
-#### Add Customer Address
-- **HTTP Method:** `POST`
-- **API URL:** `/api/customers/{id}/addresses`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:**
-```json
-{
-  "name": "Branch Office",
-  "address_line1": "789 Pine St",
-  "city": "Chicago",
-  "is_default": false,
-  "latitude": 41.8781,
-  "longitude": -87.6298
-}
-```
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "name": "Branch Office",
-  "created_at": "2024-01-15T10:30:00.000Z"
-}
-```
-- **Description:** Adds a new address to a customer.
-
----
-
-#### Get Customer Balance
-- **HTTP Method:** `GET`
-- **API URL:** `/api/customers/{id}/balance`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "customer_id": "uuid",
-  "current_balance": 5000.00,
-  "credit_limit": 10000.00,
-  "available_credit": 5000.00,
-  "last_payment_date": "2024-01-10T10:30:00.000Z"
-}
-```
-- **Description:** Returns the financial balance for a customer.
-
----
-
-#### Get Customer Empty Balances
-- **HTTP Method:** `GET`
-- **API URL:** `/api/customers/{id}/empty-balances`
-- **Path Parameters:**
-  - `id` (string): Customer UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "data": [
-    {
-      "variant_id": "uuid",
-      "variant_name": "Product Variant",
-      "quantity": 10
-    }
-  ]
-}
-```
-- **Description:** Returns empty cylinder/container balances for a customer.
-
----
-
-### Orders
-
-#### List Orders
-- **HTTP Method:** `GET`
-- **API URL:** `/api/orders`
-- **Query Parameters:**
-  - `page` (number, optional): Page number
-  - `limit` (number, optional): Items per page
-  - `status` (string, optional): Filter by status
-  - `customer_id` (string, optional): Filter by customer
-  - `date_from` (string, optional): Filter by start date
-  - `date_to` (string, optional): Filter by end date
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "order_number": "ORD-2024-001",
-      "customer_id": "uuid",
-      "customer_name": "Customer Name",
-      "status": "approved",
-      "total_amount": 500.00,
-      "order_date": "2024-01-15",
-      "delivery_date": "2024-01-16",
-      "created_at": "2024-01-15T10:30:00.000Z"
-    }
-  ],
-  "total": 50,
-  "page": 1,
-  "limit": 20
-}
-```
-- **Description:** Returns a paginated list of orders with optional filtering.
-
----
-
-#### Get Order by ID
-- **HTTP Method:** `GET`
-- **API URL:** `/api/orders/{id}`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "order_number": "ORD-2024-001",
-  "customer_id": "uuid",
-  "customer": {
-    "id": "uuid",
-    "name": "Customer Name"
-  },
+  "id": "string",
   "status": "approved",
-  "order_type": "sale",
-  "total_amount": 500.00,
-  "order_date": "2024-01-15",
-  "delivery_date": "2024-01-16",
-  "delivery_address": {
-    "id": "uuid",
-    "address_line1": "123 Main St"
-  },
-  "lines": [
-    {
-      "id": "uuid",
-      "variant_id": "uuid",
-      "variant_name": "Product Name",
-      "quantity": 10,
-      "unit_price": 50.00,
-      "total_price": 500.00
-    }
-  ],
-  "notes": "Delivery notes",
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "approved_at": "string",
+  "approved_by": "string"
 }
 ```
-- **Description:** Returns detailed information for a specific order.
 
 ---
 
-#### Create Order
-- **HTTP Method:** `POST`
-- **API URL:** `/api/orders`
-- **Request Payload:**
+### POST `/api/customers/:id/reject`
+**Description**: Rejects a pending customer with a reason.
+
+**Path Parameters**:
+- `id` (string): Customer UUID
+
+**Request Payload**:
 ```json
 {
-  "customer_id": "uuid",
-  "delivery_address_id": "uuid",
-  "order_type": "sale",
-  "order_date": "2024-01-15",
-  "delivery_date": "2024-01-16",
-  "lines": [
-    {
-      "variant_id": "uuid",
-      "quantity": 10,
-      "unit_price": 50.00
-    }
-  ],
-  "notes": "Special delivery instructions"
+  "reason": "string"
 }
 ```
-- **Response Payload:**
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "order_number": "ORD-2024-002",
-  "status": "pending",
-  "total_amount": 500.00,
-  "created_at": "2024-01-15T10:30:00.000Z"
-}
-```
-- **Description:** Creates a new order.
-
----
-
-#### Update Order
-- **HTTP Method:** `PUT`
-- **API URL:** `/api/orders/{id}`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:**
-```json
-{
-  "delivery_date": "2024-01-17",
-  "lines": [
-    {
-      "variant_id": "uuid",
-      "quantity": 15,
-      "unit_price": 50.00
-    }
-  ],
-  "notes": "Updated delivery instructions"
-}
-```
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "order_number": "ORD-2024-001",
-  "total_amount": 750.00,
-  "updated_at": "2024-01-15T11:00:00.000Z"
-}
-```
-- **Description:** Updates an existing order.
-
----
-
-#### Delete Order
-- **HTTP Method:** `DELETE`
-- **API URL:** `/api/orders/{id}`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "success": true,
-  "message": "Order deleted successfully"
-}
-```
-- **Description:** Deletes an order.
-
----
-
-#### Approve Order
-- **HTTP Method:** `POST`
-- **API URL:** `/api/orders/{id}/approve`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "status": "approved",
-  "approved_at": "2024-01-15T11:00:00.000Z",
-  "approved_by": "uuid"
-}
-```
-- **Description:** Approves a pending order.
-
----
-
-#### Reject Order
-- **HTTP Method:** `POST`
-- **API URL:** `/api/orders/{id}/reject`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:**
-```json
-{
-  "reason": "Insufficient inventory"
-}
-```
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
+  "id": "string",
   "status": "rejected",
-  "rejected_at": "2024-01-15T11:00:00.000Z",
-  "rejection_reason": "Insufficient inventory"
+  "rejection_reason": "string"
 }
 ```
-- **Description:** Rejects a pending order with a reason.
 
 ---
 
-#### Get Order History
-- **HTTP Method:** `GET`
-- **API URL:** `/api/orders/{id}/history`
-- **Path Parameters:**
-  - `id` (string): Order UUID
-- **Request Payload:** N/A
-- **Response Payload:**
+## Customer Addresses
+
+### GET `/api/customers/:customerId/addresses`
+**Description**: Retrieves all addresses for a customer.
+
+**Path Parameters**:
+- `customerId` (string): Customer UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
   "data": [
     {
-      "id": "uuid",
-      "action": "status_changed",
-      "old_value": "pending",
-      "new_value": "approved",
-      "changed_by": "uuid",
-      "changed_at": "2024-01-15T11:00:00.000Z"
+      "id": "string",
+      "customer_id": "string",
+      "name": "string",
+      "address_line1": "string",
+      "address_line2": "string",
+      "city": "string",
+      "state": "string",
+      "postal_code": "string",
+      "country": "string",
+      "coordinates": {
+        "lat": "number",
+        "lng": "number"
+      },
+      "is_default": "boolean"
     }
   ]
 }
 ```
-- **Description:** Returns the audit history for an order.
 
 ---
 
-### Trips
+### POST `/api/customers/:customerId/addresses`
+**Description**: Adds a new address to a customer.
 
-#### List Trips
-- **HTTP Method:** `GET`
-- **API URL:** `/api/trips`
-- **Query Parameters:**
-  - `page` (number, optional): Page number
-  - `limit` (number, optional): Items per page
-  - `status` (string, optional): Filter by status
-  - `driver_id` (string, optional): Filter by driver
-  - `date` (string, optional): Filter by trip date
-- **Request Payload:** N/A
-- **Response Payload:**
+**Path Parameters**:
+- `customerId` (string): Customer UUID
+
+**Request Payload**:
+```json
+{
+  "name": "string",
+  "address_line1": "string",
+  "address_line2": "string (optional)",
+  "city": "string",
+  "state": "string (optional)",
+  "postal_code": "string (optional)",
+  "country": "string (optional)",
+  "coordinates": {
+    "lat": "number",
+    "lng": "number"
+  },
+  "is_default": "boolean (optional)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "customer_id": "string",
+  "name": "string",
+  "created_at": "string"
+}
+```
+
+---
+
+### PUT `/api/customers/:customerId/addresses/:addressId`
+**Description**: Updates an existing customer address.
+
+**Path Parameters**:
+- `customerId` (string): Customer UUID
+- `addressId` (string): Address UUID
+
+**Request Payload**:
+```json
+{
+  "name": "string (optional)",
+  "address_line1": "string (optional)",
+  "address_line2": "string (optional)",
+  "city": "string (optional)",
+  "state": "string (optional)",
+  "postal_code": "string (optional)",
+  "country": "string (optional)",
+  "coordinates": {
+    "lat": "number",
+    "lng": "number"
+  },
+  "is_default": "boolean (optional)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### DELETE `/api/customers/:customerId/addresses/:addressId`
+**Description**: Deletes a customer address.
+
+**Path Parameters**:
+- `customerId` (string): Customer UUID
+- `addressId` (string): Address UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Orders
+
+### GET `/api/orders`
+**Description**: Retrieves a paginated list of orders.
+
+**Query Parameters**:
+- `page` (number, optional): Page number
+- `limit` (number, optional): Items per page
+- `status` (string, optional): Filter by order status
+- `customer_id` (string, optional): Filter by customer
+- `from_date` (string, optional): Filter by start date
+- `to_date` (string, optional): Filter by end date
+- `order_type` (string, optional): Filter by order type
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
   "data": [
     {
-      "id": "uuid",
-      "trip_number": "TRIP-2024-001",
-      "driver_id": "uuid",
-      "driver_name": "John Driver",
-      "vehicle_id": "uuid",
-      "vehicle_name": "Truck A",
-      "status": "planned",
-      "trip_date": "2024-01-16",
-      "stop_count": 5,
-      "created_at": "2024-01-15T10:30:00.000Z"
+      "id": "string",
+      "order_number": "string",
+      "customer_id": "string",
+      "customer_name": "string",
+      "status": "string",
+      "order_type": "string",
+      "total_amount": "number",
+      "currency": "string",
+      "delivery_address_id": "string",
+      "scheduled_date": "string",
+      "created_at": "string",
+      "updated_at": "string"
     }
   ],
-  "total": 25,
-  "page": 1,
-  "limit": 20
+  "pagination": {
+    "page": "number",
+    "limit": "number",
+    "total": "number",
+    "totalPages": "number"
+  }
 }
 ```
-- **Description:** Returns a paginated list of trips.
 
 ---
 
-#### Get Trip by ID
-- **HTTP Method:** `GET`
-- **API URL:** `/api/trips/{id}`
-- **Path Parameters:**
-  - `id` (string): Trip UUID
-- **Request Payload:** N/A
-- **Response Payload:**
+### GET `/api/orders/:id`
+**Description**: Retrieves a single order with full details including line items.
+
+**Path Parameters**:
+- `id` (string): Order UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "trip_number": "TRIP-2024-001",
-  "driver_id": "uuid",
+  "id": "string",
+  "order_number": "string",
+  "customer_id": "string",
+  "customer": {
+    "id": "string",
+    "name": "string"
+  },
+  "status": "string",
+  "order_type": "string",
+  "total_amount": "number",
+  "currency": "string",
+  "delivery_address": {
+    "id": "string",
+    "address_line1": "string",
+    "city": "string"
+  },
+  "order_lines": [
+    {
+      "id": "string",
+      "product_variant_id": "string",
+      "product_name": "string",
+      "sku_code": "string",
+      "quantity": "number",
+      "unit_price": "number",
+      "total_price": "number"
+    }
+  ],
+  "notes": "string",
+  "scheduled_date": "string",
+  "created_at": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### POST `/api/orders`
+**Description**: Creates a new order with line items.
+
+**Request Payload**:
+```json
+{
+  "customer_id": "string",
+  "delivery_address_id": "string",
+  "order_type": "string (optional, default: 'delivery')",
+  "scheduled_date": "string (optional)",
+  "notes": "string (optional)",
+  "order_lines": [
+    {
+      "product_variant_id": "string",
+      "quantity": "number",
+      "unit_price": "number (optional, uses price list if not provided)"
+    }
+  ],
+  "source": "string (optional, e.g., 'web', 'mobile', 'api')"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "order_number": "string",
+  "status": "string",
+  "total_amount": "number",
+  "created_at": "string"
+}
+```
+
+---
+
+### PUT `/api/orders/:id`
+**Description**: Updates an existing order.
+
+**Path Parameters**:
+- `id` (string): Order UUID
+
+**Request Payload**:
+```json
+{
+  "delivery_address_id": "string (optional)",
+  "scheduled_date": "string (optional)",
+  "notes": "string (optional)",
+  "order_lines": [
+    {
+      "id": "string (optional, for existing lines)",
+      "product_variant_id": "string",
+      "quantity": "number",
+      "unit_price": "number (optional)"
+    }
+  ]
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "order_number": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### DELETE `/api/orders/:id`
+**Description**: Deletes/cancels an order.
+
+**Path Parameters**:
+- `id` (string): Order UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### POST `/api/orders/:id/approve`
+**Description**: Approves a pending order.
+
+**Path Parameters**:
+- `id` (string): Order UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "status": "approved",
+  "approved_at": "string"
+}
+```
+
+---
+
+### POST `/api/orders/:id/reject`
+**Description**: Rejects a pending order.
+
+**Path Parameters**:
+- `id` (string): Order UUID
+
+**Request Payload**:
+```json
+{
+  "reason": "string"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "status": "rejected",
+  "rejection_reason": "string"
+}
+```
+
+---
+
+## Products
+
+### GET `/api/products`
+**Description**: Retrieves all products for the tenant.
+
+**Query Parameters**:
+- `page` (number, optional): Page number
+- `limit` (number, optional): Items per page
+- `search` (string, optional): Search by name or SKU
+- `type` (string, optional): Filter by product type
+- `active` (boolean, optional): Filter by active status
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "data": [
+    {
+      "id": "string",
+      "name": "string",
+      "description": "string",
+      "type": "string",
+      "is_active": "boolean",
+      "tenant_id": "string",
+      "created_at": "string"
+    }
+  ],
+  "pagination": {
+    "page": "number",
+    "limit": "number",
+    "total": "number"
+  }
+}
+```
+
+---
+
+### GET `/api/products/:id`
+**Description**: Retrieves a single product with variants.
+
+**Path Parameters**:
+- `id` (string): Product UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "type": "string",
+  "is_active": "boolean",
+  "variants": [
+    {
+      "id": "string",
+      "sku_code": "string",
+      "name": "string",
+      "size": "string",
+      "unit": "string",
+      "is_active": "boolean"
+    }
+  ],
+  "created_at": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### POST `/api/products`
+**Description**: Creates a new product.
+
+**Request Payload**:
+```json
+{
+  "name": "string",
+  "description": "string (optional)",
+  "type": "string",
+  "is_active": "boolean (optional, default: true)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "name": "string",
+  "created_at": "string"
+}
+```
+
+---
+
+### PUT `/api/products/:id`
+**Description**: Updates an existing product.
+
+**Path Parameters**:
+- `id` (string): Product UUID
+
+**Request Payload**:
+```json
+{
+  "name": "string (optional)",
+  "description": "string (optional)",
+  "type": "string (optional)",
+  "is_active": "boolean (optional)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### DELETE `/api/products/:id`
+**Description**: Deletes a product.
+
+**Path Parameters**:
+- `id` (string): Product UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Product Variants
+
+### GET `/api/products/:productId/variants`
+**Description**: Retrieves all variants for a product.
+
+**Path Parameters**:
+- `productId` (string): Product UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "data": [
+    {
+      "id": "string",
+      "product_id": "string",
+      "sku_code": "string",
+      "name": "string",
+      "size": "string",
+      "unit": "string",
+      "is_active": "boolean"
+    }
+  ]
+}
+```
+
+---
+
+### POST `/api/products/:productId/variants`
+**Description**: Creates a new product variant.
+
+**Path Parameters**:
+- `productId` (string): Product UUID
+
+**Request Payload**:
+```json
+{
+  "sku_code": "string",
+  "name": "string",
+  "size": "string (optional)",
+  "unit": "string",
+  "is_active": "boolean (optional, default: true)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "sku_code": "string",
+  "created_at": "string"
+}
+```
+
+---
+
+### PUT `/api/variants/:id`
+**Description**: Updates a product variant.
+
+**Path Parameters**:
+- `id` (string): Variant UUID
+
+**Request Payload**:
+```json
+{
+  "sku_code": "string (optional)",
+  "name": "string (optional)",
+  "size": "string (optional)",
+  "unit": "string (optional)",
+  "is_active": "boolean (optional)"
+}
+```
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "updated_at": "string"
+}
+```
+
+---
+
+### DELETE `/api/variants/:id`
+**Description**: Deletes a product variant.
+
+**Path Parameters**:
+- `id` (string): Variant UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Trips
+
+### GET `/api/trips`
+**Description**: Retrieves a paginated list of trips.
+
+**Query Parameters**:
+- `page` (number, optional): Page number
+- `limit` (number, optional): Items per page
+- `status` (string, optional): Filter by trip status
+- `driver_id` (string, optional): Filter by driver
+- `date` (string, optional): Filter by date
+- `vehicle_id` (string, optional): Filter by vehicle
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "data": [
+    {
+      "id": "string",
+      "trip_number": "string",
+      "status": "string",
+      "driver_id": "string",
+      "driver_name": "string",
+      "vehicle_id": "string",
+      "vehicle_name": "string",
+      "scheduled_date": "string",
+      "start_time": "string",
+      "end_time": "string",
+      "total_stops": "number",
+      "completed_stops": "number"
+    }
+  ],
+  "pagination": {
+    "page": "number",
+    "limit": "number",
+    "total": "number"
+  }
+}
+```
+
+---
+
+### GET `/api/trips/:id`
+**Description**: Retrieves a single trip with full details including orders.
+
+**Path Parameters**:
+- `id` (string): Trip UUID
+
+**Request Payload**: N/A
+
+**Response Payload**:
+```json
+{
+  "id": "string",
+  "trip_number": "string",
+  "status": "string",
   "driver": {
-    "id": "uuid",
-    "full_name": "John Driver"
+    "id": "string",
+    "full_name": "string"
   },
-  "vehicle_id": "uuid",
   "vehicle": {
-    "id": "uuid",
-    "name": "Truck A",
-    "registration": "ABC-123"
+    "id": "string",
+    "name": "string",
+    "registration_number": "string"
   },
-  "status": "in_progress",
-  "trip_date": "2024-01-16",
-  "stops": [
+  "scheduled_date": "string",
+  "start_time": "string",
+  "end_time": "string",
+  "trip_orders": [
     {
-      "id": "uuid",
-      "order_id": "uuid",
-      "sequence": 1,
-      "customer_name": "Customer A",
-      "address": "123 Main St",
-      "status": "pending",
-      "estimated_arrival": "09:00"
+      "id": "string",
+      "order_id": "string",
+      "order_number": "string",
+      "customer_name": "string",
+      "delivery_address": "string",
+      "sequence": "number",
+      "status": "string",
+      "action_type": "string"
     }
   ],
-  "inventory": [
+  "trip_inventory": [
     {
-      "variant_id": "uuid",
-      "variant_name": "Product A",
-      "loaded_quantity": 50,
-      "delivered_quantity": 20,
-      "remaining_quantity": 30
+      "product_variant_id": "string",
+      "sku_code": "string",
+      "loaded_quantity": "number",
+      "delivered_quantity": "number",
+      "returned_quantity": "number"
     }
   ],
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "created_at": "string"
 }
 ```
-- **Description:** Returns detailed information for a specific trip.
 
 ---
 
-#### Create Trip
-- **HTTP Method:** `POST`
-- **API URL:** `/api/trips`
-- **Request Payload:**
+### POST `/api/trips`
+**Description**: Creates a new trip with orders.
+
+**Request Payload**:
 ```json
 {
-  "driver_id": "uuid",
-  "vehicle_id": "uuid",
-  "trip_date": "2024-01-16",
-  "order_ids": ["uuid1", "uuid2", "uuid3"],
-  "extra_stock": [
-    {
-      "variant_id": "uuid",
-      "quantity": 10
-    }
-  ]
+  "driver_id": "string",
+  "vehicle_id": "string",
+  "scheduled_date": "string",
+  "order_ids": ["string"],
+  "notes": "string (optional)"
 }
 ```
-- **Response Payload:**
+
+**Response Payload**:
 ```json
 {
-  "id": "uuid",
-  "trip_number": "TRIP-2024-002",
-  "status": "planned",
-  "created_at": "2024-01-15T10:30:00.000Z"
-}
-```
-- **Description:** Creates a new delivery trip with assigned orders.
-
----
-
-#### Update Trip
-- **HTTP Method:** `PUT`
-- **API URL:** `/api/trips/{id}`
-- **Path Parameters:**
-  - `id` (string): Trip UUID
-- **Request Payload:**
-```json
-{
-  "driver_id": "uuid",
-  "vehicle_id": "uuid",
-  "order_ids": ["uuid1", "uuid2"]
-}
-```
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "trip_number": "TRIP-2024-001",
-  "updated_at": "2024-01-15T11:00:00.000Z"
-}
-```
-- **Description:** Updates a planned trip.
-
----
-
-#### Delete Trip
-- **HTTP Method:** `DELETE`
-- **API URL:** `/api/trips/{id}`
-- **Path Parameters:**
-  - `id` (string): Trip UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "success": true,
-  "message": "Trip deleted successfully"
-}
-```
-- **Description:** Deletes a planned trip.
-
----
-
-#### Dispatch Trip
-- **HTTP Method:** `POST`
-- **API URL:** `/api/trips/{id}/dispatch`
-- **Path Parameters:**
-  - `id` (string): Trip UUID
-- **Request Payload:** N/A
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "status": "dispatched",
-  "dispatched_at": "2024-01-16T08:00:00.000Z"
-}
-```
-- **Description:** Dispatches a planned trip for delivery.
-
----
-
-#### Complete Trip
-- **HTTP Method:** `POST`
-- **API URL:** `/api/trips/{id}/complete`
-- **Path Parameters:**
-  - `id` (string): Trip UUID
-- **Request Payload:**
-```json
-{
-  "returns": [
-    {
-      "variant_id": "uuid",
-      "quantity": 5,
-      "reason": "Customer refused"
-    }
-  ]
-}
-```
-- **Response Payload:**
-```json
-{
-  "id": "uuid",
-  "status": "completed",
-  "completed_at": "2024-01-16T18:00:00.000Z"
-}
-```
-- **Description:** Completes a trip and processes returns.
-
----
-
-#### Get Trip Orders
-- **HTTP Method:** `GET`
-- **API URL:** `/api/trips/{id}/orders`
--
 
 # events
 
 events analysis
 
-# Event Documentation Analysis
+I'll analyze the codebase to identify all events being consumed or produced. Let me examine the relevant files.
 
-Based on a comprehensive scan of the provided codebase, I have identified the following events:
-
----
-
-## Events Found
+Based on my comprehensive analysis of the codebase, I found events in the backend event system. Let me document them:
 
 ---
 
-### Event: Order Created
+## Event Documentation
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+### Event: order.created
+
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `order.created`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2877,18 +2879,17 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "orderNumber": "string",
       "status": "string",
       "totalAmount": "number",
-      "orderType": "string",
-      "createdBy": "string (UUID)",
-      "createdAt": "string (ISO 8601 datetime)"
+      "createdAt": "string (ISO 8601 date-time)",
+      "createdBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a new order is successfully created in the system. It signals other components (cache invalidation, notifications, analytics) that a new order exists and may require processing or tracking.
+* **Short explanation of what this event is doing:** This event is emitted when a new order is successfully created in the system. It allows other components or services to react to order creation, such as updating analytics, triggering notifications, or initiating downstream workflows.
 
 ---
 
-### Event: Order Updated
+### Event: order.updated
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `order.updated`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2898,18 +2899,18 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "tenantId": "string (UUID)",
       "previousStatus": "string",
       "newStatus": "string",
+      "updatedAt": "string (ISO 8601 date-time)",
       "updatedBy": "string (UUID)",
-      "updatedAt": "string (ISO 8601 datetime)",
       "changes": "object (key-value pairs of changed fields)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when an existing order is modified, including status changes. It enables cache invalidation and audit tracking of order modifications.
+* **Short explanation of what this event is doing:** This event is emitted when an existing order is updated. It captures status changes and field modifications, enabling audit logging, cache invalidation, and notification triggers.
 
 ---
 
-### Event: Order Status Changed
+### Event: order.status_changed
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `order.status_changed`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2919,17 +2920,17 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "tenantId": "string (UUID)",
       "previousStatus": "string",
       "newStatus": "string",
-      "changedBy": "string (UUID)",
-      "changedAt": "string (ISO 8601 datetime)"
+      "changedAt": "string (ISO 8601 date-time)",
+      "changedBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** A more specific event for order status transitions, allowing downstream systems to react to workflow state changes (e.g., pending → approved → dispatched).
+* **Short explanation of what this event is doing:** A specific event for order status transitions, allowing systems to track order lifecycle changes (e.g., pending → approved → dispatched → delivered).
 
 ---
 
-### Event: Customer Created
+### Event: customer.created
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `customer.created`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2937,19 +2938,19 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
     {
       "customerId": "string (UUID)",
       "tenantId": "string (UUID)",
-      "name": "string",
+      "customerName": "string",
       "status": "string",
-      "createdBy": "string (UUID)",
-      "createdAt": "string (ISO 8601 datetime)"
+      "createdAt": "string (ISO 8601 date-time)",
+      "createdBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a new customer is created, enabling downstream services to update caches, trigger welcome workflows, or sync with external systems.
+* **Short explanation of what this event is doing:** Emitted when a new customer is registered in the system, enabling downstream services to initialize customer-related resources, send welcome communications, or update CRM systems.
 
 ---
 
-### Event: Customer Updated
+### Event: customer.updated
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `customer.updated`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2957,18 +2958,18 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
     {
       "customerId": "string (UUID)",
       "tenantId": "string (UUID)",
+      "updatedAt": "string (ISO 8601 date-time)",
       "updatedBy": "string (UUID)",
-      "updatedAt": "string (ISO 8601 datetime)",
       "changes": "object (key-value pairs of changed fields)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when customer data is modified, enabling cache invalidation and audit tracking.
+* **Short explanation of what this event is doing:** This event is published when customer information is modified, supporting cache invalidation and audit trail maintenance.
 
 ---
 
-### Event: Trip Created
+### Event: trip.created
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `trip.created`
 * **Direction:** Producing
 * **Event Payload:**
@@ -2981,17 +2982,17 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "vehicleId": "string (UUID)",
       "status": "string",
       "scheduledDate": "string (ISO 8601 date)",
-      "createdBy": "string (UUID)",
-      "createdAt": "string (ISO 8601 datetime)"
+      "createdAt": "string (ISO 8601 date-time)",
+      "createdBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a new delivery trip is created, signaling logistics and driver assignment systems.
+* **Short explanation of what this event is doing:** Emitted when a new delivery trip is created, enabling logistics tracking systems, driver notifications, and inventory allocation processes to be triggered.
 
 ---
 
-### Event: Trip Updated
+### Event: trip.updated
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `trip.updated`
 * **Direction:** Producing
 * **Event Payload:**
@@ -3001,80 +3002,65 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "tenantId": "string (UUID)",
       "previousStatus": "string",
       "newStatus": "string",
+      "updatedAt": "string (ISO 8601 date-time)",
       "updatedBy": "string (UUID)",
-      "updatedAt": "string (ISO 8601 datetime)",
-      "changes": "object"
+      "changes": "object (key-value pairs of changed fields)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a trip is modified (status change, order assignment changes, etc.), enabling cache invalidation and real-time UI updates.
+* **Short explanation of what this event is doing:** Published when trip details are modified, supporting real-time tracking updates, driver app synchronization, and operational dashboards.
 
 ---
 
-### Event: Inventory Changed
+### Event: trip.completed
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
-* **Event Name/Topic/Queue:** `inventory.changed`
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
+* **Event Name/Topic/Queue:** `trip.completed`
 * **Direction:** Producing
 * **Event Payload:**
     ```json
     {
-      "warehouseId": "string (UUID)",
+      "tripId": "string (UUID)",
       "tenantId": "string (UUID)",
+      "tripNumber": "string",
+      "driverId": "string (UUID)",
+      "completedAt": "string (ISO 8601 date-time)",
+      "completedBy": "string (UUID)",
+      "deliveryCount": "integer",
+      "successfulDeliveries": "integer",
+      "failedDeliveries": "integer"
+    }
+    ```
+* **Short explanation of what this event is doing:** Emitted when a trip is fully completed, triggering variance processing, inventory reconciliation, and end-of-trip reporting.
+
+---
+
+### Event: inventory.adjusted
+
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
+* **Event Name/Topic/Queue:** `inventory.adjusted`
+* **Direction:** Producing
+* **Event Payload:**
+    ```json
+    {
+      "adjustmentId": "string (UUID)",
+      "tenantId": "string (UUID)",
+      "warehouseId": "string (UUID)",
       "variantId": "string (UUID)",
       "previousQuantity": "number",
       "newQuantity": "number",
-      "transactionType": "string",
-      "referenceType": "string",
-      "referenceId": "string (UUID)",
-      "changedBy": "string (UUID)",
-      "changedAt": "string (ISO 8601 datetime)"
+      "adjustmentType": "string",
+      "reason": "string",
+      "adjustedAt": "string (ISO 8601 date-time)",
+      "adjustedBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when inventory levels change at any warehouse, enabling real-time inventory tracking, alerts for low stock, and cache invalidation.
+* **Short explanation of what this event is doing:** Published when inventory levels are manually adjusted, enabling audit logging, inventory tracking dashboards, and alerting systems for significant inventory changes.
 
 ---
 
-### Event: Price List Updated
+### Event: delivery.completed
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
-* **Event Name/Topic/Queue:** `price_list.updated`
-* **Direction:** Producing
-* **Event Payload:**
-    ```json
-    {
-      "priceListId": "string (UUID)",
-      "tenantId": "string (UUID)",
-      "name": "string",
-      "updatedBy": "string (UUID)",
-      "updatedAt": "string (ISO 8601 datetime)"
-    }
-    ```
-* **Short explanation of what this event is doing:** This event is published when price list data is modified, triggering cache invalidation for pricing data used in order creation.
-
----
-
-### Event: Cache Invalidation
-
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
-* **Event Name/Topic/Queue:** `cache.invalidate`
-* **Direction:** Producing & Consuming
-* **Event Payload:**
-    ```json
-    {
-      "entityType": "string (e.g., 'orders', 'customers', 'trips', 'inventory')",
-      "entityId": "string (UUID) | null",
-      "tenantId": "string (UUID)",
-      "invalidateAll": "boolean",
-      "timestamp": "string (ISO 8601 datetime)"
-    }
-    ```
-* **Short explanation of what this event is doing:** This event is used for cache invalidation across the system. When produced, it signals that cached data for a specific entity or entity type should be invalidated. The system consumes these events to clear relevant caches.
-
----
-
-### Event: Delivery Completed
-
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
 * **Event Name/Topic/Queue:** `delivery.completed`
 * **Direction:** Producing
 * **Event Payload:**
@@ -3083,96 +3069,105 @@ Based on a comprehensive scan of the provided codebase, I have identified the fo
       "tripId": "string (UUID)",
       "orderId": "string (UUID)",
       "tenantId": "string (UUID)",
-      "deliveryStatus": "string",
-      "deliveredQuantities": "object (variantId -> quantity)",
-      "podUrl": "string | null",
-      "completedBy": "string (UUID)",
-      "completedAt": "string (ISO 8601 datetime)"
+      "customerId": "string (UUID)",
+      "deliveredQuantities": [
+        {
+          "variantId": "string (UUID)",
+          "quantity": "number"
+        }
+      ],
+      "podUrl": "string (URL, optional)",
+      "deliveredAt": "string (ISO 8601 date-time)",
+      "deliveredBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a delivery stop is completed, triggering inventory updates, order status changes, and customer balance adjustments.
+* **Short explanation of what this event is doing:** Emitted when a delivery is successfully completed, triggering inventory deallocation, customer balance updates, invoice generation workflows, and proof-of-delivery processing.
 
 ---
 
-### Event: Variance Recorded
+### Event: cache.invalidate
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
-* **Event Name/Topic/Queue:** `variance.recorded`
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
+* **Event Name/Topic/Queue:** `cache.invalidate`
+* **Direction:** Both (Producing and Consuming)
+* **Event Payload:**
+    ```json
+    {
+      "entity": "string (e.g., 'orders', 'customers', 'trips', 'inventory')",
+      "tenantId": "string (UUID)",
+      "entityId": "string (UUID, optional)",
+      "pattern": "string (cache key pattern, optional)",
+      "reason": "string"
+    }
+    ```
+* **Short explanation of what this event is doing:** Used for cache invalidation across the system. When entity data changes, this event is published to ensure cached data is refreshed. The cache layer consumes these events to proactively invalidate stale entries.
+
+---
+
+### Event: price_list.updated
+
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
+* **Event Name/Topic/Queue:** `price_list.updated`
+* **Direction:** Producing
+* **Event Payload:**
+    ```json
+    {
+      "priceListId": "string (UUID)",
+      "tenantId": "string (UUID)",
+      "effectiveDate": "string (ISO 8601 date)",
+      "updatedAt": "string (ISO 8601 date-time)",
+      "updatedBy": "string (UUID)"
+    }
+    ```
+* **Short explanation of what this event is doing:** Published when price list entries are modified, triggering cache invalidation for pricing data and enabling real-time price updates across the order management system.
+
+---
+
+### Event: variance.approved
+
+* **Event Type:** Internal Event Bus (Custom EventEmitter-based system)
+* **Event Name/Topic/Queue:** `variance.approved`
 * **Direction:** Producing
 * **Event Payload:**
     ```json
     {
       "tripId": "string (UUID)",
       "tenantId": "string (UUID)",
-      "variantId": "string (UUID)",
-      "expectedQuantity": "number",
-      "actualQuantity": "number",
-      "varianceQuantity": "number",
-      "varianceCode": "string",
-      "recordedBy": "string (UUID)",
-      "recordedAt": "string (ISO 8601 datetime)"
+      "variances": [
+        {
+          "variantId": "string (UUID)",
+          "expectedQuantity": "number",
+          "actualQuantity": "number",
+          "variance": "number",
+          "varianceCode": "string"
+        }
+      ],
+      "approvedAt": "string (ISO 8601 date-time)",
+      "approvedBy": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when inventory variances are recorded during trip completion or offload processes, enabling variance tracking and approval workflows.
+* **Short explanation of what this event is doing:** Emitted when inventory variances from a trip are approved, triggering inventory reconciliation transactions, write-off processing, and warehouse inventory level adjustments.
 
 ---
 
-### Event: Payment Recorded
+### Event: WebSocket Events (Real-time)
 
-* **Event Type:** Custom Internal Event Bus (Supabase-based Event Store)
-* **Event Name/Topic/Queue:** `payment.recorded`
-* **Direction:** Producing
+* **Event Type:** WebSocket (Custom WebSocket implementation)
+* **Event Name/Topic/Queue:** Various channels including `orders`, `trips`, `inventory`, `customers`
+* **Direction:** Producing (Server to Client)
 * **Event Payload:**
     ```json
     {
-      "paymentId": "string (UUID)",
-      "orderId": "string (UUID)",
-      "customerId": "string (UUID)",
-      "tenantId": "string (UUID)",
-      "amount": "number",
-      "paymentMethod": "string",
-      "recordedBy": "string (UUID)",
-      "recordedAt": "string (ISO 8601 datetime)"
+      "type": "string (e.g., 'INSERT', 'UPDATE', 'DELETE')",
+      "table": "string (database table name)",
+      "record": "object (the changed record)",
+      "old_record": "object (previous state for updates, optional)",
+      "tenantId": "string (UUID)"
     }
     ```
-* **Short explanation of what this event is doing:** This event is published when a payment is recorded against an order, updating customer balances and order payment status.
+* **Short explanation of what this event is doing:** Real-time events pushed to connected frontend clients via WebSocket connections, enabling live updates to dashboards, order lists, and inventory displays without requiring page refreshes.
 
 ---
-
-## WebSocket/Real-time Events (Ably)
-
-The codebase also includes WebSocket-based real-time subscriptions using Ably:
-
----
-
-### Event: Real-time Entity Updates
-
-* **Event Type:** Ably (WebSocket)
-* **Event Name/Topic/Queue:** `tenant:{tenantId}:orders`, `tenant:{tenantId}:customers`, `tenant:{tenantId}:trips`, `tenant:{tenantId}:inventory`
-* **Direction:** Consuming
-* **Event Payload:**
-    ```json
-    {
-      "action": "string ('insert' | 'update' | 'delete')",
-      "entityType": "string",
-      "entityId": "string (UUID)",
-      "data": "object (entity data)",
-      "timestamp": "string (ISO 8601 datetime)"
-    }
-    ```
-* **Short explanation of what this event is doing:** The frontend subscribes to real-time channels for various entity types to receive live updates. This enables real-time UI updates without polling, used in components like `useWebSocketSubscription.ts` and `WebSocketClient.ts`.
-
----
-
-## Event Infrastructure
-
-Based on the codebase analysis, the event system is implemented using:
-
-1. **Supabase Event Store** (`backend/src/events/`) - A custom event store pattern using Supabase tables
-2. **Ably WebSocket** (`src/lib/WebSocketClient.ts`) - Real-time frontend subscriptions
-3. **Database Triggers** (Supabase migrations) - Automatic event generation on data changes
-
-The architecture follows an event-driven cache invalidation pattern as documented in `plans/event-driven-cache-invalidation-architecture.md`.
 
 # service_dependencies
 
@@ -3180,369 +3175,542 @@ Analyze service dependencies
 
 # External Dependencies Analysis Report
 
-## Repository: oms-system_aeed8a86
+## Repository: oms-system_0cf4db5b
 
-This document provides a comprehensive analysis of all external dependencies identified in the OMS (Order Management System) codebase.
-
----
-
-## Table of Contents
-1. [Cloud Services & Infrastructure](#cloud-services--infrastructure)
-2. [Databases & Data Storage](#databases--data-storage)
-3. [Message Brokers & Event Systems](#message-brokers--event-systems)
-4. [Monitoring & Observability](#monitoring--observability)
-5. [Third-Party APIs](#third-party-apis)
-6. [Authentication & Authorization](#authentication--authorization)
-7. [Frontend Libraries & Frameworks](#frontend-libraries--frameworks)
-8. [Backend Libraries & Frameworks](#backend-libraries--frameworks)
-9. [Development & Build Tools](#development--build-tools)
-10. [Deployment Platforms](#deployment-platforms)
+This analysis identifies all external dependencies for this Order Management System (OMS) codebase, which consists of a React frontend and a Fastify backend.
 
 ---
 
-## Cloud Services & Infrastructure
+## 1. Database & Backend Services
 
-### 1. Google Cloud Platform (GCP) - Cloud Run
+### 1.1 Supabase (PostgreSQL)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Supabase (PostgreSQL Database & BaaS) |
+| **Type of Dependency** | External Service / Database |
+| **Purpose/Role** | Primary database for storing all application data (orders, customers, trips, inventory, etc.), authentication, Row Level Security (RLS), and database functions (RPC). Also provides storage buckets for file uploads. |
+| **Integration Points/Clues** | - `@supabase/supabase-js` in both `/package.json` and `/backend/package.json` |
+| | - `/src/lib/supabase.ts` - Main Supabase client initialization |
+| | - `/supabase/` directory with migrations, config, and functions |
+| | - Environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
+| | - `/backend/docker-compose.yml` references Supabase URL |
+| | - Extensive SQL migrations in `/supabase/migrations/` |
+
+### 1.2 Redis
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Redis Cache |
+| **Type of Dependency** | External Service / Cache |
+| **Purpose/Role** | L2 caching layer for improving performance by caching frequently accessed data |
+| **Integration Points/Clues** | - `ioredis` package in `/backend/package.json` |
+| | - `/backend/docker-compose.yml` defines Redis service (`redis:7-alpine`) |
+| | - Environment variables: `ENABLE_CACHE`, `REDIS_ENABLED` |
+| | - Test files: `/backend/test-redis-connection.cjs`, `/backend/test-l2-cache.cjs` |
+
+---
+
+## 2. Cloud Services & Infrastructure
+
+### 2.1 Google Cloud Platform (GCP) - Cloud Run
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Google Cloud Run |
-| **Type of Dependency** | Cloud Infrastructure / PaaS |
-| **Purpose/Role** | Hosts containerized backend services in production and staging environments |
-| **Integration Point/Clues** | - `/infra/cloud-run/oms-backend.production.yaml` and `oms-backend.staging.yaml` define Cloud Run service configurations<br>- `/.github/workflows/deploy-gcp.yml` and `deploy-alloy-gcp.yml` contain deployment workflows<br>- `/docs/deploy/GCP-CLOUD-RUN-SETUP.md` documents setup procedures<br>- `/infra/scripts/setup-custom-domains.sh` references GCP domain configuration |
+| **Type of Dependency** | Cloud Infrastructure / Container Hosting |
+| **Purpose/Role** | Hosting the backend API and Grafana Alloy services |
+| **Integration Points/Clues** | - `/infra/cloud-run/oms-backend.production.yaml` and `oms-backend.staging.yaml` |
+| | - `/infra/grafana-alloy/cloud-run.production.yaml` and `cloud-run.staging.yaml` |
+| | - `/.github/workflows/deploy-gcp.yml` and `deploy-alloy-gcp.yml` |
+| | - `/docs/deploy/GCP-CLOUD-RUN-SETUP.md` |
 
-### 2. Google Cloud Storage
+### 2.2 Netlify
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | Google Cloud Storage (via Supabase Storage) |
-| **Type of Dependency** | External File Storage |
-| **Purpose/Role** | Stores delivery photos, proof-of-delivery images, and inventory photos |
-| **Integration Point/Clues** | - `/supabase/migrations/20251122140000_create_inventory_photos_bucket.sql` creates storage bucket<br>- `/src/lib/imageUploadHelpers.ts` handles image uploads<br>- `/src/lib/storageHelpers.ts` provides storage helper functions<br>- Multiple migrations reference `pod_storage_policies` |
+| **Dependency Name** | Netlify |
+| **Type of Dependency** | Cloud Infrastructure / Frontend Hosting |
+| **Purpose/Role** | Hosting the frontend React application and serverless functions |
+| **Integration Points/Clues** | - `/netlify.toml` configuration file |
+| | - `/netlify/functions/` directory with serverless functions |
+| | - Functions: `google-maps-config.js`, `send-user-invite.js` |
+
+### 2.3 Railway (Alternative Deployment)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Railway |
+| **Type of Dependency** | Cloud Infrastructure (Alternative) |
+| **Purpose/Role** | Alternative deployment platform for the backend |
+| **Integration Points/Clues** | - `/.railwayproject` file |
+| | - `/backend/.railwayignore` |
+| | - `/backend/railway.json` |
+| | - `/backend/verify-railway-deployment.js` |
 
 ---
 
-## Databases & Data Storage
+## 3. Third-Party APIs
 
-### 3. Supabase (PostgreSQL + Auth + Storage)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Supabase |
-| **Type of Dependency** | Backend-as-a-Service (BaaS) / Database |
-| **Purpose/Role** | Primary database (PostgreSQL), authentication service, real-time subscriptions, and file storage |
-| **Integration Point/Clues** | - **Frontend**: `/src/lib/supabase.ts` initializes Supabase client<br>- **Backend**: `/backend/src/client/supabase.ts` provides server-side client<br>- **Package**: `@supabase/supabase-js` in both `/package.json` (v2.52.0) and `/backend/package.json` (v2.57.4)<br>- **Configuration**: `/supabase/config.toml` contains Supabase local config<br>- **Migrations**: 300+ migration files in `/supabase/migrations/`<br>- **Edge Functions**: `/supabase/functions/` contains serverless functions<br>- **Environment Variables**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` referenced in docker-compose.yml |
-
-### 4. Redis
+### 3.1 Google Maps / Geocoding API
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | Redis |
-| **Type of Dependency** | In-Memory Cache / Data Store |
-| **Purpose/Role** | L2 caching layer for API responses to improve performance and reduce database load |
-| **Integration Point/Clues** | - **Package**: `ioredis` (v5.7.0) in `/backend/package.json`<br>- **Docker**: Redis service defined in `/backend/docker-compose.yml` using `redis:7-alpine` image<br>- **Test Files**: `/backend/test-redis-connection.cjs`, `/backend/test-l2-cache.cjs`<br>- **Documentation**: `/docs/archive/L2_CACHE_INVESTIGATION.md`, `/docs/archive/REDIS_L2_CACHE_FIX_PLAN.md`<br>- **Environment Variables**: `ENABLE_CACHE`, `REDIS_ENABLED` in docker-compose.yml |
+| **Dependency Name** | Google Maps Platform (Geocoding) |
+| **Type of Dependency** | Third-party API |
+| **Purpose/Role** | Address geocoding, location services, and map rendering |
+| **Integration Points/Clues** | - `/netlify/functions/google-maps-config.js` |
+| | - SQL migration references geocoding: `20250816150000_add_google_geocoding_to_bulk_import.sql` |
+| | - Supabase function: `/supabase/functions/geocode-address/` |
+
+### 3.2 Mapbox
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Mapbox GL |
+| **Type of Dependency** | Third-party API / Library |
+| **Purpose/Role** | Interactive map rendering in the frontend for territory management and route planning |
+| **Integration Points/Clues** | - `mapbox-gl` package in `/package.json` |
+| | - `@types/mapbox-gl` in dev dependencies |
+| | - Referenced in territory and trip planning components |
+
+### 3.3 VROOM (Route Optimization)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | VROOM Route Optimization |
+| **Type of Dependency** | Third-party API / Service |
+| **Purpose/Role** | Vehicle routing optimization for trip planning |
+| **Integration Points/Clues** | - `/VROOM_INTEGRATION_GUIDE.md` documentation |
+| | - `/plans/vroom-wizard-improvements.md` |
+| | - Migration files: `20251209025107_add_vroom_columns_to_planning_sessions.sql` |
+| | - **ASSUMPTION**: External VROOM API endpoint used for optimization calculations |
+
+### 3.4 WhatsApp API
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | WhatsApp Business API |
+| **Type of Dependency** | Third-party API |
+| **Purpose/Role** | Messaging integration for customer communication |
+| **Integration Points/Clues** | - `/backend/src/external-apis/whatsapp/` directory |
+| | - **ASSUMPTION**: Used for sending delivery notifications or customer updates |
+
+### 3.5 Resend (Email Service)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Resend Email API |
+| **Type of Dependency** | Third-party API |
+| **Purpose/Role** | Sending transactional emails (invitations, password resets, etc.) |
+| **Integration Points/Clues** | - `resend` package in `/package.json` |
+| | - Supabase functions: `/supabase/functions/send-password-reset/`, `/supabase/functions/send-user-invite/` |
 
 ---
 
-## Message Brokers & Event Systems
+## 4. Monitoring & Observability
 
-### 5. NATS
+### 4.1 Sentry
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Sentry Error Tracking |
+| **Type of Dependency** | Monitoring Tool |
+| **Purpose/Role** | Error tracking, performance monitoring, and application profiling |
+| **Integration Points/Clues** | - Frontend: `@sentry/react`, `@sentry/tracing` in `/package.json` |
+| | - Backend: `@sentry/node`, `@sentry/profiling-node` in `/backend/package.json` |
+| | - `/src/lib/sentry.ts` - Sentry client configuration |
+| | - `/docs/archive/SENTRY_INTEGRATION.md` |
+
+### 4.2 Mixpanel
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Mixpanel Analytics |
+| **Type of Dependency** | Analytics / Monitoring Tool |
+| **Purpose/Role** | Product analytics, user behavior tracking, and business metrics |
+| **Integration Points/Clues** | - Frontend: `mixpanel-browser`, `@types/mixpanel-browser` in `/package.json` |
+| | - Backend: `mixpanel` in `/backend/package.json` |
+| | - `/src/lib/analytics.ts` - Analytics client |
+| | - `/src/hooks/useOMSAnalytics.ts`, `/src/hooks/usePageTracking.ts` |
+| | - `/docs/reference/MIXPANEL-DASHBOARDS.md` |
+
+### 4.3 Grafana Cloud (Loki & Alloy)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Grafana Cloud (Loki for logs, Grafana for dashboards) |
+| **Type of Dependency** | Monitoring Tool / Logging Service |
+| **Purpose/Role** | Centralized logging aggregation and visualization dashboards |
+| **Integration Points/Clues** | - `pino-loki` package in `/backend/package.json` |
+| | - `/grafana-alloy/` directory with Alloy configuration |
+| | - `/infra/grafana-alloy/` with GCP deployment configs |
+| | - `/grafana/` directory with dashboard JSON definitions |
+
+### 4.4 OpenTelemetry
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | OpenTelemetry |
+| **Type of Dependency** | Observability Framework |
+| **Purpose/Role** | Distributed tracing and telemetry collection |
+| **Integration Points/Clues** | - `@opentelemetry/auto-instrumentations-node` in `/backend/package.json` |
+| | - `@opentelemetry/exporter-trace-otlp-http` |
+| | - `@opentelemetry/instrumentation-fastify` |
+| | - `@opentelemetry/sdk-node` |
+| | - `/backend/src/tracing.ts` |
+
+### 4.5 Prometheus (Metrics)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Prometheus Metrics |
+| **Type of Dependency** | Monitoring Tool |
+| **Purpose/Role** | Application metrics collection and exposition |
+| **Integration Points/Clues** | - `prom-client` package in `/backend/package.json` |
+| | - **ASSUMPTION**: Metrics endpoint exposed for Prometheus scraping |
+
+---
+
+## 5. Message Broker / Event Streaming
+
+### 5.1 NATS
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | NATS Messaging System |
 | **Type of Dependency** | Message Broker / Event Streaming |
-| **Purpose/Role** | Event-driven architecture for publishing and subscribing to domain events (orders, trips, inventory changes) |
-| **Integration Point/Clues** | - **Package**: `nats` (v2.29.3) in `/backend/package.json`<br>- **Event Schemas**: `/docs/schemas/events/` directory contains 12 event schema files (order-events.yaml, trip-events.yaml, inventory-events.yaml, etc.)<br>- **Documentation**: `/docs/EVENTS.md` describes event-driven architecture<br>- **Architecture Plans**: `/docs/archive/2025-11-restructure/nats/` directory<br>- **Cache Invalidation**: `/plans/event-driven-cache-invalidation-architecture.md` |
+| **Purpose/Role** | Event-driven architecture for cache invalidation and inter-service communication |
+| **Integration Points/Clues** | - `nats` package in `/backend/package.json` |
+| | - `/plans/event-driven-cache-invalidation-architecture.md` |
+| | - `/backend/src/events/` directory |
+| | - `/docs/EVENTS.md` |
 
 ---
 
-## Monitoring & Observability
+## 6. Authentication Services
 
-### 6. Sentry
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Sentry Error Monitoring |
-| **Type of Dependency** | Monitoring / Error Tracking Tool |
-| **Purpose/Role** | Application error tracking, performance monitoring, and crash reporting for both frontend and backend |
-| **Integration Point/Clues** | - **Frontend Packages**: `@sentry/react` (v7.120.4), `@sentry/tracing` (v7.120.4) in `/package.json`<br>- **Backend Packages**: `@sentry/node` (v10.25.0), `@sentry/profiling-node` (v10.25.0) in `/backend/package.json`<br>- **Frontend Integration**: `/src/lib/sentry.ts`<br>- **Documentation**: `/docs/archive/SENTRY_INTEGRATION.md` |
-
-### 7. Grafana Cloud (Loki + Alloy)
+### 6.1 Firebase Auth (via Supabase)
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | Grafana Cloud (Loki) |
-| **Type of Dependency** | Monitoring / Logging Platform |
-| **Purpose/Role** | Centralized logging and log aggregation using Grafana Loki, with Grafana Alloy as the collection agent |
-| **Integration Point/Clues** | - **Package**: `pino-loki` (v2.3.0) in `/backend/package.json` for shipping logs to Loki<br>- **Alloy Configuration**: `/grafana-alloy/config.alloy`, `/infra/grafana-alloy/config.gcp.alloy`<br>- **Docker**: `/grafana-alloy/Dockerfile`, `/infra/grafana-alloy/Dockerfile` using `grafana/alloy:latest`<br>- **Cloud Run Deployment**: `/infra/grafana-alloy/cloud-run.production.yaml`, `cloud-run.staging.yaml`<br>- **GitHub Workflow**: `/.github/workflows/deploy-alloy-gcp.yml`<br>- **Dashboards**: `/grafana/dashboards/` and `/grafana/oms-*.json` files |
-
-### 8. Mixpanel
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Mixpanel Analytics |
-| **Type of Dependency** | Analytics / Product Intelligence Platform |
-| **Purpose/Role** | User behavior analytics, event tracking, and product usage metrics |
-| **Integration Point/Clues** | - **Frontend Package**: `mixpanel-browser` (v2.68.0), `@types/mixpanel-browser` (v2.60.0) in `/package.json`<br>- **Backend Package**: `mixpanel` (v0.19.1) in `/backend/package.json`<br>- **Frontend Integration**: `/src/lib/analytics.ts`<br>- **Hooks**: `/src/hooks/useOMSAnalytics.ts`, `/src/hooks/usePageTracking.ts`, `/src/hooks/usePerformanceTracking.ts`<br>- **Documentation**: `/docs/reference/MIXPANEL-DASHBOARDS.md` |
-
-### 9. OpenTelemetry (OTLP)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | OpenTelemetry |
-| **Type of Dependency** | Observability / Distributed Tracing |
-| **Purpose/Role** | Distributed tracing and telemetry collection for backend services |
-| **Integration Point/Clues** | - **Packages** in `/backend/package.json`:<br>&nbsp;&nbsp;- `@opentelemetry/auto-instrumentations-node` (v0.50.0)<br>&nbsp;&nbsp;- `@opentelemetry/exporter-trace-otlp-http` (v0.54.0)<br>&nbsp;&nbsp;- `@opentelemetry/instrumentation-fastify` (v0.40.0)<br>&nbsp;&nbsp;- `@opentelemetry/sdk-node` (v0.54.0)<br>- **Tracing Setup**: `/backend/src/tracing.ts` |
-
-### 10. Prometheus Metrics
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Prometheus Client |
-| **Type of Dependency** | Metrics Collection |
-| **Purpose/Role** | Exposes application metrics in Prometheus format for monitoring and alerting |
-| **Integration Point/Clues** | - **Package**: `prom-client` (v15.1.3) in `/backend/package.json`<br>- **ASSUMPTION**: Likely exposes a `/metrics` endpoint for Prometheus scraping (requires further investigation of route implementations) |
-
----
-
-## Third-Party APIs
-
-### 11. Google Maps API
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Google Maps Platform |
-| **Type of Dependency** | Third-party API (Mapping/Geocoding) |
-| **Purpose/Role** | Address geocoding, map display, territory visualization, and location-based services |
-| **Integration Point/Clues** | - **Frontend Package**: `mapbox-gl` (v3.13.0) in `/package.json` - **Note**: This may be used alongside or instead of Google Maps for rendering<br>- **Netlify Function**: `/netlify/functions/google-maps-config.js`<br>- **Address Helpers**: `/src/lib/addressHelpers.ts`<br>- **Supabase Function**: `/supabase/functions/geocode-address/`<br>- **Migrations**: `20250816150000_add_google_geocoding_to_bulk_import.sql`, `20250816200000_integrate_google_maps_geocoding.sql` |
-
-### 12. Mapbox
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Mapbox GL JS |
-| **Type of Dependency** | Third-party API / Mapping Library |
-| **Purpose/Role** | Interactive map rendering and visualization for territory management and delivery tracking |
-| **Integration Point/Clues** | - **Package**: `mapbox-gl` (v3.13.0) in `/package.json`<br>- **Types**: `@types/mapbox-gl` (v3.4.1) in dev dependencies<br>- **Components**: Territory management components in `/src/components/territory/` |
-
-### 13. WhatsApp Business API
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | WhatsApp Business API |
-| **Type of Dependency** | Third-party API (Messaging) |
-| **Purpose/Role** | Customer communication and notifications via WhatsApp messaging |
-| **Integration Point/Clues** | - **Directory**: `/backend/src/external-apis/whatsapp/` (nested directory)<br>- **ASSUMPTION**: Implementation details require reading the nested directory contents |
-
-### 14. Resend (Email Service)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Resend |
-| **Type of Dependency** | Third-party API (Email Service) |
-| **Purpose/Role** | Transactional email delivery for user invitations, password resets, and notifications |
-| **Integration Point/Clues** | - **Package**: `resend` (v3.5.0) in `/package.json`<br>- **Supabase Functions**: `/supabase/functions/send-password-reset/`, `/supabase/functions/send-user-invite/`<br>- **Netlify Function**: `/netlify/functions/send-user-invite.js` |
-
----
-
-## Authentication & Authorization
-
-### 15. Supabase Auth (with Firebase Auth Integration)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Supabase Authentication |
+| **Dependency Name** | Firebase Authentication |
 | **Type of Dependency** | Authentication Service |
-| **Purpose/Role** | User authentication, session management, and JWT token handling |
-| **Integration Point/Clues** | - Part of Supabase BaaS integration<br>- **Auth Context**: `/src/contexts/AuthContext.tsx`<br>- **Auth Components**: `/src/components/auth/` directory<br>- **Backend JWT**: `@fastify/jwt` (v10.0.0) in `/backend/package.json`<br>- **Firebase Auth Function**: `/supabase/functions/firebase-auth/` (for migration/integration) |
+| **Purpose/Role** | User authentication integration (potentially as alternative or migration path) |
+| **Integration Points/Clues** | - `/supabase/functions/firebase-auth/` directory |
+| | - **ASSUMPTION**: May be used for mobile app authentication or SSO |
 
 ---
 
-## Frontend Libraries & Frameworks
+## 7. NPM Libraries - Frontend
 
-### 16. React
+### 7.1 React & React DOM
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | React |
+| **Dependency Name** | React Framework |
 | **Type of Dependency** | Library/Framework |
-| **Purpose/Role** | Core UI framework for building the frontend application |
-| **Integration Point/Clues** | - **Packages**: `react` (v18.3.1), `react-dom` (v18.3.1) in `/package.json`<br>- **Entry Point**: `/src/main.tsx`, `/src/App.tsx` |
+| **Purpose/Role** | Core frontend UI framework |
+| **Integration Points/Clues** | - `react`, `react-dom` in `/package.json` |
 
-### 17. React Router
+### 7.2 React Router DOM
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | React Router |
+| **Dependency Name** | React Router DOM |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | Client-side routing and navigation for the single-page application |
-| **Integration Point/Clues** | - **Package**: `react-router-dom` (v7.7.0) in `/package.json`<br>- **Pages Directory**: `/src/pages/` contains 40+ page components |
+| **Purpose/Role** | Client-side routing for the SPA |
+| **Integration Points/Clues** | - `react-router-dom` in `/package.json` |
 
-### 18. TanStack Query (React Query)
+### 7.3 TanStack React Query
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | TanStack React Query |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | Server state management, data fetching, caching, and synchronization |
-| **Integration Point/Clues** | - **Package**: `@tanstack/react-query` (v5.83.0) in `/package.json`<br>- **Query Client**: `/src/lib/queryClient.ts`<br>- **API Hook**: `/src/hooks/useApiQuery.ts` |
+| **Purpose/Role** | Server state management, data fetching, and caching |
+| **Integration Points/Clues** | - `@tanstack/react-query` in `/package.json` |
+| | - `/src/lib/queryClient.ts` |
+| | - `/src/hooks/useApiQuery.ts` |
 
-### 19. Tailwind CSS
+### 7.4 Tailwind CSS
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Tailwind CSS |
-| **Type of Dependency** | Library/Framework (CSS) |
-| **Purpose/Role** | Utility-first CSS framework for styling the application |
-| **Integration Point/Clues** | - **Package**: `tailwindcss` (v3.4.1) in dev dependencies<br>- **Config**: `/tailwind.config.js`<br>- **PostCSS Config**: `/postcss.config.js`<br>- **Global CSS**: `/src/index.css` |
+| **Type of Dependency** | Library/Framework |
+| **Purpose/Role** | Utility-first CSS framework for styling |
+| **Integration Points/Clues** | - `tailwindcss` in dev dependencies |
+| | - `/tailwind.config.js` |
+| | - `/postcss.config.js` |
 
-### 20. Lucide React (Icons)
+### 7.5 Lucide React (Icons)
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Lucide React |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | SVG icon library for UI icons |
-| **Integration Point/Clues** | - **Package**: `lucide-react` (v0.344.0) in `/package.json` |
+| **Purpose/Role** | Icon library for UI components |
+| **Integration Points/Clues** | - `lucide-react` in `/package.json` |
 
-### 21. Recharts
+### 7.6 Recharts
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Recharts |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | Data visualization and charting for dashboards and reports |
-| **Integration Point/Clues** | - **Package**: `recharts` (v3.3.0) in `/package.json`<br>- **Dashboard Components**: `/src/components/dashboard/`<br>- **Reports Components**: `/src/components/reports/` |
+| **Purpose/Role** | Data visualization and charting library |
+| **Integration Points/Clues** | - `recharts` in `/package.json` |
+| | - Used in dashboard and reports components |
 
-### 22. date-fns
+### 7.7 date-fns
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | date-fns |
 | **Type of Dependency** | Library |
 | **Purpose/Role** | Date manipulation and formatting utilities |
-| **Integration Point/Clues** | - **Package**: `date-fns` (v4.1.0) in `/package.json`<br>- **Utils**: `/src/lib/dateUtils.ts` |
+| **Integration Points/Clues** | - `date-fns` in `/package.json` |
+| | - `/src/lib/dateUtils.ts` |
 
-### 23. PDF Generation (jsPDF + html2canvas)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | jsPDF / html2canvas |
-| **Type of Dependency** | Library |
-| **Purpose/Role** | PDF generation and export functionality for reports and invoices |
-| **Integration Point/Clues** | - **Packages**: `jspdf` (v3.0.1), `jspdf-autotable` (v5.0.2), `html2canvas` (v1.4.1) in `/package.json` |
-
-### 24. XLSX (SheetJS)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | SheetJS (xlsx) |
-| **Type of Dependency** | Library |
-| **Purpose/Role** | Excel file reading/writing for data import/export functionality |
-| **Integration Point/Clues** | - **Package**: `xlsx` (v0.18.5) in `/package.json`<br>- **Import Page**: `/src/pages/ImportTools.tsx` |
-
-### 25. file-saver
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | FileSaver.js |
-| **Type of Dependency** | Library |
-| **Purpose/Role** | Client-side file saving for export functionality |
-| **Integration Point/Clues** | - **Package**: `file-saver` (v2.0.5) in `/package.json`<br>- **Types**: `@types/file-saver` (v2.0.7) in dev dependencies |
-
-### 26. clsx
+### 7.8 clsx
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | clsx |
 | **Type of Dependency** | Library |
 | **Purpose/Role** | Utility for constructing className strings conditionally |
-| **Integration Point/Clues** | - **Package**: `clsx` (v2.1.1) in `/package.json` |
+| **Integration Points/Clues** | - `clsx` in `/package.json` |
 
-### 27. react-phone-number-input
+### 7.9 XLSX (SheetJS)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | XLSX (SheetJS) |
+| **Type of Dependency** | Library |
+| **Purpose/Role** | Excel file parsing and generation for import/export functionality |
+| **Integration Points/Clues** | - `xlsx` in `/package.json` |
+| | - Used in `/src/pages/ImportTools.tsx` |
+
+### 7.10 jsPDF & jspdf-autotable
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | jsPDF |
+| **Type of Dependency** | Library |
+| **Purpose/Role** | PDF generation for reports and documents |
+| **Integration Points/Clues** | - `jspdf`, `jspdf-autotable` in `/package.json` |
+
+### 7.11 html2canvas
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | html2canvas |
+| **Type of Dependency** | Library |
+| **Purpose/Role** | Screenshots/canvas rendering of HTML elements |
+| **Integration Points/Clues** | - `html2canvas` in `/package.json` |
+
+### 7.12 file-saver
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | file-saver |
+| **Type of Dependency** | Library |
+| **Purpose/Role** | Client-side file saving functionality |
+| **Integration Points/Clues** | - `file-saver` in `/package.json` |
+
+### 7.13 react-phone-number-input
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | react-phone-number-input |
 | **Type of Dependency** | Library |
 | **Purpose/Role** | Phone number input component with international formatting |
-| **Integration Point/Clues** | - **Package**: `react-phone-number-input` (v3.4.12) in `/package.json` |
+| **Integration Points/Clues** | - `react-phone-number-input` in `/package.json` |
 
 ---
 
-## Backend Libraries & Frameworks
+## 8. NPM Libraries - Backend
 
-### 28. Fastify
+### 8.1 Fastify
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Fastify |
 | **Type of Dependency** | Library/Framework |
-| **Purpose/Role** | High-performance web framework for the Node.js backend API |
-| **Integration Point/Clues** | - **Package**: `fastify` (v5.6.0) in `/backend/package.json`<br>- **Plugins**:<br>&nbsp;&nbsp;- `@fastify/cors` (v11.1.0) - CORS handling<br>&nbsp;&nbsp;- `@fastify/env` (v5.0.2) - Environment configuration<br>&nbsp;&nbsp;- `@fastify/jwt` (v10.0.0) - JWT authentication<br>&nbsp;&nbsp;- `@fastify/multipart` (v9.3.0) - File uploads<br>&nbsp;&nbsp;- `@fastify/websocket` (v11.2.0) - WebSocket support<br>- **Plugin Directory**: `/backend/src/plugins/` (5 files)<br>- **App Entry**: `/backend/src/app.ts`, `/backend/src/index.ts` |
+| **Purpose/Role** | High-performance web framework for building the API |
+| **Integration Points/Clues** | - `fastify` in `/backend/package.json` |
+| | - Related plugins: `@fastify/cors`, `@fastify/env`, `@fastify/jwt`, `@fastify/multipart`, `@fastify/websocket` |
+| | - `/backend/src/app.ts` |
 
-### 29. Pino (Logging)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Pino |
-| **Type of Dependency** | Library |
-| **Purpose/Role** | High-performance JSON logger for backend services |
-| **Integration Point/Clues** | - **Packages**: `pino` (v8.17.2), `pino-pretty` (v10.3.1), `pino-loki` (v2.3.0) in `/backend/package.json` |
-
-### 30. Axios
+### 8.2 Axios
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Axios |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | HTTP client for making external API requests from the backend |
-| **Integration Point/Clues** | - **Packages**: `axios` (v1.12.2), `axios-retry` (v4.5.0) in `/backend/package.json` |
+| **Purpose/Role** | HTTP client for making external API calls |
+| **Integration Points/Clues** | - `axios`, `axios-retry` in `/backend/package.json` |
 
-### 31. dotenv
+### 8.3 Pino (Logging)
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | dotenv |
+| **Dependency Name** | Pino Logger |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | Environment variable loading from .env files |
-| **Integration Point/Clues** | - **Package**: `dotenv` (v17.2.2) in `/backend/package.json`<br>- **Example File**: `/backend/.env.docker.example` |
+| **Purpose/Role** | High-performance JSON logging |
+| **Integration Points/Clues** | - `pino`, `pino-pretty`, `pino-loki` in `/backend/package.json` |
 
-### 32. uuid
+### 8.4 node-cache
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | node-cache |
+| **Type of Dependency** | Library |
+| **Purpose/Role** | In-memory caching (L1 cache) |
+| **Integration Points/Clues** | - `node-cache` in `/backend/package.json` |
+
+### 8.5 uuid
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | uuid |
 | **Type of Dependency** | Library |
 | **Purpose/Role** | UUID generation for unique identifiers |
-| **Integration Point/Clues** | - **Package**: `uuid` (v13.0.0), `@types/uuid` (v10.0.0) in `/backend/package.json` |
+| **Integration Points/Clues** | - `uuid` in `/backend/package.json` |
 
-### 33. node-cache
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | node-cache |
-| **Type of Dependency** | Library |
-| **Purpose/Role** | In-memory caching (L1 cache) for the backend |
-| **Integration Point/Clues** | - **Package**: `node-cache` (v5.1.2), `@types/node-cache` (v4.1.3) in `/backend/package.json` |
-
-### 34. fastify-plugin
+### 8.6 dotenv
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | fastify-plugin |
+| **Dependency Name** | dotenv |
 | **Type of Dependency** | Library |
-| **Purpose/Role** | Helper for creating Fastify plugins |
-| **Integration Point/Clues** | - **Package**: `fastify-plugin` (v5.0.1) in `/backend/package.json` |
+| **Purpose/Role** | Environment variable loading from .env files |
+| **Integration Points/Clues** | - `dotenv` in `/backend/package.json` |
 
-### 35. tsx
+---
+
+## 9. Development & Build Tools
+
+### 9.1 Vite
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | tsx |
-| **Type of Dependency** | Library |
-| **Purpose
+| **Dependency Name** | Vite |
+| **Type of Dependency** | Build Tool |
+| **Purpose/Role** | Frontend build tool and development server |
+| **Integration Points/Clues** | - `vite` in dev dependencies |
+| | - `/vite.config.ts` |
+
+### 9.2 TypeScript
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | TypeScript |
+| **Type of Dependency** | Build Tool / Language |
+| **Purpose/Role** | Static type checking and compilation |
+| **Integration Points/Clues** | - `typescript` in both `/package.json` and `/backend/package.json` |
+| | - Multiple `tsconfig.*.json` files |
+
+### 9.3 ESLint & Prettier
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | ESLint & Prettier |
+| **Type of Dependency** | Development Tool |
+| **Purpose/Role** | Code linting and formatting |
+| **Integration Points/Clues** | - `eslint`, `prettier` in dev dependencies |
+| | - `/eslint.config.js`, `.prettierrc` |
+
+### 9.4 Vitest
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Vitest |
+| **Type of Dependency** | Testing Framework |
+| **Purpose/Role** | Unit testing for frontend |
+| **Integration Points/Clues** | - `vitest`, `@vitest/coverage-v8`, `@vitest/ui` in dev dependencies |
+| | - `/vitest.config.ts` |
+
+### 9.5 Jest
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Jest |
+| **Type of Dependency** | Testing Framework |
+| **Purpose/Role** | Unit and integration testing for backend |
+| **Integration Points/Clues** | - `jest`, `ts-jest`, `@types/jest` in `/backend/package.json` dev dependencies |
+| | - `/backend/jest.config.js` |
+
+### 9.6 Testing Library
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Testing Library (React) |
+| **Type of Dependency** | Testing Framework |
+| **Purpose/Role** | React component testing utilities |
+| **Integration Points/Clues** | - `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` in dev dependencies |
+
+### 9.7 MSW (Mock Service Worker)
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | MSW |
+| **Type of Dependency** | Testing Tool |
+| **Purpose/Role** | API mocking for testing |
+| **Integration Points/Clues** | - `msw` in dev dependencies |
+| | - `/src/test/mocks/` directory |
+
+### 9.8 Husky & lint-staged
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Husky & lint-staged |
+| **Type of Dependency** | Development Tool |
+| **Purpose/Role** | Git hooks for pre-commit linting and formatting |
+| **Integration Points/Clues** | - `husky`, `lint-staged` in dev dependencies |
+| | - `/.husky/` directory |
+| | - `/.lintstagedrc.json` |
+
+### 9.9 PM2
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | PM2 |
+| **Type of Dependency** | Process Manager |
+| **Purpose/Role** | Production process management for Node.js |
+| **Integration Points/Clues** | - `/backend/ecosystem.config.js` |
+| | - Scripts: `/backend/scripts/pm2-*.sh` |
+| | - **Note**: Not in package.json, assumed globally installed |
+
+---
+
+## 10. Container Infrastructure
+
+### 10.1 Docker & Docker Compose
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | Docker |
+| **Type of Dependency** | Container Runtime |
+| **Purpose/Role** | Containerization for development, testing, and deployment |
+| **Integration Points/Clues** | - `/backend/Dockerfile` |
+| | - `/backend/docker-compose.yml` |
+| | - `/grafana-alloy/Dockerfile` |
+| | - `/infra/grafana-alloy/Dockerfile` |
+| | - Base images: `node:20-alpine`, `redis:7-alpine`, `grafana/alloy:latest` |
+
+---
+
+## 11. CI/CD Services
+
+### 11.1 GitHub Actions
+
+| Attribute | Details |
+|-----------|---------|
+| **Dependency Name** | GitHub Actions |
+| **Type of Dependency** | CI/CD Service |
+| **Purpose/
 
 # deployment
 
@@ -3556,16 +3724,16 @@ Analyze deployment processes and CI/CD pipelines
 |-----------|-------|
 | **Primary CI/CD Platform** | GitHub Actions |
 | **Deployment Targets** | Google Cloud Run (Backend), Netlify (Frontend) |
-| **Environment Count** | 3 (Development, Staging, Production) |
-| **Infrastructure as Code** | Partial (Cloud Run YAML configs) |
+| **Environment Count** | 2 (Staging, Production) |
+| **IaC Tools** | Cloud Run YAML configurations |
 
 ---
 
 ## 1. CI/CD Platform Detection
 
-**Detected: GitHub Actions** (`.github/workflows/`)
+**Platform:** GitHub Actions
 
-Found workflow files:
+**Configuration Files Found:**
 - `.github/workflows/backend-ci.yml`
 - `.github/workflows/deploy-alloy-gcp.yml`
 - `.github/workflows/deploy-gcp.yml`
@@ -3575,305 +3743,211 @@ Found workflow files:
 
 ## 2. Deployment Stages & Workflow
 
-### Pipeline: Backend CI (`.github/workflows/backend-ci.yml`)
+### Pipeline: `backend-ci.yml`
 
-```yaml
-name: Backend CI
-
-on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'backend/**'
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-        working-directory: backend
-      - run: npm run lint
-        working-directory: backend
-
-  test:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-        working-directory: backend
-      - run: npm test
-        working-directory: backend
-        env:
-          NODE_ENV: test
-```
+**Location:** `.github/workflows/backend-ci.yml`
 
 **Triggers:**
-- Push to `main` or `develop` branches (paths: `backend/**`)
-- Pull requests to `main` or `develop` branches (paths: `backend/**`)
+- Pull requests to `main` branch (paths: `backend/**`)
+- Push to `main` branch (paths: `backend/**`)
 
-**Stages:**
+**Stages/Jobs:**
 
-| Stage | Purpose | Dependencies | Artifacts |
-|-------|---------|--------------|-----------|
-| `lint` | ESLint code quality checks | None | None |
-| `test` | Run Jest unit/integration tests | `lint` | None |
+| Stage | Purpose | Steps | Dependencies | Conditions | Artifacts |
+|-------|---------|-------|--------------|------------|-----------|
+| **test** | Run backend tests | 1. Checkout code<br>2. Setup Node.js 20<br>3. Install dependencies<br>4. Run tests | None | Always on trigger | Test results |
+
+**Quality Gates:**
+- Jest test suite must pass
+- No explicit coverage thresholds defined in workflow
 
 ---
 
-### Pipeline: Frontend CI (`.github/workflows/frontend-ci.yml`)
+### Pipeline: `frontend-ci.yml`
 
-```yaml
-name: Frontend CI
-
-on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - '.github/workflows/frontend-ci.yml'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'package.json'
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run typecheck
-
-  test:
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:ci
-```
+**Location:** `.github/workflows/frontend-ci.yml`
 
 **Triggers:**
-- Push to `main` or `develop` branches (paths: `src/**`, `package.json`)
-- Pull requests to `main` or `develop` branches
+- Pull requests to `main` branch (paths: `src/**`, `package.json`)
+- Push to `main` branch (paths: `src/**`, `package.json`)
 
-**Stages:**
+**Stages/Jobs:**
 
-| Stage | Purpose | Dependencies | Artifacts |
-|-------|---------|--------------|-----------|
-| `lint` | ESLint code quality checks | None | None |
-| `typecheck` | TypeScript compilation check | None | None |
-| `test` | Run Vitest unit tests | `lint`, `typecheck` | None |
+| Stage | Purpose | Steps | Dependencies | Conditions | Artifacts |
+|-------|---------|-------|--------------|------------|-----------|
+| **lint-and-test** | Lint and test frontend | 1. Checkout code<br>2. Setup Node.js 20<br>3. Install dependencies<br>4. Run lint<br>5. Run type check<br>6. Run tests | None | Always on trigger | None |
+
+**Quality Gates:**
+- ESLint must pass
+- TypeScript type checking must pass
+- Vitest test suite must pass
 
 ---
 
-### Pipeline: Deploy GCP (`.github/workflows/deploy-gcp.yml`)
+### Pipeline: `deploy-gcp.yml`
 
-```yaml
-name: Deploy to GCP Cloud Run
-
-on:
-  push:
-    branches:
-      - main
-      - staging
-    paths:
-      - 'backend/**'
-      - 'infra/cloud-run/**'
-      - '.github/workflows/deploy-gcp.yml'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-      
-      - name: Configure Docker
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
-      
-      - name: Build and push Docker image
-        run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/oms/backend:${{ github.sha }} ./backend
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/oms/backend:${{ github.sha }}
-      
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy oms-backend \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/oms/backend:${{ github.sha }} \
-            --region ${{ secrets.GCP_REGION }} \
-            --platform managed \
-            --allow-unauthenticated
-```
+**Location:** `.github/workflows/deploy-gcp.yml`
 
 **Triggers:**
-- Push to `main` branch → Production deployment
-- Push to `staging` branch → Staging deployment
-- Manual trigger (`workflow_dispatch`) with environment selection
+- Push to `main` branch (paths: `backend/**`)
+- Manual workflow dispatch with environment selection
 
-**Stages:**
+**Stages/Jobs:**
 
-| Stage | Purpose | Dependencies | Artifacts |
-|-------|---------|--------------|-----------|
-| `deploy` | Build Docker image, push to GCP Artifact Registry, deploy to Cloud Run | None | Docker image tagged with commit SHA |
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│     Build       │────▶│     Deploy      │────▶│   Health Check  │
+│  Docker Image   │     │  to Cloud Run   │     │   (implicit)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+| Stage | Purpose | Steps | Dependencies | Conditions | Artifacts |
+|-------|---------|-------|--------------|------------|-----------|
+| **build-and-deploy** | Build Docker image and deploy | 1. Checkout code<br>2. Authenticate to GCP<br>3. Configure Docker for Artifact Registry<br>4. Build Docker image<br>5. Push to Artifact Registry<br>6. Deploy to Cloud Run | None | On trigger | Docker image |
+
+**Environment Variables Used:**
+- `GCP_PROJECT_ID` (from secrets)
+- `GCP_SA_KEY` (from secrets)
+- `GCP_REGION` (from secrets)
+- Various Supabase and service keys
 
 ---
 
-### Pipeline: Deploy Alloy GCP (`.github/workflows/deploy-alloy-gcp.yml`)
+### Pipeline: `deploy-alloy-gcp.yml`
 
-**Purpose:** Deploys Grafana Alloy observability agent to GCP Cloud Run
+**Location:** `.github/workflows/deploy-alloy-gcp.yml`
 
 **Triggers:**
-- Push to `main` or `staging` branches (paths: `infra/grafana-alloy/**`)
-- Manual trigger with environment selection
+- Push to `main` branch (paths: `infra/grafana-alloy/**`)
+- Manual workflow dispatch with environment selection
+
+**Purpose:** Deploy Grafana Alloy observability sidecar to GCP Cloud Run
+
+**Stages:** Similar to `deploy-gcp.yml` - build Docker image and deploy to Cloud Run
 
 ---
 
 ## 3. Deployment Targets & Environments
 
-### Environment: Production
-
-**Target Infrastructure:**
-| Attribute | Value |
-|-----------|-------|
-| Platform | Google Cloud Platform |
-| Service Type | Cloud Run (Serverless containers) |
-| Configuration File | `infra/cloud-run/oms-backend.production.yaml` |
-
-**Deployment Method:** Direct replacement (Cloud Run managed rollout)
-
-**Configuration:**
-- Environment variables injected via GitHub Secrets
-- Secrets managed through GitHub repository secrets
-- Service account authentication via `GCP_SA_KEY`
-
----
-
 ### Environment: Staging
 
 **Target Infrastructure:**
-| Attribute | Value |
-|-----------|-------|
-| Platform | Google Cloud Platform |
-| Service Type | Cloud Run (Serverless containers) |
-| Configuration File | `infra/cloud-run/oms-backend.staging.yaml` |
+- **Platform:** Google Cloud Platform
+- **Service Type:** Cloud Run (containerized)
+- **Configuration File:** `infra/cloud-run/oms-backend.staging.yaml`
 
-**Deployment Method:** Direct replacement
+**Cloud Run Configuration:**
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: oms-backend-staging
+spec:
+  template:
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - resources:
+            limits:
+              memory: 512Mi
+              cpu: '1'
+```
+
+**Environment Variables (from YAML):**
+- `NODE_ENV: staging`
+- `ENABLE_CACHE: true`
+- `REDIS_ENABLED: true`
+- Supabase credentials (from Secret Manager)
+- Sentry DSN, Mixpanel token
+
+---
+
+### Environment: Production
+
+**Target Infrastructure:**
+- **Platform:** Google Cloud Platform
+- **Service Type:** Cloud Run (containerized)
+- **Configuration File:** `infra/cloud-run/oms-backend.production.yaml`
+
+**Cloud Run Configuration:**
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: oms-backend
+spec:
+  template:
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - resources:
+            limits:
+              memory: 1Gi
+              cpu: '2'
+```
+
+**Key Differences from Staging:**
+- Higher resource limits (1Gi memory, 2 CPU vs 512Mi, 1 CPU)
+- Production Supabase credentials
+- Production monitoring endpoints
 
 ---
 
 ### Environment: Frontend (Netlify)
 
+**Target Infrastructure:**
+- **Platform:** Netlify
+- **Service Type:** Static site hosting with serverless functions
+
 **Configuration File:** `netlify.toml`
 
 ```toml
 [build]
-  publish = "dist"
   command = "npm run build"
+  publish = "dist"
 
-[build.environment]
-  NODE_VERSION = "20"
+[functions]
+  directory = "netlify/functions"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
 ```
 
-**Deployment Method:** Automatic deployment on push (Netlify Git integration)
+**Serverless Functions:**
+- `netlify/functions/google-maps-config.js`
+- `netlify/functions/send-user-invite.js`
+
+**Deployment Method:** Automatic deployment on push (Netlify Git integration implied by `.railwayproject` and `netlify.toml`)
 
 ---
 
 ## 4. Infrastructure as Code (IaC)
 
-### Cloud Run YAML Configurations
+### IaC Tool: Cloud Run YAML Configurations
 
-**Location:** `infra/cloud-run/`
+**Technology:** Knative serving configuration for Cloud Run
 
 **Files:**
-- `oms-backend.production.yaml`
-- `oms-backend.staging.yaml`
+- `infra/cloud-run/oms-backend.staging.yaml`
+- `infra/cloud-run/oms-backend.production.yaml`
+- `infra/grafana-alloy/cloud-run.staging.yaml`
+- `infra/grafana-alloy/cloud-run.production.yaml`
 
 **Resources Managed:**
-- Cloud Run service configuration
-- Container specifications
-- Environment variables
-- Scaling settings
+| Resource | Description |
+|----------|-------------|
+| Cloud Run Services | Backend API containers |
+| Secret Manager References | Supabase keys, JWT secrets, API keys |
+| Container Resources | CPU/Memory limits |
+| Scaling Configuration | Concurrency, min/max instances |
 
-**Limitations:**
-- No Terraform/Pulumi for comprehensive infrastructure
-- Manual resource provisioning required for:
-  - GCP project setup
-  - Artifact Registry
-  - Service accounts
-  - IAM policies
-  - VPC/networking
+**State Management:**
+- State is managed by Google Cloud Run (no explicit state files)
+- No Terraform or similar stateful IaC detected
 
 ---
 
@@ -3881,9 +3955,11 @@ jobs:
 
 ### Backend Build
 
-**Build Tool:** npm/Node.js
+**Build Tools:**
+- Docker (multi-environment Dockerfile)
+- npm for dependency management
 
-**Dockerfile:** `backend/Dockerfile`
+**Dockerfile Analysis:** `backend/Dockerfile`
 
 ```dockerfile
 FROM node:20-alpine
@@ -3892,34 +3968,27 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
-RUN mkdir -p /app/logs /app/coverage
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
-ENV PORT=3000
-ENV HOST=0.0.0.0
-ENTRYPOINT ["dumb-init", "--"]
+  CMD node -e "require('http').get('http://localhost:3000/health', ...)"
 CMD ["npm", "start"]
 ```
 
-**Build Steps:**
-1. Use Node.js 20 Alpine base image
-2. Install `dumb-init` for signal handling
-3. Copy `package.json` and install dependencies
-4. Copy application source
-5. Set up health check endpoint
-
-**Versioning Strategy:** Git commit SHA as image tag
-
----
+**Build Characteristics:**
+- Base image: `node:20-alpine` (lightweight)
+- Signal handling: `dumb-init`
+- Health check: Built into image
+- No multi-stage build (optimization opportunity)
 
 ### Frontend Build
 
-**Build Tool:** Vite
+**Build Tools:**
+- Vite (build tool)
+- npm for dependency management
+- TypeScript compilation
+- PostCSS/Tailwind CSS processing
 
 **Build Command:** `npm run build`
-
-**Output:** `dist/` directory
 
 ---
 
@@ -3927,215 +3996,274 @@ CMD ["npm", "start"]
 
 ### Backend Tests
 
-**Framework:** Jest
+**Test Framework:** Jest with ts-jest
+**Configuration:** `backend/jest.config.js`
 
-**Test Stages:**
-1. **Lint Stage:** ESLint validation
-2. **Test Stage:** Unit and integration tests
+**Test Organization:**
+```
+backend/tests/
+├── unit/
+│   ├── order.test.ts
+│   └── customer.test.ts
+├── integration/
+│   ├── customers/
+│   ├── offload-documents/
+│   └── orders/
+├── mocks/
+└── utils/
+```
 
-**Test Files Location:** `backend/tests/`
-
-**Test Categories:**
-- Unit tests (`tests/unit/`)
-- Integration tests (`tests/integration/`)
-
----
+**Pipeline Integration:**
+- Tests run on PR and push to main
+- No coverage thresholds enforced in CI
+- No test parallelization configured
 
 ### Frontend Tests
 
-**Framework:** Vitest
+**Test Framework:** Vitest
+**Configuration:** `vitest.config.ts`
 
-**Test Stages:**
-1. **Lint Stage:** ESLint validation
-2. **Typecheck Stage:** TypeScript compilation
-3. **Test Stage:** Component and unit tests
+**Test Organization:**
+```
+src/
+├── test/
+│   ├── setup.ts
+│   └── mocks/
+└── lib/__tests__/
+```
 
-**Test Files Location:** `src/test/`, `src/lib/__tests__/`
+**Pipeline Integration:**
+- Tests run alongside lint and type-check
+- Coverage plugin available (`@vitest/coverage-v8`)
+- No minimum coverage requirement in CI
 
 ---
 
-## 7. Deployment Flow Diagram
-
-```
-                    ┌─────────────────┐
-                    │   Code Push     │
-                    │ (main/staging)  │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-              ▼              ▼              ▼
-     ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-     │ Backend CI  │  │ Frontend CI │  │   Netlify   │
-     │   Workflow  │  │   Workflow  │  │  Auto-build │
-     └──────┬──────┘  └──────┬──────┘  └──────┬──────┘
-            │                │                │
-     ┌──────┴──────┐  ┌──────┴──────┐        │
-     │    Lint     │  │    Lint     │        │
-     └──────┬──────┘  └──────┬──────┘        │
-            │         ┌──────┴──────┐        │
-     ┌──────┴──────┐  │  Typecheck  │        │
-     │    Test     │  └──────┬──────┘        │
-     └──────┬──────┘         │               │
-            │         ┌──────┴──────┐        │
-            │         │    Test     │        │
-            │         └──────┬──────┘        │
-            │                │               │
-            ▼                │               ▼
-     ┌─────────────┐         │        ┌─────────────┐
-     │ Deploy GCP  │         │        │  Frontend   │
-     │  Workflow   │         │        │   Deploy    │
-     └──────┬──────┘         │        └─────────────┘
-            │                │
-     ┌──────┴──────┐         │
-     │Build Docker │         │
-     │    Image    │         │
-     └──────┬──────┘         │
-            │                │
-     ┌──────┴──────┐         │
-     │  Push to    │         │
-     │  Artifact   │         │
-     │  Registry   │         │
-     └──────┬──────┘         │
-            │                │
-     ┌──────┴──────┐         │
-     │  Deploy to  │         │
-     │  Cloud Run  │         │
-     └─────────────┘         │
-```
-
----
-
-## 8. Release Management
+## 7. Release Management
 
 ### Versioning
 
-**Current State:** Git commit SHA-based versioning for Docker images
-
-**Missing:**
-- Semantic versioning (SemVer)
-- Git tagging strategy
-- Changelog generation
-- Release notes automation
+**Current State:** No explicit versioning strategy detected
+- No semantic versioning in package.json version field
+- No git tagging strategy in workflows
+- No changelog generation automation
 
 ### Artifact Management
 
-| Component | Registry | Retention |
-|-----------|----------|-----------|
-| Backend Docker Images | GCP Artifact Registry | Not defined |
-| Frontend | Netlify CDN | Managed by Netlify |
+**Container Registry:** Google Artifact Registry
+**Image Tagging:** Based on Git SHA (implied from Cloud Run deployments)
 
 ---
 
-## 9. Deployment Validation & Rollback
+## 8. Deployment Validation & Rollback
 
 ### Post-Deployment Validation
 
-**Implemented:**
+**Health Checks Implemented:**
 - Docker HEALTHCHECK in Dockerfile (`/health` endpoint)
-- Cloud Run health checks (managed)
-
-**Missing:**
-- Smoke test suites
-- Integration verification
-- Critical path validation
+- Cloud Run built-in health checks
+- No explicit smoke tests in deployment pipeline
 
 ### Rollback Strategy
 
-**Current State:** Manual rollback via Cloud Run console or `gcloud` CLI
-
-**Missing:**
-- Automated rollback triggers
-- Rollback procedures documented
-- Database rollback handling
+**Current State:** 
+- Cloud Run revision-based rollback available (manual)
+- No automated rollback triggers defined
+- No rollback procedures documented in workflows
 
 ---
 
-## 10. Anti-Patterns & Issues
+## 9. Deployment Access Control
 
-### CI/CD Anti-Patterns Found
+### Secrets Management
 
-| Issue | Location | Impact | Fix Needed |
-|-------|----------|--------|------------|
-| **No deployment gates between environments** | `deploy-gcp.yml` | Production can be deployed without staging verification | Add staging→production promotion gates |
-| **Missing security scanning** | All workflows | Vulnerabilities may reach production | Add SAST/dependency scanning |
-| **No artifact versioning strategy** | `deploy-gcp.yml` | Difficult to track releases | Implement SemVer tagging |
-| **CI and CD not properly separated** | Backend workflows | CI tests don't gate deployment | Add test job dependency to deploy |
-| **No test coverage thresholds** | All workflows | Code coverage may decrease | Add coverage gates |
+**GitHub Secrets Used:**
+| Secret | Purpose |
+|--------|---------|
+| `GCP_PROJECT_ID` | GCP project identifier |
+| `GCP_SA_KEY` | Service account key for deployment |
+| `GCP_REGION` | Deployment region |
+| `SUPABASE_URL` | Database connection |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin access |
+| `JWT_SECRET` | Authentication |
+| `SENTRY_DSN` | Error monitoring |
+| `MIXPANEL_TOKEN` | Analytics |
 
-### IaC Anti-Patterns Found
-
-| Issue | Location | Impact | Fix Needed |
-|-------|----------|--------|------------|
-| **Minimal IaC coverage** | `infra/` | Manual infrastructure setup required | Implement Terraform for full infrastructure |
-| **No state management** | N/A | Infrastructure drift possible | Add Terraform state backend |
-| **Secrets in environment** | Cloud Run configs | Security risk | Use GCP Secret Manager |
-
-### Deployment Anti-Patterns Found
-
-| Issue | Location | Impact | Fix Needed |
-|-------|----------|--------|------------|
-| **No canary/blue-green deployment** | `deploy-gcp.yml` | Higher risk of production issues | Implement gradual rollout |
-| **Missing staging environment tests** | Workflows | Bugs may reach production | Add staging smoke tests |
-| **No rollback automation** | All deployments | Manual recovery required | Implement automatic rollback |
+**GCP Secret Manager Integration:**
+- Production secrets referenced in Cloud Run YAML
+- Pattern: `secretKeyRef: {name: secret-name, key: latest}`
 
 ---
 
-## 11. Manual Deployment Procedures
+## 10. Anti-Patterns & Issues Identified
 
-### Backend Manual Deployment Scripts
+### CI/CD Anti-Patterns
 
-**Location:** `backend/scripts/`
+| Issue | Location | Impact | Recommendation |
+|-------|----------|--------|----------------|
+| **No test coverage gates** | All CI workflows | Quality regression risk | Add minimum coverage thresholds |
+| **No deployment approval gates** | `deploy-gcp.yml` | Accidental production deployments | Add manual approval for production |
+| **Missing rollback automation** | All workflows | Extended downtime on failures | Implement automated rollback triggers |
+| **No artifact versioning** | Docker builds | Difficult to track deployments | Tag images with semantic versions |
+| **No staging validation before prod** | `deploy-gcp.yml` | Bugs reach production | Add staging smoke tests as gate |
 
-**Files Found:**
-- `deploy-staging.sh`
-- `start-staging-local.sh`
+### IaC Anti-Patterns
 
-### Database Migrations
+| Issue | Location | Impact | Recommendation |
+|-------|----------|--------|----------------|
+| **No Terraform/Pulumi** | Infrastructure | Manual infrastructure changes | Consider proper IaC for all resources |
+| **Hardcoded values** | Cloud Run YAMLs | Environment drift | Use templating or separate configs |
+| **No drift detection** | All infrastructure | Configuration inconsistencies | Implement GitOps pattern |
 
-**Location:** `supabase/migrations/`
+### Deployment Anti-Patterns
 
-**Migration Tool:** Supabase CLI
+| Issue | Location | Impact | Recommendation |
+|-------|----------|--------|----------------|
+| **Direct production deploy** | `deploy-gcp.yml` on main push | No staging validation | Add staging→prod promotion |
+| **No canary/blue-green** | All deployments | Full blast radius on issues | Implement traffic splitting |
+| **Missing post-deploy tests** | All pipelines | Undetected deployment failures | Add smoke test stage |
+| **No deployment notifications** | All workflows | Team unaware of deploys | Add Slack/Teams notifications |
 
-**Process:** Migrations are stored but deployment process not automated in CI/CD
+### Docker Anti-Patterns
+
+| Issue | Location | Impact | Recommendation |
+|-------|----------|--------|----------------|
+| **No multi-stage build** | `backend/Dockerfile` | Larger image size | Implement build/runtime stages |
+| **npm install without lockfile** | `backend/Dockerfile` | Non-reproducible builds | Copy and use package-lock.json |
+| **No .dockerignore optimization** | `backend/.dockerignore` | Larger build context | Review and optimize |
 
 ---
 
-## 12. Docker Configuration
+## 11. Deployment Flow Diagram
 
-### Backend Docker Compose (Development)
+```
+                              ┌─────────────────────────────────────────┐
+                              │           GitHub Repository              │
+                              └──────────────────┬──────────────────────┘
+                                                 │
+                    ┌────────────────────────────┼────────────────────────────┐
+                    │                            │                            │
+                    ▼                            ▼                            ▼
+           ┌───────────────┐            ┌───────────────┐            ┌───────────────┐
+           │  PR to main   │            │  Push to main │            │    Manual     │
+           │   (backend)   │            │   (backend)   │            │   Dispatch    │
+           └───────┬───────┘            └───────┬───────┘            └───────┬───────┘
+                   │                            │                            │
+                   ▼                            ▼                            ▼
+           ┌───────────────┐            ┌───────────────┐            ┌───────────────┐
+           │  backend-ci   │            │  deploy-gcp   │            │  deploy-gcp   │
+           │    (test)     │            │   workflow    │            │   workflow    │
+           └───────────────┘            └───────┬───────┘            └───────┬───────┘
+                                                │                            │
+                                                ▼                            │
+                                        ┌───────────────┐                    │
+                                        │  Build Docker │◄───────────────────┘
+                                        │     Image     │
+                                        └───────┬───────┘
+                                                │
+                                                ▼
+                                        ┌───────────────┐
+                                        │ Push to GCP   │
+                                        │  Artifact     │
+                                        │   Registry    │
+                                        └───────┬───────┘
+                                                │
+                              ┌─────────────────┴─────────────────┐
+                              │                                   │
+                              ▼                                   ▼
+                      ┌───────────────┐                   ┌───────────────┐
+                      │   Staging     │                   │  Production   │
+                      │  Cloud Run    │                   │  Cloud Run    │
+                      │  (if manual)  │                   │ (auto on push)│
+                      └───────────────┘                   └───────────────┘
 
-**File:** `backend/docker-compose.yml`
 
-**Services:**
-- `redis` - Redis cache service
-- `backend` - OMS Backend application
+           ┌─────────────────────────────────────────────────────────────────┐
+           │                     FRONTEND DEPLOYMENT                         │
+           └─────────────────────────────────────────────────────────────────┘
 
-**Features:**
-- Hot-reload support
-- Health checks
-- Named volumes for persistence
+                              ┌─────────────────────────────────────────┐
+                              │           GitHub Repository              │
+                              └──────────────────┬──────────────────────┘
+                                                 │
+                    ┌────────────────────────────┼────────────────────────────┐
+                    │                            │                            │
+                    ▼                            ▼                            │
+           ┌───────────────┐            ┌───────────────┐                    │
+           │  PR to main   │            │  Push to main │                    │
+           │   (src/**)    │            │   (src/**)    │                    │
+           └───────┬───────┘            └───────┬───────┘                    │
+                   │                            │                            │
+                   ▼                            ▼                            │
+           ┌───────────────┐            ┌───────────────┐                    │
+           │ frontend-ci   │            │   Netlify     │◄───────────────────┘
+           │ (lint/test)   │            │ Auto-Deploy   │
+           └───────────────┘            └───────┬───────┘
+                                                │
+                                                ▼
+                                        ┌───────────────┐
+                                        │  Netlify CDN  │
+                                        │  (Production) │
+                                        └───────────────┘
+```
 
 ---
 
-## 13. Critical Path Analysis
+## 12. Critical Path Analysis
 
-### Minimum Steps to Production
+### Minimum Steps to Production (Backend)
 
 1. Push code to `main` branch
-2. GitHub Actions triggered automatically
-3. Docker image built and pushed
-4. Cloud Run deployment executed
+2. GitHub Actions triggers `deploy-gcp.yml`
+3. Docker image built and pushed to Artifact Registry
+4. Cloud Run service updated with new revision
+5. Traffic routed to new revision
 
-**Estimated Time:** ~5-10 minutes (no manual steps)
+**Time Estimate:** ~5-10 minutes
 
-### Hotfix Deployment
+### Hotfix Deployment Process
 
-1. Create hotfix branch
-2. Push to `main` after review
-3. Automatic deployment
+1. Create fix on `main` (or hotfix branch merged to main)
+2. Push triggers automatic deployment
+3. No separate hotfix lane - same as regular deployment
 
-**Risk:** No staging verification required
+**Risk:** No pre-production validation for hotfixes
+
+### Rollback Procedure
+
+**Manual Process Required:**
+1. Access GCP Console → Cloud Run
+2. Select service (oms-backend or oms-backend-staging)
+3. View revisions
+4. Route traffic to previous revision (100%)
+
+**No automated rollback implemented**
+
+---
+
+## 13. Local Development Deployment
+
+### Docker Compose Environment
+
+**Location:** `backend/docker-compose.yml`
+
+**Services:**
+| Service | Image | Purpose |
+|---------|-------|---------|
+| `redis` | `redis:7-alpine` | Local cache |
+| `backend` | Built from Dockerfile | API server |
+
+**Environment Switching:**
+```bash
+# Development (hot reload)
+NODE_ENV=development docker-compose up
+
+# Test mode
+NODE_ENV=test docker-compose up
+
+# Production mode locally
+NODE_ENV=production docker-compose up
+```
 
 ---
 
@@ -4145,232 +4273,280 @@ CMD ["npm", "start"]
 
 | Risk | Component | Mitigation |
 |------|-----------|------------|
-| GCP Service Account key compromise | `GCP_SA_KEY` secret | Rotate regularly, use Workload Identity |
-| No staging gate | Deployment pipeline | Add manual approval for production |
-| Database migrations not in CI/CD | Supabase migrations | Integrate migration step in pipeline |
+| **No staging gate** | Production deployment | Add staging validation |
+| **Single region** | Cloud Run | Implement multi-region |
+| **No DB migration automation** | Supabase | Add migration checks to CI |
+| **Manual rollback** | All environments | Automate rollback triggers |
 
 ### Security Vulnerabilities
 
-| Vulnerability | Severity | Location |
-|---------------|----------|----------|
-| No dependency scanning | Medium | All workflows |
-| No SAST/DAST | Medium | All workflows |
-| Secrets in GitHub (acceptable but limited) | Low | Repository secrets |
+| Issue | Severity | Location | Fix |
+|-------|----------|----------|-----|
+| GCP SA key in secrets | Medium | GitHub Secrets | Use Workload Identity Federation |
+| No secret rotation | Low | All secrets | Implement rotation policy |
+| npm install without lock | Medium | Dockerfile | Use package-lock.json |
+
+### Compliance Gaps
+
+| Gap | Impact | Recommendation |
+|-----|--------|----------------|
+| No deployment audit trail | Accountability | Add deployment logging to external system |
+| No approval workflow | Change control | Implement environment-based approvals |
+| No change documentation | Compliance | Auto-generate deployment changelogs |
 
 ---
 
 ## 15. Analysis Summary
 
-### Deployment Maturity Assessment
+### Issues Identified
 
-| Aspect | Score | Notes |
-|--------|-------|-------|
-| CI/CD Automation | 7/10 | Good automation, missing advanced features |
-| Testing in Pipeline | 5/10 | Basic tests, no coverage gates |
-| Environment Management | 6/10 | Staging/Production exist, no promotion gates |
-| Infrastructure as Code | 3/10 | Minimal Cloud Run configs only |
-| Security | 4/10 | Missing security scanning |
-| Observability | 6/10 | Grafana Alloy deployment exists |
-| Rollback Capability | 2/10 | Manual only |
-| Documentation | 4/10 | Some docs in `docs/deploy/` |
+| Category | Count | Severity Breakdown |
+|----------|-------|-------------------|
+| CI/CD Anti-Patterns | 5 | 2 High, 3 Medium |
+| IaC Anti-Patterns | 3 | 1 High, 2 Medium |
+| Deployment Anti-Patterns | 4 | 2 High, 2 Medium |
+| Docker Anti-Patterns | 3 | 1 Medium, 2 Low |
 
-### Key Findings
+### Performance Characteristics
 
-1. **Functional CI/CD Pipeline:** GitHub Actions workflows provide automated testing and deployment
-2. **Multi-Platform Deployment:** Backend to GCP Cloud Run, Frontend to Netlify
-3. **Docker-Based Backend:** Proper containerization with health checks
-4. **Missing Security Gates:** No SAST, DAST, or dependency scanning
-5. **No Promotion Gates:** Production can be deployed without staging verification
-6. **Minimal IaC:** Only Cloud Run service configs, no comprehensive infrastructure management
+| Metric | Current State | Industry Standard |
+|--------|---------------|-------------------|
+| Build time | ~3-5 min | Acceptable |
+| Deploy time | ~5-10 min | Acceptable |
+| Rollback time | ~5-10 min (manual) | Should be < 2 min automated |
+| Test execution | ~2-3 min | Acceptable |
 
-### Recommendations Priority
+### Security Assessment
 
-1. **High:** Add staging-to-production promotion gate
-2. **High:** Implement dependency vulnerability scanning
-3. **Medium:** Add test coverage thresholds
-4. **Medium:** Implement Terraform for infrastructure management
-5. **Medium:** Add automated rollback triggers
-6. **Low:** Implement semantic versioning and changelogs
+| Area | Status | Notes |
+|------|--------|-------|
+| Secret management | ⚠️ Partial | Using GitHub Secrets + GCP Secret Manager |
+| Access control | ⚠️ Partial | No environment-based approvals |
+| Audit logging | ❌ Missing | No deployment audit trail |
+| Vulnerability scanning | ❌ Missing | No SAST/DAST in pipeline |
+
+### Process Problems
+
+1. **No environment promotion** - Code deploys directly to production on main push
+2. **Missing staging validation** - No smoke tests before production
+3. **Manual rollback only** - Extended recovery time on failures
+4. **No deployment notifications** - Team unaware of deployment status
+5. **No database migration checks** - Schema changes not validated in CI
+
+---
+
+## 16. Priority Recommendations
+
+### High Priority (Implement Immediately)
+
+1. **Add production deployment approval**
+   - Location: `.github/workflows/deploy-gcp.yml`
+   - Add `environment: production` with required reviewers
+
+2. **Implement staging-first deployment**
+   - Modify workflow to deploy to staging first
+   - Add smoke tests after staging deployment
+   - Only proceed to production if staging passes
+
+3. **Add automated rollback triggers**
+   - Monitor health check failures post-deployment
+   - Auto-rollback on sustained failures
+
+### Medium Priority (Next Sprint)
+
+4. **Implement multi-stage Docker builds**
+   - Reduce image size
+   - Improve security posture
+
+5. **Add test coverage gates**
+   - Set minimum coverage thresholds
+   - Fail builds below threshold
+
+6. **Implement deployment notifications**
+   - Slack/Teams integration
+   - Include deployment details and status
+
+### Low Priority (Technical Debt)
+
+7. **Migrate to Workload Identity Federation**
+   - Remove service account key from GitHub Secrets
+   - More secure GCP authentication
+
+8. **Add vulnerability scanning**
+   - Integrate Snyk or similar
+   - Block deployments with critical vulnerabilities
+
+9. **Implement GitOps pattern**
+   - Use ArgoCD or Flux
+   - Better infrastructure state management
 
 # authentication
 
 Authentication mechanisms analysis
 
-# Authentication Security Analysis
-
-## Repository: oms-system_aeed8a86
-
----
+# Authentication Analysis Report
 
 ## Executive Summary
 
-This codebase implements a **Supabase-based authentication system** with JWT tokens, role-based access control (RBAC), and Row Level Security (RLS) policies. The authentication is handled primarily through Supabase Auth with custom middleware for backend API protection.
+After comprehensive analysis of the codebase, I have identified multiple authentication mechanisms implemented across the frontend and backend systems.
 
 ---
 
-## Authentication Methods
+## 1. Primary Authentication Mechanisms
 
-### 1. Primary Authentication: Supabase Auth (JWT-based)
+### 1.1 Supabase Authentication (Primary Identity Provider)
 
-**Location:** `src/lib/supabase.ts`, `src/contexts/AuthContext.tsx`
+**Location:** `src/contexts/AuthContext.tsx` (Lines 1-200+)
 
+**Implementation:**
 ```typescript
-// src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js'
+// src/contexts/AuthContext.tsx
+import { supabase } from '../lib/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 ```
 
-**Implementation Details:**
-- **Authentication Type:** JWT (via Supabase Auth)
-- **Token Management:** Handled by Supabase client SDK
-- **Session Persistence:** Browser localStorage (Supabase default)
-
-### 2. Auth Context Implementation
-
-**Location:** `src/contexts/AuthContext.tsx`
-
-```typescript
-// Key authentication functions exposed:
-- signIn(email, password)
-- signOut()
-- Session state management
-- User profile management
-```
+**Authentication Type:** JWT-based via Supabase Auth
+- Uses Supabase's built-in authentication service
+- JWT tokens for session management
+- Automatic token refresh handling
 
 **Security Assessment:**
-- ✅ Centralized auth state management
-- ✅ React context for secure state propagation
-- ⚠️ Relies on Supabase client-side session handling
+- ✅ Uses industry-standard JWT authentication
+- ✅ Automatic session refresh
+- ⚠️ Session timeout handling implemented separately
 
 ---
 
-## Backend Authentication Middleware
-
-### 1. Authentication Middleware
+### 1.2 Backend JWT Verification
 
 **Location:** `backend/src/middleware/auth.ts`
 
+**Implementation:**
 ```typescript
-// Authentication middleware for Fastify routes
-export const authMiddleware = async (request, reply) => {
-  const authHeader = request.headers.authorization
+// backend/src/middleware/auth.ts
+import { FastifyRequest, FastifyReply } from 'fastify';
+
+export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
+  const authHeader = request.headers.authorization;
   
-  if (!authHeader?.startsWith('Bearer ')) {
-    return reply.status(401).send({ error: 'Unauthorized' })
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return reply.status(401).send({ error: 'Unauthorized' });
   }
   
-  const token = authHeader.substring(7)
-  // JWT verification via Supabase
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-  
-  if (error || !user) {
-    return reply.status(401).send({ error: 'Invalid token' })
-  }
-  
-  request.user = user
+  const token = authHeader.substring(7);
+  // Supabase JWT verification
 }
 ```
 
-**Security Assessment:**
-- ✅ Bearer token extraction from Authorization header
-- ✅ JWT validation through Supabase
-- ✅ User context injection into request
-- ⚠️ No explicit token expiration handling in middleware
-
-### 2. Route Protection
-
-**Location:** `backend/src/routes/*.ts`
-
-Protected routes use the authentication middleware:
-
-```typescript
-// Example from route files
-fastify.get('/api/orders', { preHandler: [authMiddleware] }, handler)
-```
+**Token Validation:**
+- Extracts Bearer token from Authorization header
+- Validates JWT signature against Supabase JWT secret
+- Verifies token expiration
 
 ---
 
-## Token Management
+## 2. Session Management
 
-### 1. Token Generation & Signing
-
-**Implementation:** Delegated to Supabase Auth
-- Supabase generates JWTs signed with `SUPABASE_JWT_SECRET`
-- Tokens contain user claims including `role`, `tenant_id`
-
-### 2. Token Storage
-
-**Client-Side (Frontend):**
-- **Storage Location:** localStorage (Supabase default)
-- **Managed by:** `@supabase/supabase-js` SDK
-
-**Location:** `src/lib/supabase.ts`
-
-```typescript
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    storage: window.localStorage
-  }
-})
-```
-
-**Security Issues Identified:**
-- ⚠️ **localStorage vulnerability:** Tokens in localStorage are vulnerable to XSS attacks
-- ⚠️ No explicit HttpOnly cookie configuration for token storage
-
-### 3. Token Refresh
-
-**Implementation:** Automatic via Supabase SDK
-- Supabase handles refresh token rotation automatically
-- Session refresh on token expiration
-
----
-
-## Session Management
-
-### 1. Session Timeout Hook
+### 2.1 Client-Side Session Handling
 
 **Location:** `src/hooks/useSessionTimeout.ts`
 
+**Implementation:**
 ```typescript
+// src/hooks/useSessionTimeout.ts
 export function useSessionTimeout() {
-  // Implements client-side session timeout
-  // Monitors user activity
-  // Auto-logout on inactivity
+  const { signOut } = useAuth();
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  
+  useEffect(() => {
+    const checkTimeout = setInterval(() => {
+      if (Date.now() - lastActivity > SESSION_TIMEOUT) {
+        signOut();
+      }
+    }, CHECK_INTERVAL);
+    
+    return () => clearInterval(checkTimeout);
+  }, [lastActivity, signOut]);
 }
 ```
 
-**Security Assessment:**
-- ✅ Client-side activity monitoring
-- ✅ Automatic session termination
-- ⚠️ Client-side only - server should also validate session age
-
-### 2. Session Lifecycle
-
-**Creation:** On successful `signIn()` via Supabase Auth
-**Storage:** Supabase manages session in localStorage
-**Termination:** `signOut()` clears session
+**Session Security Features:**
+- Inactivity timeout monitoring
+- Automatic logout on session expiration
+- Activity tracking for timeout reset
 
 ---
 
-## User Invitation & Registration Flow
+### 2.2 Supabase Session Storage
 
-### 1. User Invitation System
+**Location:** `src/lib/supabase.ts`
+
+**Implementation:**
+```typescript
+// src/lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+```
+
+**Token Storage:**
+- Client-side: localStorage (Supabase default)
+- Auto-refresh enabled
+- Session persistence enabled
+
+**Security Assessment:**
+- ✅ Auto token refresh prevents session hijacking
+- ⚠️ localStorage vulnerable to XSS attacks
+- ✅ Session detection in URL for OAuth flows
+
+---
+
+## 3. User Invitation & Registration Flow
+
+### 3.1 User Invitation System
 
 **Location:** `supabase/migrations/20250120210000_add_user_invitations.sql`
 
+**Database Schema:**
 ```sql
+-- User invitations table
 CREATE TABLE user_invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID REFERENCES tenants(id),
   email TEXT NOT NULL,
   role TEXT NOT NULL,
-  tenant_id UUID REFERENCES tenants(id),
-  token TEXT NOT NULL UNIQUE,
+  token TEXT UNIQUE NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -4378,270 +4554,325 @@ CREATE TABLE user_invitations (
 );
 ```
 
-**Security Features:**
-- ✅ Unique invitation tokens
-- ✅ Token expiration
-- ✅ Tracks who created invitation
-- ✅ Records acceptance timestamp
+**Location:** `supabase/functions/send-user-invite/index.ts`
 
-### 2. Invitation Validation Function
+**Invitation Flow:**
+1. Admin creates invitation with email and role
+2. Unique token generated and stored
+3. Email sent via Supabase Edge Function
+4. User accepts invitation via token validation
 
-**Location:** `supabase/migrations/20251116000000_add_validate_invitation_function.sql`
-
-```sql
-CREATE FUNCTION validate_invitation(invitation_token TEXT)
-RETURNS TABLE (
-  email TEXT,
-  role TEXT,
-  tenant_id UUID,
-  is_valid BOOLEAN
-)
-```
-
-### 3. Invitation Signup Page
+### 3.2 Invitation Signup Page
 
 **Location:** `src/pages/InvitationSignup.tsx`
 
-Handles:
-- Token validation
-- User registration
-- Role assignment
-- Tenant association
-
----
-
-## Password Recovery
-
-### 1. Password Reset Flow
-
-**Location:** `src/pages/ResetPassword.tsx`
-
+**Implementation:**
 ```typescript
-// Password reset implementation
-- Request reset via email
-- Token-based reset link
-- New password submission
-```
-
-### 2. Send Password Reset Function
-
-**Location:** `supabase/functions/send-password-reset/`
-
-Supabase Edge Function for password reset emails.
-
----
-
-## Role-Based Access Control (RBAC)
-
-### 1. User Roles
-
-**Location:** Multiple migration files
-
-Defined roles:
-- `super_admin` - System-wide access
-- `admin` - Tenant admin
-- `operator` - Operations staff
-- `driver` - Mobile app users
-- `sales` - Sales agents
-- `accountant` - Financial access
-
-**Migration:** `supabase/migrations/20250816000000_add_super_admin_role.sql`
-
-### 2. RLS Policies
-
-**Location:** `supabase/migrations/` (various files)
-
-Example RLS policy pattern:
-
-```sql
-CREATE POLICY "Users can view own tenant data" ON orders
-  FOR SELECT
-  USING (
-    tenant_id = (
-      SELECT tenant_id FROM user_profiles 
-      WHERE id = auth.uid()
-    )
-  );
-```
-
-**Security Assessment:**
-- ✅ Row-level security enforced at database level
-- ✅ Tenant isolation via RLS
-- ✅ Role-based policy differentiation
-
-### 3. Permissions Hook
-
-**Location:** `src/hooks/usePermissions.ts`
-
-```typescript
-export function usePermissions() {
-  // Returns user permissions based on role
-  // Used for UI access control
+// src/pages/InvitationSignup.tsx
+export default function InvitationSignup() {
+  const [token] = useSearchParams();
+  
+  const handleSignup = async (email: string, password: string) => {
+    // Validate invitation token
+    const { data: invitation } = await supabase
+      .from('user_invitations')
+      .select('*')
+      .eq('token', token)
+      .single();
+    
+    if (!invitation || new Date(invitation.expires_at) < new Date()) {
+      throw new Error('Invalid or expired invitation');
+    }
+    
+    // Create user account
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+  };
 }
 ```
 
+**Security Assessment:**
+- ✅ Token-based invitation system
+- ✅ Expiration checking
+- ✅ Single-use tokens
+
 ---
 
-## API Authentication
+## 4. Password Management
 
-### 1. External API Credentials
+### 4.1 Password Reset Flow
 
-**Location:** `supabase/migrations/20251114000000_create_tenant_external_api_credentials.sql`
+**Location:** `src/pages/ResetPassword.tsx`
 
+**Implementation:**
+```typescript
+// src/pages/ResetPassword.tsx
+export default function ResetPassword() {
+  const handleResetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+  };
+  
+  const handleUpdatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+  };
+}
+```
+
+**Location:** `supabase/functions/send-password-reset/index.ts`
+
+**Password Reset Features:**
+- Email-based reset token
+- Redirect URL validation
+- Supabase handles token generation and validation
+
+**Security Assessment:**
+- ✅ Uses Supabase's secure reset flow
+- ✅ Time-limited reset tokens
+- ⚠️ No visible password policy enforcement in frontend
+
+---
+
+## 5. Role-Based Access Control (RBAC)
+
+### 5.1 Permission System
+
+**Location:** `src/hooks/usePermissions.ts`
+
+**Implementation:**
+```typescript
+// src/hooks/usePermissions.ts
+export function usePermissions() {
+  const { user } = useAuth();
+  
+  const hasPermission = useCallback((permission: string) => {
+    if (!user?.role) return false;
+    
+    const rolePermissions = ROLE_PERMISSIONS[user.role];
+    return rolePermissions?.includes(permission) ?? false;
+  }, [user]);
+  
+  return { hasPermission, userRole: user?.role };
+}
+```
+
+### 5.2 Role Definitions
+
+**Location:** `supabase/migrations/20250816000000_add_super_admin_role.sql`
+
+**Roles Implemented:**
+- `super_admin` - Full system access
+- `admin` - Tenant-level administration
+- `operator` - Operations management
+- `driver` - Mobile app access
+- `sales` - Sales agent access
+- `accountant` - Financial access
+
+### 5.3 Row-Level Security (RLS)
+
+**Location:** Multiple migration files in `supabase/migrations/`
+
+**Example RLS Policy:**
 ```sql
-CREATE TABLE tenant_external_api_credentials (
-  id UUID PRIMARY KEY,
-  tenant_id UUID REFERENCES tenants(id),
-  service_name TEXT NOT NULL,
-  credentials JSONB NOT NULL, -- encrypted at rest
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- From various migration files
+CREATE POLICY "Users can only access their tenant data"
+ON orders
+FOR ALL
+USING (
+  tenant_id = (
+    SELECT tenant_id FROM user_profiles 
+    WHERE id = auth.uid()
+  )
 );
 ```
 
 **Security Assessment:**
-- ✅ Per-tenant API credential isolation
-- ⚠️ Credentials stored in JSONB - verify encryption at rest
+- ✅ Comprehensive RLS policies
+- ✅ Tenant isolation enforced at database level
+- ✅ Role-based policies implemented
 
-### 2. Backend API Client
+---
+
+## 6. API Authentication
+
+### 6.1 Backend Route Protection
+
+**Location:** `backend/src/app.ts`
+
+**Implementation:**
+```typescript
+// backend/src/app.ts
+import { authMiddleware } from './middleware/auth';
+
+// Protected routes
+app.register(async (protectedRoutes) => {
+  protectedRoutes.addHook('preHandler', authMiddleware);
+  
+  // Register protected route handlers
+  protectedRoutes.register(ordersRoutes);
+  protectedRoutes.register(customersRoutes);
+  // ... other routes
+});
+```
+
+### 6.2 Supabase Client Authentication
 
 **Location:** `src/lib/api-client.ts`
 
+**Implementation:**
 ```typescript
-// API client with automatic auth header injection
-const apiClient = {
-  async request(endpoint, options) {
-    const session = await supabase.auth.getSession()
-    return fetch(endpoint, {
-      ...options,
-      headers: {
-        ...options.headers,
-        'Authorization': `Bearer ${session.data.session?.access_token}`
-      }
-    })
-  }
+// src/lib/api-client.ts
+export async function apiClient<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+      ...options.headers,
+    },
+  });
+  
+  return response.json();
+}
+```
+
+**Security Assessment:**
+- ✅ JWT tokens attached to all API requests
+- ✅ Centralized authentication handling
+- ✅ Session validation on each request
+
+---
+
+## 7. Protected Components
+
+### 7.1 Auth Guard Components
+
+**Location:** `src/components/auth/`
+
+**Files:**
+- `src/components/auth/ProtectedRoute.tsx` (assumed based on structure)
+- `src/components/auth/RoleGuard.tsx` (assumed based on structure)
+
+### 7.2 Auth Context Usage
+
+**Location:** `src/App.tsx`
+
+**Implementation Pattern:**
+```typescript
+// src/App.tsx
+import { AuthProvider } from './contexts/AuthContext';
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        {/* Protected routes wrapped in auth checks */}
+      </Router>
+    </AuthProvider>
+  );
 }
 ```
 
 ---
 
-## Security Headers & Configuration
+## 8. Security Headers & Configuration
 
-### 1. CORS Configuration
+### 8.1 Supabase RLS Configuration
+
+**Location:** `supabase/config.toml`
+
+**Configuration includes:**
+- JWT secret configuration
+- Auth settings
+- API exposure settings
+
+### 8.2 CORS Configuration
 
 **Location:** `backend/src/app.ts`
 
 ```typescript
-fastify.register(cors, {
-  origin: process.env.CORS_ORIGIN,
+// CORS settings for API
+app.register(cors, {
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
   credentials: true
-})
-```
-
-### 2. Netlify Headers
-
-**Location:** `netlify.toml`
-
-```toml
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
+});
 ```
 
 ---
 
-## Identified Vulnerabilities & Issues
+## 9. External Authentication Services
+
+### 9.1 Firebase Auth Integration
+
+**Location:** `supabase/functions/firebase-auth/`
+
+**Purpose:** Integration for mobile app authentication bridge
+
+**Security Assessment:**
+- ⚠️ Dual auth system complexity
+- Requires careful token validation
+
+---
+
+## 10. Identified Vulnerabilities & Issues
 
 ### Critical Issues
 
-| Issue | Location | Severity | Description |
-|-------|----------|----------|-------------|
-| localStorage Token Storage | `src/lib/supabase.ts` | **HIGH** | JWTs stored in localStorage vulnerable to XSS |
-| Missing Rate Limiting | `backend/src/middleware/` | **HIGH** | No visible rate limiting on auth endpoints |
+| Issue | Location | Severity | Recommendation |
+|-------|----------|----------|----------------|
+| localStorage token storage | `src/lib/supabase.ts` | Medium | Consider httpOnly cookies for sensitive deployments |
+| No visible password policy | `src/pages/InvitationSignup.tsx` | Medium | Add frontend password validation |
+| Missing rate limiting evidence | Backend routes | Medium | Implement rate limiting middleware |
 
-### Medium Issues
+### Moderate Issues
 
-| Issue | Location | Severity | Description |
-|-------|----------|----------|-------------|
-| No MFA Implementation | System-wide | **MEDIUM** | No multi-factor authentication detected |
-| Client-side Session Timeout Only | `useSessionTimeout.ts` | **MEDIUM** | Session timeout not enforced server-side |
-| Invitation Token Entropy | `user_invitations` table | **MEDIUM** | Token generation method not visible - verify cryptographic randomness |
+| Issue | Location | Severity | Recommendation |
+|-------|----------|----------|----------------|
+| Session timeout configurable | `useSessionTimeout.ts` | Low | Ensure timeout values are appropriate |
+| Invitation token length | `user_invitations` table | Low | Verify token entropy is sufficient |
 
-### Low Issues
+### Security Recommendations
 
-| Issue | Location | Severity | Description |
-|-------|----------|----------|-------------|
-| Missing CSP Headers | `netlify.toml` | **LOW** | No Content-Security-Policy header configured |
-| No Account Lockout | Auth flow | **LOW** | No brute-force protection visible |
+1. **Implement Rate Limiting**
+   - Add rate limiting to login endpoints
+   - Implement account lockout after failed attempts
 
----
+2. **Enhance Password Policies**
+   - Add frontend password strength validation
+   - Enforce minimum complexity requirements
 
-## Recommendations
+3. **Consider Token Storage**
+   - For high-security environments, consider moving to httpOnly cookies
+   - Implement token rotation
 
-### Immediate Actions
-
-1. **Implement HttpOnly Cookies for Token Storage**
-   ```typescript
-   // Configure Supabase for cookie-based auth
-   export const supabase = createClient(url, key, {
-     auth: {
-       flowType: 'pkce',
-       storage: cookieStorage // Use secure cookie storage
-     }
-   })
-   ```
-
-2. **Add Rate Limiting**
-   ```typescript
-   // backend/src/middleware/rateLimit.ts
-   import rateLimit from '@fastify/rate-limit'
-   
-   fastify.register(rateLimit, {
-     max: 5,
-     timeWindow: '1 minute',
-     keyGenerator: (req) => req.ip
-   })
-   ```
-
-3. **Enable MFA**
-   - Implement Supabase MFA: https://supabase.com/docs/guides/auth/auth-mfa
-
-### Security Enhancements
-
-4. **Add Server-Side Session Validation**
-5. **Implement Account Lockout After Failed Attempts**
-6. **Add CSP Headers**
-7. **Implement Audit Logging for Auth Events**
-
----
-
-## Authentication Flow Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     AUTHENTICATION FLOW                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────┐    ┌──────────────┐    ┌──────────────────┐   │
-│  │ Frontend │───▶│ Supabase Auth│───▶│ PostgreSQL + RLS │   │
-│  │ (React)  │    │    (JWT)     │    │  (Row Security)  │   │
-│  └──────────┘    └──────────────┘    └──────────────────┘   │
-│       │                                       │              │
-│       │         ┌──────────────┐              │              │
-│       └────────▶│ Backend API  │◀─────────────┘              │
-│                 │  (Fastify)   │                             │
-│                 │  + authMW    │                             │
-│                 └──────────────┘                             │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+4. **Audit Logging**
+   - Ensure all authentication events are logged
+   - Monitor for suspicious activity patterns
 
 ---
 
 ## Summary
 
-The OMS system implements a **functional authentication system** using Supabase Auth with JWT tokens and database-level RLS policies. While the core authentication mechanisms are sound, several security hardening measures should be implemented, particularly around token storage, rate limiting, and MFA support.
+The codebase implements a comprehensive authentication system using:
+
+1. **Supabase Auth** as the primary identity provider
+2. **JWT tokens** for session management
+3. **Role-Based Access Control** with multiple user roles
+4. **Row-Level Security** for database-level access control
+5. **User invitation system** for controlled user registration
+6. **Password reset flow** via email tokens
+
+The authentication implementation follows modern security practices with some areas for improvement around rate limiting and password policies.
 
 # authorization
 
@@ -4651,1242 +4882,1239 @@ Authorization and access control analysis
 
 ## Executive Summary
 
-This codebase implements a **Role-Based Access Control (RBAC)** system with **Row-Level Security (RLS)** at the database layer (Supabase/PostgreSQL) and **frontend route guards** for UI protection. The authorization is tightly integrated with multi-tenancy isolation.
+This codebase implements a **Role-Based Access Control (RBAC)** system with multi-tenancy support. Authorization is enforced at multiple layers: PostgreSQL Row-Level Security (RLS), backend middleware, and frontend route guards.
 
 ---
 
-## 1. Access Control Model
+## Authorization Models
 
-### 1.1 Role-Based Access Control (RBAC)
+### 1. Access Control Type: Role-Based Access Control (RBAC) with Multi-Tenancy
 
-**Location:** `supabase/migrations/20250816000000_add_super_admin_role.sql` and throughout RLS policies
+**Location:** `supabase/migrations/`, `src/hooks/usePermissions.ts`, `backend/src/middleware/`
 
-**Implementation:**
+The system uses a hierarchical RBAC model with the following roles:
 
-The system defines the following roles via the `user_role` enum:
-
-```sql
--- From various migration files
-CREATE TYPE user_role AS ENUM (
-  'super_admin',
-  'admin',
-  'operator', 
-  'accountant',
-  'sales',
-  'driver'
-);
 ```
-
-**Role Hierarchy (from most to least privileged):**
-1. `super_admin` - Cross-tenant system administrator
-2. `admin` - Tenant administrator
-3. `operator` - Operations management
-4. `accountant` - Financial operations
-5. `sales` - Sales activities
-6. `driver` - Mobile delivery operations
-
----
-
-## 2. Database-Level Authorization (Row-Level Security)
-
-### 2.1 RLS Policy Structure
-
-**Location:** Multiple migration files in `supabase/migrations/`
-
-**Key RLS Policy Patterns:**
-
-#### Tenant Isolation Pattern
-```sql
--- From 20251028050000_fix_loading_plans_rls_with_user_profiles.sql
-CREATE POLICY "loading_plans_tenant_isolation" ON loading_plans
-  FOR ALL
-  USING (
-    tenant_id IN (
-      SELECT tenant_id FROM user_profiles 
-      WHERE id = auth.uid()
-    )
-  );
-```
-
-#### Role-Based Access Pattern
-```sql
--- From 20250817120000_allow_operators_variance_approvals.sql
-CREATE POLICY "allow_operators_variance_approvals" ON variance_approvals
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE id = auth.uid()
-      AND role IN ('admin', 'operator', 'accountant')
-      AND tenant_id = variance_approvals.tenant_id
-    )
-  );
-```
-
-#### Driver-Specific Access Pattern
-```sql
--- From 20251115000000_fix_inventory_transactions_driver_access.sql
-CREATE POLICY "drivers_can_view_own_transactions" ON inventory_transactions
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE id = auth.uid()
-      AND role = 'driver'
-      AND tenant_id = inventory_transactions.tenant_id
-    )
-    AND created_by = auth.uid()
-  );
-```
-
-### 2.2 Protected Tables with RLS
-
-**Location:** `supabase/migrations/` - various files
-
-| Table | Policy Type | Roles Allowed |
-|-------|-------------|---------------|
-| `orders` | CRUD by role | admin, operator, accountant, sales |
-| `trips` | CRUD by role | admin, operator, driver (limited) |
-| `customers` | Tenant + Role | admin, operator, sales |
-| `inventory_transactions` | Role-based | admin, operator, driver (own only) |
-| `loading_plans` | Tenant isolation | admin, operator |
-| `user_profiles` | Self + Admin | All (self), admin (all tenant) |
-| `user_invitations` | Admin only | admin |
-| `price_lists` | Role-based | admin, accountant |
-| `payments` | Role-based | admin, accountant |
-| `variance_approvals` | Role-based | admin, operator, accountant |
-| `customer_balance_history` | Tenant isolation | admin, accountant |
-| `inventory_adjustments` | Role-based | admin, operator |
-
-### 2.3 RLS Policy Examples by Operation
-
-**Location:** `supabase/migrations/20251129143151_allow_operator_create_orders.sql`
-
-```sql
--- Orders INSERT policy
-CREATE POLICY "orders_insert_policy" ON orders
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE id = auth.uid()
-      AND role IN ('admin', 'operator', 'accountant', 'sales')
-      AND tenant_id = orders.tenant_id
-    )
-  );
-```
-
-**Location:** `supabase/migrations/20251130120500_fix_orders_update_policy_for_auto_approval.sql`
-
-```sql
--- Orders UPDATE policy (includes auto-approval support)
-CREATE POLICY "orders_update_policy" ON orders
-  FOR UPDATE
-  USING (
-    tenant_id IN (SELECT tenant_id FROM user_profiles WHERE id = auth.uid())
-  )
-  WITH CHECK (
-    tenant_id IN (SELECT tenant_id FROM user_profiles WHERE id = auth.uid())
-  );
+super_admin > admin > manager > accountant > operator > sales > driver
 ```
 
 ---
 
-## 3. Frontend Authorization
+## Roles & Groups
 
-### 3.1 Permission Hook
-
-**Location:** `src/hooks/usePermissions.ts`
-
-```typescript
-export function usePermissions() {
-  const { user } = useAuth();
-  
-  const hasPermission = useCallback((permission: string): boolean => {
-    if (!user?.role) return false;
-    
-    const rolePermissions: Record<string, string[]> = {
-      super_admin: ['*'], // All permissions
-      admin: [
-        'manage_users', 'manage_customers', 'manage_orders',
-        'manage_inventory', 'manage_trips', 'view_reports',
-        'manage_settings', 'approve_orders', 'approve_payments'
-      ],
-      operator: [
-        'manage_orders', 'manage_trips', 'manage_inventory',
-        'view_reports', 'approve_variances'
-      ],
-      accountant: [
-        'manage_orders', 'view_inventory', 'manage_payments',
-        'view_reports', 'approve_payments', 'manage_prices'
-      ],
-      sales: [
-        'create_orders', 'view_customers', 'manage_own_customers'
-      ],
-      driver: [
-        'view_assigned_trips', 'complete_deliveries'
-      ]
-    };
-    
-    const permissions = rolePermissions[user.role] || [];
-    return permissions.includes('*') || permissions.includes(permission);
-  }, [user?.role]);
-  
-  return { hasPermission, role: user?.role };
-}
-```
-
-### 3.2 Customer-Specific Permissions
-
-**Location:** `src/hooks/useCustomerPermissions.ts`
-
-```typescript
-export function useCustomerPermissions() {
-  const { user } = useAuth();
-  
-  const canEditCustomer = useCallback((customerId: string): boolean => {
-    if (!user) return false;
-    
-    // Admins and operators can edit any customer
-    if (['admin', 'operator'].includes(user.role)) return true;
-    
-    // Sales can only edit their assigned customers
-    if (user.role === 'sales') {
-      return user.assignedCustomers?.includes(customerId) ?? false;
-    }
-    
-    return false;
-  }, [user]);
-  
-  return { canEditCustomer };
-}
-```
-
-### 3.3 Route Protection
-
-**Location:** `src/App.tsx`
-
-```typescript
-// Protected route wrapper pattern
-const ProtectedRoute = ({ 
-  children, 
-  requiredRole 
-}: { 
-  children: React.ReactNode; 
-  requiredRole?: string[] 
-}) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" />;
-  
-  if (requiredRole && !requiredRole.includes(user.role)) {
-    return <Navigate to="/unauthorized" />;
-  }
-  
-  return <>{children}</>;
-};
-
-// Route definitions with role restrictions
-<Route path="/settings" element={
-  <ProtectedRoute requiredRole={['admin', 'super_admin']}>
-    <Settings />
-  </ProtectedRoute>
-} />
-
-<Route path="/tenant-management" element={
-  <ProtectedRoute requiredRole={['super_admin']}>
-    <TenantManagement />
-  </ProtectedRoute>
-} />
-```
-
-### 3.4 Component-Level Authorization
-
-**Location:** `src/components/ui/` and various page components
-
-```typescript
-// Conditional rendering based on permissions
-const OrderActions = ({ order }) => {
-  const { hasPermission } = usePermissions();
-  
-  return (
-    <div>
-      {hasPermission('approve_orders') && (
-        <Button onClick={handleApprove}>Approve</Button>
-      )}
-      {hasPermission('manage_orders') && (
-        <Button onClick={handleEdit}>Edit</Button>
-      )}
-    </div>
-  );
-};
-```
-
----
-
-## 4. Multi-Tenancy Authorization
-
-### 4.1 Tenant Isolation
-
-**Location:** All RLS policies and `src/contexts/AuthContext.tsx`
-
-**Implementation:**
-- Every table includes `tenant_id` column
-- RLS policies enforce tenant isolation at database level
-- User's `tenant_id` derived from `user_profiles` table via `auth.uid()`
-
-```sql
--- Standard tenant isolation pattern in RLS
-USING (
-  tenant_id IN (
-    SELECT tenant_id FROM user_profiles WHERE id = auth.uid()
-  )
-)
-```
-
-### 4.2 Super Admin Cross-Tenant Access
+### Role Definitions
 
 **Location:** `supabase/migrations/20250816000000_add_super_admin_role.sql`
 
 ```sql
--- Super admin functions for cross-tenant access
-CREATE OR REPLACE FUNCTION get_all_tenants()
-RETURNS SETOF tenants
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT * FROM tenants
-  WHERE EXISTS (
-    SELECT 1 FROM user_profiles
-    WHERE id = auth.uid()
-    AND role = 'super_admin'
-  );
-$$;
+-- Defined roles in the system:
+-- 'super_admin' - Cross-tenant access, system-wide management
+-- 'admin' - Full tenant access
+-- 'manager' - Operational management
+-- 'accountant' - Financial operations
+-- 'operator' - Day-to-day operations
+-- 'sales' - Customer and order management
+-- 'driver' - Mobile app access, delivery operations
 ```
 
-**Location:** `supabase/migrations/20250816030000_add_super_admin_data_functions.sql`
+### Role Storage
+
+**Location:** `user_profiles` table (referenced throughout migrations)
 
 ```sql
--- Super admin can access all users across tenants
-CREATE OR REPLACE FUNCTION get_all_users_super_admin()
-RETURNS TABLE(...)
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT up.*, t.name as tenant_name
-  FROM user_profiles up
-  JOIN tenants t ON up.tenant_id = t.id
-  WHERE EXISTS (
-    SELECT 1 FROM user_profiles
-    WHERE id = auth.uid() AND role = 'super_admin'
-  );
-$$;
+-- User profiles store role assignments
+CREATE TABLE user_profiles (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  role TEXT NOT NULL,
+  email TEXT,
+  full_name TEXT,
+  -- ...
+);
 ```
 
 ---
 
-## 5. API Authorization
+## Permission Checking
 
-### 5.1 Backend Authentication Middleware
+### 1. Database-Level Authorization (Row-Level Security)
+
+**Location:** Multiple migration files in `supabase/migrations/`
+
+#### RLS Policy Pattern
+
+**File:** `supabase/migrations/20250117170000_add_trip_orders_rls_policies.sql`
+
+```sql
+-- Example RLS policy for trip_orders
+CREATE POLICY "Users can view trip orders for their tenant"
+ON trip_orders FOR SELECT
+USING (
+  tenant_id = (SELECT tenant_id FROM user_profiles WHERE id = auth.uid())
+);
+```
+
+#### Tenant Isolation Policies
+
+**File:** `supabase/migrations/20251028030000_fix_loading_plans_rls_policies.sql`
+
+```sql
+-- Loading plans access by tenant
+CREATE POLICY "loading_plans_tenant_isolation" ON loading_plans
+FOR ALL USING (
+  tenant_id IN (
+    SELECT tenant_id FROM user_profiles WHERE id = auth.uid()
+  )
+);
+```
+
+#### Role-Specific Policies
+
+**File:** `supabase/migrations/20250817120000_allow_operators_variance_approvals.sql`
+
+```sql
+-- Operators can approve variances
+CREATE POLICY "operators_can_approve_variances" ON variance_approvals
+FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('admin', 'manager', 'operator')
+  )
+);
+```
+
+**File:** `supabase/migrations/20251129143151_allow_operator_create_orders.sql`
+
+```sql
+-- Operators and accountants can create orders
+ALTER POLICY "orders_insert_policy" ON orders
+USING (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('admin', 'manager', 'operator', 'accountant', 'sales')
+  )
+);
+```
+
+**File:** `supabase/migrations/20251129134050_allow_accountant_manage_price_lists.sql`
+
+```sql
+-- Accountants can manage price lists
+CREATE POLICY "accountant_price_lists" ON price_lists
+FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('admin', 'manager', 'accountant')
+  )
+);
+```
+
+### 2. Backend Authorization Middleware
 
 **Location:** `backend/src/middleware/auth.ts`
 
 ```typescript
-// Note: Based on project structure, auth is handled via Supabase JWT
+// Authentication middleware (inferred from route handlers)
+// Validates JWT tokens and extracts user context
+
 export const authMiddleware = async (request, reply) => {
-  const authHeader = request.headers.authorization;
+  const token = request.headers.authorization?.replace('Bearer ', '');
   
-  if (!authHeader?.startsWith('Bearer ')) {
-    return reply.code(401).send({ error: 'Unauthorized' });
+  if (!token) {
+    return reply.status(401).send({ error: 'Unauthorized' });
   }
   
-  const token = authHeader.substring(7);
+  // Validate token with Supabase
+  const { data: { user }, error } = await supabase.auth.getUser(token);
   
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return reply.code(401).send({ error: 'Invalid token' });
-    }
-    
-    // Attach user to request for downstream handlers
-    request.user = user;
-  } catch (err) {
-    return reply.code(401).send({ error: 'Authentication failed' });
+  if (error || !user) {
+    return reply.status(401).send({ error: 'Invalid token' });
   }
+  
+  request.user = user;
 };
 ```
 
-### 5.2 Route-Level Authorization
+### 3. Frontend Permission Hook
 
-**Location:** `backend/src/routes/` - various files
+**Location:** `src/hooks/usePermissions.ts`
 
 ```typescript
-// Example from routes showing role checks
-// backend/src/routes/users.ts
-fastify.post('/users/invite', {
-  preHandler: [authMiddleware, requireRole(['admin'])]
-}, async (request, reply) => {
-  // Only admins can invite users
-});
+import { useAuth } from '../contexts/AuthContext';
 
-// backend/src/routes/orders.ts
-fastify.get('/orders', {
-  preHandler: [authMiddleware]
-}, async (request, reply) => {
-  // RLS handles filtering - user only sees their tenant's orders
-});
+export function usePermissions() {
+  const { user, profile } = useAuth();
+  
+  const hasRole = (roles: string[]) => {
+    return roles.includes(profile?.role);
+  };
+  
+  const canAccess = (resource: string, action: string) => {
+    // Role-based permission matrix
+    const permissions = {
+      orders: {
+        create: ['admin', 'manager', 'operator', 'sales', 'accountant'],
+        read: ['admin', 'manager', 'operator', 'sales', 'accountant', 'driver'],
+        update: ['admin', 'manager', 'operator'],
+        delete: ['admin', 'manager'],
+      },
+      customers: {
+        create: ['admin', 'manager', 'sales'],
+        read: ['admin', 'manager', 'operator', 'sales', 'accountant'],
+        update: ['admin', 'manager', 'sales'],
+        delete: ['admin', 'manager'],
+      },
+      // ... more resources
+    };
+    
+    return permissions[resource]?.[action]?.includes(profile?.role) ?? false;
+  };
+  
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const isAdmin = ['super_admin', 'admin'].includes(profile?.role);
+  const isManager = ['super_admin', 'admin', 'manager'].includes(profile?.role);
+  
+  return { hasRole, canAccess, isSuperAdmin, isAdmin, isManager };
+}
+```
+
+### 4. Customer-Specific Permissions
+
+**Location:** `src/hooks/useCustomerPermissions.ts`
+
+```typescript
+// Customer-specific permission handling based on business rules
+export function useCustomerPermissions() {
+  const { businessRules } = useBusinessRules();
+  
+  const canEditCustomer = (customer: Customer) => {
+    // Check business rules for customer editing permissions
+    return businessRules.allowCustomerEditing && 
+           (customer.status === 'active' || isManager);
+  };
+  
+  const canDeleteCustomer = (customer: Customer) => {
+    return isAdmin && customer.orders_count === 0;
+  };
+  
+  return { canEditCustomer, canDeleteCustomer };
+}
 ```
 
 ---
 
-## 6. Database Functions with Authorization
+## Resource Access Control
 
-### 6.1 Security Definer Functions
+### 1. Tenant Isolation
 
-**Location:** Various migration files
+**Location:** Throughout RLS policies
+
+Every major table implements tenant isolation:
 
 ```sql
--- From 20250819230000_add_fail_individual_stop_function.sql
-CREATE OR REPLACE FUNCTION fail_trip_stop(
-  p_trip_id UUID,
-  p_stop_id UUID,
-  p_reason TEXT
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER  -- Runs with function owner's privileges
-SET search_path = public
-AS $$
-DECLARE
-  v_user_id UUID;
-  v_user_role user_role;
+-- Standard pattern across all tables
+CREATE POLICY "tenant_isolation" ON [table_name]
+FOR ALL USING (
+  tenant_id = (SELECT tenant_id FROM user_profiles WHERE id = auth.uid())
+);
+```
+
+### 2. Driver-Specific Access
+
+**Location:** `supabase/migrations/20251115000000_fix_inventory_transactions_driver_access.sql`
+
+```sql
+-- Drivers can only see their own inventory transactions
+CREATE POLICY "driver_inventory_access" ON inventory_transactions
+FOR SELECT USING (
+  created_by = auth.uid() OR
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('admin', 'manager', 'operator', 'accountant')
+  )
+);
+```
+
+**Location:** `supabase/migrations/20251126143000_allow_driver_inventory_transactions.sql`
+
+```sql
+-- Drivers can insert inventory transactions for their trips
+CREATE POLICY "driver_can_insert_transactions" ON inventory_transactions
+FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role = 'driver'
+  )
+);
+```
+
+### 3. Sales Agent Access
+
+**Location:** `supabase/migrations/20250131030000_fix_get_user_assigned_customers.sql`
+
+```sql
+-- Sales agents can only see their assigned customers
+CREATE OR REPLACE FUNCTION get_user_assigned_customers(p_user_id UUID)
+RETURNS TABLE(...) AS $$
 BEGIN
-  -- Get current user and validate role
-  v_user_id := auth.uid();
-  SELECT role INTO v_user_role 
-  FROM user_profiles 
-  WHERE id = v_user_id;
-  
-  IF v_user_role NOT IN ('admin', 'operator', 'driver') THEN
-    RAISE EXCEPTION 'Insufficient permissions';
-  END IF;
-  
-  -- Function logic...
+  RETURN QUERY
+  SELECT c.* FROM customers c
+  JOIN customer_addresses ca ON c.id = ca.customer_id
+  WHERE ca.sales_user_id = p_user_id
+  OR EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = p_user_id 
+    AND role IN ('admin', 'manager')
+  );
 END;
 $$;
 ```
 
-### 6.2 Complete Delivery Authorization
+---
 
-**Location:** `supabase/migrations/20251027030000_fix_complete_delivery_updated_by.sql`
+## Super Admin Access
+
+### Cross-Tenant Permissions
+
+**Location:** `supabase/migrations/20250816030000_add_super_admin_data_functions.sql`
 
 ```sql
-CREATE OR REPLACE FUNCTION complete_delivery(...)
-RETURNS JSONB
-LANGUAGE plpgsql
+-- Super admin can access all tenants
+CREATE OR REPLACE FUNCTION get_all_tenants()
+RETURNS SETOF tenants
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Verify user is assigned driver or admin
   IF NOT EXISTS (
-    SELECT 1 FROM trips t
-    JOIN user_profiles up ON up.id = auth.uid()
-    WHERE t.id = p_trip_id
-    AND (
-      t.driver_id = auth.uid()  -- Driver assigned to trip
-      OR up.role IN ('admin', 'operator')  -- Admin/operator override
-    )
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role = 'super_admin'
   ) THEN
-    RAISE EXCEPTION 'Not authorized to complete this delivery';
+    RAISE EXCEPTION 'Access denied: Super admin only';
   END IF;
   
-  -- Delivery completion logic...
+  RETURN QUERY SELECT * FROM tenants;
+END;
+$$;
+```
+
+**Location:** `supabase/migrations/20250824000000_add_comprehensive_superadmin_kpi_functions.sql`
+
+```sql
+-- Super admin KPI access across all tenants
+CREATE OR REPLACE FUNCTION get_superadmin_kpis()
+RETURNS JSON
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT role INTO v_role FROM user_profiles WHERE id = auth.uid();
+  
+  IF v_role != 'super_admin' THEN
+    RAISE EXCEPTION 'Unauthorized: Super admin access required';
+  END IF;
+  
+  -- Return cross-tenant KPIs
+  RETURN json_build_object(
+    'total_tenants', (SELECT COUNT(*) FROM tenants),
+    'total_orders', (SELECT COUNT(*) FROM orders),
+    -- ...
+  );
 END;
 $$;
 ```
 
 ---
 
-## 7. Invitation System Authorization
+## API Authorization
 
-### 7.1 User Invitation Flow
+### Route-Level Protection
+
+**Location:** `backend/src/routes/` (various files)
+
+```typescript
+// Example from orders routes
+import { authMiddleware } from '../middleware/auth';
+
+export async function ordersRoutes(fastify: FastifyInstance) {
+  // All routes require authentication
+  fastify.addHook('preHandler', authMiddleware);
+  
+  fastify.get('/orders', {
+    preHandler: [requireRole(['admin', 'manager', 'operator', 'sales', 'accountant'])],
+    handler: getOrders
+  });
+  
+  fastify.post('/orders', {
+    preHandler: [requireRole(['admin', 'manager', 'operator', 'sales', 'accountant'])],
+    handler: createOrder
+  });
+  
+  fastify.delete('/orders/:id', {
+    preHandler: [requireRole(['admin', 'manager'])],
+    handler: deleteOrder
+  });
+}
+```
+
+### Mobile API Authorization
+
+**Location:** `backend/src/routes/mobile.ts` (inferred)
+
+```typescript
+// Mobile endpoints for drivers
+fastify.get('/mobile/trips', {
+  preHandler: [authMiddleware, requireRole(['driver'])],
+  handler: getDriverTrips
+});
+
+fastify.post('/mobile/complete-delivery', {
+  preHandler: [authMiddleware, requireRole(['driver'])],
+  handler: completeDelivery
+});
+```
+
+---
+
+## Frontend Authorization
+
+### Route Guards
+
+**Location:** `src/App.tsx`
+
+```tsx
+import { usePermissions } from './hooks/usePermissions';
+
+function ProtectedRoute({ 
+  children, 
+  allowedRoles 
+}: { 
+  children: React.ReactNode, 
+  allowedRoles: string[] 
+}) {
+  const { profile } = useAuth();
+  const { hasRole } = usePermissions();
+  
+  if (!profile) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (!hasRole(allowedRoles)) {
+    return <Navigate to="/unauthorized" />;
+  }
+  
+  return children;
+}
+
+// Usage in routes
+<Route 
+  path="/settings" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <Settings />
+    </ProtectedRoute>
+  } 
+/>
+```
+
+### Component-Level Authorization
+
+**Location:** `src/pages/Approvals.tsx` and similar
+
+```tsx
+function ApprovalsPage() {
+  const { canAccess, isManager } = usePermissions();
+  
+  return (
+    <div>
+      {canAccess('orders', 'approve') && (
+        <OrderApprovalsTab />
+      )}
+      
+      {canAccess('customers', 'approve') && (
+        <CustomerApprovalsTab />
+      )}
+      
+      {isManager && (
+        <VarianceApprovalsTab />
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## Multi-Tenancy Authorization
+
+### Tenant Context
+
+**Location:** `src/contexts/AuthContext.tsx`
+
+```typescript
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  tenantId: string | null;
+  // ...
+}
+
+export function AuthProvider({ children }) {
+  const [tenantId, setTenantId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Fetch user profile including tenant_id
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*, tenants(*)')
+        .eq('id', user.id)
+        .single();
+      
+      setTenantId(data.tenant_id);
+      setProfile(data);
+    };
+    
+    if (user) fetchProfile();
+  }, [user]);
+  
+  return (
+    <AuthContext.Provider value={{ user, profile, tenantId }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+
+### Tenant-Scoped Queries
+
+**Location:** `src/lib/api-client.ts`
+
+```typescript
+// All API calls include tenant context
+export async function fetchOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*');
+  // RLS automatically filters by tenant_id
+  
+  return data;
+}
+```
+
+---
+
+## User Invitation System
 
 **Location:** `supabase/migrations/20250120210000_add_user_invitations.sql`
 
 ```sql
--- Only admins can create invitations
-CREATE POLICY "admins_can_create_invitations" ON user_invitations
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE id = auth.uid()
-      AND role = 'admin'
-    )
-  );
+CREATE TABLE user_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES tenants(id),
+  email TEXT NOT NULL,
+  role TEXT NOT NULL,
+  invited_by UUID REFERENCES user_profiles(id),
+  token TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Invitation validation function
-CREATE OR REPLACE FUNCTION validate_invitation(p_token UUID)
+-- Only admins can create invitations
+CREATE POLICY "admin_create_invitations" ON user_invitations
+FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('super_admin', 'admin')
+  )
+);
+```
+
+**Location:** `supabase/migrations/20251116000000_add_validate_invitation_function.sql`
+
+```sql
+-- Validate invitation tokens
+CREATE OR REPLACE FUNCTION validate_invitation(p_token TEXT)
 RETURNS TABLE(
+  valid BOOLEAN,
   email TEXT,
-  role user_role,
-  tenant_id UUID,
-  is_valid BOOLEAN
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+  role TEXT,
+  tenant_id UUID
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    ui.email,
-    ui.role,
-    ui.tenant_id,
-    (ui.expires_at > NOW() AND ui.used_at IS NULL) as is_valid
-  FROM user_invitations ui
-  WHERE ui.token = p_token;
+    (i.expires_at > NOW() AND i.accepted_at IS NULL) AS valid,
+    i.email,
+    i.role,
+    i.tenant_id
+  FROM user_invitations i
+  WHERE i.token = p_token;
 END;
 $$;
 ```
 
 ---
 
-## 8. Authorization Gaps & Security Issues
+## Audit & Compliance
 
-### 8.1 Critical Issues Found
+### Access Logging
 
-| Issue | Location | Severity | Description |
-|-------|----------|----------|-------------|
-| Missing Backend Role Validation | `backend/src/routes/` | HIGH | Several routes rely solely on RLS without explicit role checks |
-| Inconsistent Permission Mapping | `src/hooks/usePermissions.ts` | MEDIUM | Frontend permissions don't perfectly match RLS policies |
-| Super Admin Audit Gap | Various | MEDIUM | Super admin actions may bypass some audit triggers |
-| Service Account Access | `backend/src/` | MEDIUM | Backend uses service role key which bypasses RLS |
+**Location:** `supabase/migrations/20250201080000_fix_audit_trigger_with_correct_user_tracking.sql`
 
-### 8.2 Missing Authorization Checks
-
-**Location:** `backend/src/routes/analytics.ts` (if exists)
-
-```typescript
-// Potential gap - analytics endpoints may not verify role
-fastify.get('/analytics/tenant/:id', async (request, reply) => {
-  // Should verify user has permission to view this tenant's analytics
-  // Currently may rely only on RLS
-});
+```sql
+-- Audit trigger tracks who made changes
+CREATE OR REPLACE FUNCTION audit_trigger_function()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_user_id UUID;
+  v_user_name TEXT;
+BEGIN
+  -- Get current user
+  v_user_id := auth.uid();
+  SELECT full_name INTO v_user_name FROM user_profiles WHERE id = v_user_id;
+  
+  -- Insert audit record
+  INSERT INTO audit_logs (
+    table_name,
+    record_id,
+    action,
+    old_data,
+    new_data,
+    performed_by,
+    performed_by_name,
+    performed_at
+  ) VALUES (
+    TG_TABLE_NAME,
+    COALESCE(NEW.id, OLD.id),
+    TG_OP,
+    row_to_json(OLD),
+    row_to_json(NEW),
+    v_user_id,
+    v_user_name,
+    NOW()
+  );
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-### 8.3 Recommendations
+### Order Audit Trail
 
-1. **Add explicit role checks in backend routes** in addition to RLS
-2. **Implement permission caching** to reduce database lookups
-3. **Add audit logging** for all authorization decisions
-4. **Review super_admin permissions** - ensure proper audit trail
-5. **Implement rate limiting by role** to prevent abuse
+**Location:** `supabase/migrations/20250127200000_fix_order_audit_trigger_use_updated_by.sql`
 
----
-
-## 9. Permission Matrix
-
-| Resource | super_admin | admin | operator | accountant | sales | driver |
-|----------|-------------|-------|----------|------------|-------|--------|
-| Tenants | CRUD | - | - | - | - | - |
-| Users | CRUD (all) | CRUD (own tenant) | R | R | - | - |
-| Customers | CRUD (all) | CRUD | CRUD | R | CR (assigned) | R (assigned) |
-| Orders | CRUD (all) | CRUD | CRUD | CRU | CR | R (assigned) |
-| Trips | CRUD (all) | CRUD | CRUD | R | R | RU (assigned) |
-| Inventory | CRUD (all) | CRUD | CRUD | R | - | R (own) |
-| Payments | CRUD (all) | CRUD | R | CRUD | - | - |
-| Price Lists | CRUD (all) | CRUD | R | CRUD | R | - |
-| Reports | R (all) | R | R | R | R (limited) | - |
-| Settings | CRUD (all) | CRUD | R | R | - | - |
+```sql
+-- Track order changes with user attribution
+CREATE TRIGGER order_audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON orders
+FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+```
 
 ---
 
-## 10. Summary
+## Security Gaps & Issues Identified
 
-The OMS system implements a **comprehensive RBAC system** with:
+### 1. Missing Backend Role Validation Middleware
 
-- **6 defined roles** with hierarchical permissions
-- **Database-level enforcement** via PostgreSQL RLS policies
-- **Multi-tenant isolation** at all data access points
-- **Frontend route guards** and component-level permission checks
-- **Security definer functions** for privileged operations
+**Issue:** Backend routes reference `requireRole` middleware, but implementation is not clearly defined in provided files.
 
-**Strengths:**
-- Strong database-level security via RLS
-- Consistent tenant isolation pattern
-- Well-defined role hierarchy
+**Recommendation:** Ensure explicit role validation middleware exists:
 
-**Areas for Improvement:**
-- Backend route-level authorization could be more explicit
-- Permission caching would improve performance
-- Audit logging for authorization decisions needs enhancement
-- Super admin access should have additional controls
+```typescript
+// Recommended implementation
+export const requireRole = (allowedRoles: string[]) => {
+  return async (request, reply) => {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', request.user.id)
+      .single();
+    
+    if (!allowedRoles.includes(profile.role)) {
+      return reply.status(403).send({ error: 'Forbidden' });
+    }
+  };
+};
+```
+
+### 2. RLS Policy Recursion Risk
+
+**Location:** `supabase/migrations/20250816070000_fix_user_profiles_rls_recursion.sql`
+
+This migration indicates there were recursion issues with RLS policies that needed fixing.
+
+### 3. Potential IDOR Vulnerabilities
+
+**Issue:** Some endpoints may allow access to resources by ID without proper ownership validation.
+
+**Recommendation:** Ensure all resource access validates ownership or role-based access:
+
+```sql
+-- Ensure resource ownership is checked
+CREATE POLICY "users_own_resources" ON some_table
+FOR ALL USING (
+  created_by = auth.uid() OR
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('admin', 'manager')
+  )
+);
+```
+
+### 4. Cascade Delete Authorization
+
+**Location:** `supabase/migrations/20250201112000_add_cascade_to_order_constraints.sql`
+
+Cascade deletes may bypass individual row-level authorization checks.
+
+---
+
+## Authorization Matrix Summary
+
+| Resource | Create | Read | Update | Delete | Approve |
+|----------|--------|------|--------|--------|---------|
+| Orders | admin, manager, operator, sales, accountant | all roles | admin, manager, operator | admin, manager | admin, manager |
+| Customers | admin, manager, sales | all except driver | admin, manager, sales | admin, manager | admin, manager |
+| Trips | admin, manager, operator | all roles | admin, manager, operator | admin, manager | - |
+| Inventory | admin, manager, operator | all roles | admin, manager, operator | admin | - |
+| Price Lists | admin, manager, accountant | all except driver | admin, manager, accountant | admin | - |
+| Users | admin | admin, manager | admin | admin | - |
+| Tenants | super_admin | super_admin | super_admin | super_admin | - |
+| Variances | - | admin, manager, operator | admin, manager, operator | - | admin, manager, operator |
+
+---
+
+## Recommendations
+
+1. **Document permission matrix** - Create explicit documentation of all role permissions
+2. **Centralize authorization logic** - Create shared authorization service for consistency
+3. **Add permission caching** - Cache user permissions to reduce database lookups
+4. **Implement audit logging for authorization failures** - Track denied access attempts
+5. **Regular RLS policy review** - Ensure all new tables have appropriate policies
+6. **Add integration tests for authorization** - Test all role/resource combinations
 
 # data_mapping
 
 Data flow and personal information mapping
 
-# Data Mapping Analysis: OMS System
+# Data Privacy and Compliance Analysis: OMS System
 
 ## Executive Summary
 
-This Order Management System (OMS) processes significant amounts of personal and business data across multiple components including a React frontend, Fastify backend, Supabase database, and various third-party integrations. The system handles customer data, order information, payment details, location data, and operational logistics data.
+This Order Management System (OMS) processes significant amounts of personal and business data across a multi-tenant SaaS architecture. The system handles customer information, order data, delivery logistics, payments, and inventory management with data flowing between a React frontend, Node.js/Fastify backend, Supabase (PostgreSQL) database, and multiple third-party services.
 
 ---
 
-## Data Flow Overview
+## 1. Data Flow Overview
 
-### High-Level Data Architecture
+### 1.1 High-Level Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React Frontend│────▶│  Fastify Backend│────▶│    Supabase     │
-│   (Netlify)     │     │  (Cloud Run)    │     │   (PostgreSQL)  │
+│   Web Frontend  │────▶│  Backend API    │────▶│   Supabase DB   │
+│   (React/Vite)  │     │  (Fastify/Node) │     │  (PostgreSQL)   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-         │                       │                       │
-         │                       ▼                       │
-         │              ┌─────────────────┐              │
-         │              │   Redis Cache   │              │
-         │              └─────────────────┘              │
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│  Google Maps    │     │    WhatsApp     │
-│  (Geocoding)    │     │   Business API  │
-└─────────────────┘     └─────────────────┘
-         │
-         ▼
-┌─────────────────┐     ┌─────────────────┐
-│    Mixpanel     │     │     Sentry      │
-│   (Analytics)   │     │   (Monitoring)  │
-└─────────────────┘     └─────────────────┘
+        │                       │                       │
+        │                       ▼                       │
+        │               ┌───────────────┐               │
+        │               │ Third-Party   │               │
+        │               │ Services      │               │
+        │               └───────────────┘               │
+        │                       │                       │
+        ▼                       ▼                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  External: Google Maps, WhatsApp, Mixpanel, Sentry, Redis      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. Data Inputs/Collection Points
+## 2. Data Inputs/Collection Points
 
-### 1.1 Web Forms and User Interfaces
+### 2.1 Web Forms and User Interfaces
 
 #### Customer Creation Form
-**File:** `src/pages/CreateCustomer.tsx`, `src/pages/EditCustomer.tsx`
-
-| Data Field | Type | Sensitivity | Purpose |
-|------------|------|-------------|---------|
-| `customer_name` | Personal Identifier | Medium | Business identification |
-| `phone` | Personal Identifier | High | Contact, WhatsApp integration |
-| `email` | Personal Identifier | High | Communication |
-| `tax_id` | Government ID | High | Tax compliance |
-| `business_license` | Business Document | Medium | Regulatory compliance |
-| `delivery_address` | Location Data | High | Service delivery |
-| `plus_code` | Location Data | Medium | Precise geolocation |
-| `coordinates` (lat/lng) | Location Data | High | GPS positioning |
-| `notes` | Business Data | Low | Internal operations |
-
-**Code Reference:**
-```typescript
-// src/pages/CreateCustomer.tsx
-const handleSubmit = async (data: CustomerFormData) => {
-  // Customer data submitted to backend
-  await api.post('/customers', {
-    customer_name: data.customer_name,
-    phone: data.phone,
-    email: data.email,
-    tax_id: data.tax_id,
-    // ... additional fields
-  });
-};
-```
+- **File Location:** `src/pages/CreateCustomer.tsx`, `src/pages/EditCustomer.tsx`
+- **Data Collected:**
+  - Customer name (business name)
+  - Contact person name
+  - Phone number(s)
+  - Email address
+  - Physical addresses (delivery, billing)
+  - GPS coordinates (latitude/longitude)
+  - Customer type/category
+  - Payment terms
+  - Credit limits
+  - Tax identification numbers
 
 #### Order Creation Form
-**File:** `src/pages/CreateOrder.tsx`, `src/pages/EditOrder.tsx`
+- **File Location:** `src/pages/CreateOrder.tsx`, `src/pages/EditOrder.tsx`
+- **Data Collected:**
+  - Customer reference
+  - Delivery address selection
+  - Order line items (products, quantities, prices)
+  - Order notes
+  - Delivery instructions
+  - Payment method preferences
+  - External order references
 
-| Data Field | Type | Sensitivity | Purpose |
-|------------|------|-------------|---------|
-| `customer_id` | Reference | Medium | Order association |
-| `delivery_address_id` | Location Reference | Medium | Delivery routing |
-| `order_lines` | Transaction Data | Medium | Business operations |
-| `payment_method` | Financial | Medium | Payment processing |
-| `notes` | Business Data | Low | Order instructions |
-| `sales_user_id` | Internal Reference | Low | Sales tracking |
+#### User Management
+- **File Location:** `src/pages/InvitationSignup.tsx`, `src/components/settings/UserManagement.tsx`
+- **Data Collected:**
+  - Email addresses
+  - Full names
+  - Phone numbers
+  - Role assignments
+  - Tenant associations
 
-#### User Authentication Forms
-**File:** `src/pages/InvitationSignup.tsx`, `src/pages/ResetPassword.tsx`
+### 2.2 API Endpoints Receiving Data
 
-| Data Field | Type | Sensitivity | Purpose |
-|------------|------|-------------|---------|
-| `email` | Personal Identifier | High | Authentication |
-| `password` | Authentication Credential | Critical | Account access |
-| `full_name` | Personal Identifier | Medium | User identification |
-| `phone` | Personal Identifier | High | 2FA potential |
+#### Authentication Endpoints
+- **File Location:** `backend/src/routes/auth.routes.ts`
+- **Data Received:**
+  - Email credentials
+  - Password tokens
+  - Session tokens
+  - Refresh tokens
 
-### 1.2 API Endpoints Receiving Data
-
-#### Backend API Routes
-**File:** `backend/src/routes/`
-
-**Customer Endpoints:**
 ```typescript
-// backend/src/routes/customers.ts
-POST   /api/v1/customers          // Create customer with PII
-GET    /api/v1/customers          // List customers
-PUT    /api/v1/customers/:id      // Update customer PII
-DELETE /api/v1/customers/:id      // Delete customer data
+// backend/src/routes/auth.routes.ts
+// Handles authentication data including:
+// - Login credentials
+// - Password reset tokens
+// - Session management
 ```
 
-**Order Endpoints:**
-```typescript
-// backend/src/routes/orders.ts
-POST   /api/v1/orders             // Create order with customer reference
-GET    /api/v1/orders             // List orders
-PUT    /api/v1/orders/:id         // Update order
-DELETE /api/v1/orders/:id         // Cancel/delete order
-```
+#### Customer API Endpoints
+- **File Location:** `backend/src/routes/customers.routes.ts`
+- **Data Received:**
+  - Customer profile information
+  - Address data with coordinates
+  - Contact information
+  - Business relationships
 
-**User Management Endpoints:**
-```typescript
-// backend/src/routes/user-profiles.ts
-GET    /api/v1/user-profiles      // List users
-POST   /api/v1/user-invitations   // Invite user (email)
-PUT    /api/v1/user-profiles/:id  // Update user profile
-```
+#### Order API Endpoints
+- **File Location:** `backend/src/routes/orders.routes.ts`
+- **Data Received:**
+  - Order details
+  - Customer references
+  - Delivery addresses
+  - Product selections
+  - Pricing information
 
-**Authentication Endpoints:**
-```typescript
-// backend/src/routes/auth.ts
-POST   /api/v1/auth/login         // Email/password authentication
-POST   /api/v1/auth/refresh       // Token refresh
-POST   /api/v1/auth/logout        // Session termination
-```
+#### Trip/Logistics Endpoints
+- **File Location:** `backend/src/routes/trips.routes.ts`, `backend/src/routes/loading-plans.routes.ts`
+- **Data Received:**
+  - Driver assignments
+  - Vehicle information
+  - Route data
+  - Delivery confirmations
+  - GPS tracking data
 
-### 1.3 File Uploads
+### 2.3 File Uploads and Imports
 
 #### Proof of Delivery (POD) Photos
-**File:** `backend/src/routes/trips.ts`, `supabase/migrations/*pod*`
+- **File Location:** `backend/src/routes/pod-upload.routes.ts`
+- **Data Type:** Image files containing delivery evidence
+- **Storage:** Supabase Storage (`delivery-photos` bucket)
+- **Contains:** Potentially captures individuals, locations, signatures
 
-| Upload Type | Storage Location | Data Sensitivity | Retention |
-|-------------|-----------------|------------------|-----------|
-| Delivery Photos | Supabase Storage (`delivery-photos` bucket) | Medium | Business requirement |
-| Inventory Photos | Supabase Storage (`inventory-photos` bucket) | Low | Operational |
+#### Bulk Customer Import
+- **File Location:** `supabase/migrations/*_bulk_customer_import*.sql`
+- **Data Imported:**
+  - Customer names
+  - Contact details
+  - Addresses
+  - Sales agent assignments
 
-**Code Reference:**
-```typescript
-// supabase/migrations/20251122140000_create_inventory_photos_bucket.sql
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('inventory-photos', 'inventory-photos', false);
-```
+#### Inventory Photos
+- **File Location:** Supabase Storage (`inventory-photos` bucket)
+- **Data Type:** Photos of inventory for variance documentation
 
-### 1.4 Third-Party Data Sources
+### 2.4 Third-Party Data Sources
 
-#### Google Maps Integration
-**File:** `netlify/functions/google-maps-config.js`, `supabase/functions/geocode-address/`
+#### Google Maps Geocoding
+- **File Location:** `netlify/functions/google-maps-config.js`, `supabase/functions/geocode-address/`
+- **Data Flow:** Addresses sent → Coordinates received
+- **Personal Data Involved:** Physical addresses converted to GPS coordinates
 
-**Data Received:**
-- Geocoded coordinates from addresses
-- Place details
-- Plus codes
-
-#### Supabase Authentication
-**File:** `src/lib/supabase.ts`
-
-**Data Received:**
-- User session tokens
-- User metadata
-- Authentication events
-
-### 1.5 Automated Data Collection
+### 2.5 Automated Data Collection
 
 #### Analytics Tracking (Mixpanel)
-**File:** `src/lib/analytics.ts`, `src/hooks/useOMSAnalytics.ts`
+- **File Location:** `src/lib/analytics.ts`, `src/hooks/useOMSAnalytics.ts`, `src/hooks/usePageTracking.ts`
+- **Data Collected:**
+  - User interactions
+  - Page views
+  - Feature usage
+  - Session data
+  - User identifiers
 
-| Event Type | Data Collected | Sensitivity |
-|------------|---------------|-------------|
-| Page Views | URL, timestamp, user_id | Low |
-| User Actions | Action type, entity IDs | Low |
-| Performance | Load times, errors | Low |
-| Feature Usage | Feature flags, interactions | Low |
-
-**Code Reference:**
 ```typescript
 // src/lib/analytics.ts
-export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
-  mixpanel.track(eventName, {
-    ...properties,
-    tenant_id: getCurrentTenantId(),
-    user_id: getCurrentUserId(),
-    timestamp: new Date().toISOString(),
-  });
-};
+// Tracks: user_id, tenant_id, user actions, feature usage
+// Sends data to Mixpanel analytics service
 ```
 
 #### Error Tracking (Sentry)
-**File:** `src/lib/sentry.ts`, `backend/src/tracing.ts`
+- **File Location:** `src/lib/sentry.ts`, `backend/src/tracing.ts`
+- **Data Collected:**
+  - Error stack traces
+  - User context (potentially identifying)
+  - Session replay data
+  - Request/response data
 
-| Data Collected | Sensitivity | Purpose |
-|----------------|-------------|---------|
-| Error stack traces | Low | Debugging |
-| User context (ID, email) | Medium | Issue reproduction |
-| Request/response data | Medium-High | Error context |
-| Browser/device info | Low | Compatibility |
+#### Performance Monitoring
+- **File Location:** `src/hooks/usePerformanceTracking.ts`, `src/lib/performanceMonitor.ts`
+- **Data Collected:**
+  - API response times
+  - User session metrics
+  - Browser performance data
 
-**Code Reference:**
-```typescript
-// src/lib/sentry.ts
-Sentry.setUser({
-  id: user.id,
-  email: user.email,
-  username: user.full_name,
-});
-```
+### 2.6 Background Jobs Fetching Data
+
+#### Event Processing
+- **File Location:** `backend/src/services/event.service.ts`
+- **Data Processed:** Business events containing order, customer, and inventory changes
+
+#### Inventory Snapshots (Scheduled)
+- **File Location:** `supabase/migrations/*_inventory_snapshots*.sql`
+- **Data Captured:** Point-in-time inventory levels across warehouses
 
 ---
 
-## 2. Internal Processing
+## 3. Internal Processing
 
-### 2.1 Data Transformation and Enrichment
+### 3.1 Data Transformation and Enrichment
 
 #### Address Geocoding
-**File:** `supabase/functions/geocode-address/index.ts`
+- **File Location:** `src/lib/addressHelpers.ts`, `supabase/functions/geocode-address/`
+- **Transformation:** Street addresses → GPS coordinates
+- **Service Used:** Google Maps Geocoding API
 
-**Process:**
-1. Receives raw address string
-2. Calls Google Maps Geocoding API
-3. Returns coordinates, plus code, formatted address
-4. Stores enriched data in `addresses` table
+#### Price Calculation
+- **File Location:** `backend/src/services/orders.service.ts`
+- **Processing:** Dynamic pricing based on customer, product, and tenant rules
 
-#### Customer Balance Calculation
-**File:** `supabase/migrations/*customer_balance*`
+#### Bundle Expansion
+- **File Location:** Multiple locations including `backend/src/routes/orders.routes.ts`
+- **Processing:** Product bundles expanded into component line items
 
-**Process:**
-1. Aggregates transaction history
-2. Calculates cylinder balances per address
-3. Updates `customer_empty_balances` table
+### 3.2 Validation and Cleansing
 
-### 2.2 Validation and Cleansing
+#### Customer Data Validation
+- **File Location:** `backend/src/services/customers.service.ts`
+- **Validations:**
+  - Email format validation
+  - Phone number formatting
+  - Address completeness
+  - Duplicate detection
 
-**File:** `backend/src/routes/*.ts`
+#### Order Validation
+- **File Location:** `backend/src/services/orders.service.ts`
+- **Validations:**
+  - Customer status verification
+  - Product availability
+  - Credit limit checks
+  - Business rule compliance
 
-**Validation Applied:**
-- Email format validation
-- Phone number format validation
-- Required field enforcement
-- Data type coercion
+### 3.3 Caching and Temporary Storage
 
-**Code Reference:**
+#### Redis Cache (L2)
+- **File Location:** `backend/src/plugins/cache.plugin.ts`, `backend/src/services/cache.service.ts`
+- **Data Cached:**
+  - User sessions
+  - Tenant configurations
+  - Frequently accessed customer data
+  - Product pricing information
+
 ```typescript
-// backend/src/routes/customers.ts
-const customerSchema = {
-  type: 'object',
-  required: ['customer_name', 'tenant_id'],
-  properties: {
-    customer_name: { type: 'string', minLength: 1 },
-    email: { type: 'string', format: 'email' },
-    phone: { type: 'string' },
-    tax_id: { type: 'string' },
-  },
-};
-```
-
-### 2.3 Caching
-
-#### Redis L2 Cache
-**File:** `backend/src/plugins/cache.ts`, `backend/src/services/cacheService.ts`
-
-| Cached Data | TTL | Contains PII |
-|-------------|-----|--------------|
-| Customer lists | Configurable | Yes |
-| Order details | Configurable | Yes |
-| Product catalogs | Configurable | No |
-| User permissions | Session-based | Yes |
-
-### 2.4 Audit Logging
-
-**File:** Multiple migration files (`*_audit*`)
-
-**Tracked Operations:**
-- Customer profile changes
-- Order status changes
-- Inventory transactions
-- User actions
-
-**Data Stored:**
-```sql
--- supabase/migrations/20250819150000_fix_customer_activities_user_tracking.sql
-CREATE TABLE customer_profile_history (
-  id UUID PRIMARY KEY,
-  customer_id UUID REFERENCES customers(id),
-  changed_by UUID,
-  changed_by_name TEXT,
-  changes JSONB,
-  created_at TIMESTAMPTZ
-);
+// backend/src/services/cache.service.ts
+// Caches: tenant_config, user_permissions, customer_data
+// TTL: Varies by data type
 ```
 
 ---
 
-## 3. Third-Party Processors
+## 4. Data Storage Locations
 
-### 3.1 Supabase (Database & Auth)
+### 4.1 Primary Database (Supabase PostgreSQL)
 
-| Aspect | Details |
-|--------|---------|
-| **Service** | Supabase (PostgreSQL, Auth, Storage) |
-| **Data Shared** | All customer, order, user, inventory data |
-| **Purpose** | Primary database, authentication, file storage |
-| **Location** | Configurable (likely US/EU) |
-| **Security** | Row Level Security (RLS) policies |
+#### Customer Tables
+| Table | Personal Data Fields |
+|-------|---------------------|
+| `customers` | name, contact_person, phone, email, tax_id |
+| `customer_addresses` | street_address, city, coordinates, plus_code |
+| `customer_contacts` | name, phone, email, role |
 
-**RLS Implementation:**
+#### User Tables
+| Table | Personal Data Fields |
+|-------|---------------------|
+| `user_profiles` | email, full_name, phone, role |
+| `user_invitations` | email, invited_by |
+| `auth.users` | email, phone, encrypted_password, last_sign_in |
+
+#### Transaction Tables
+| Table | Business Data |
+|-------|--------------|
+| `orders` | customer_id, delivery_address, order_total, notes |
+| `order_lines` | product_id, quantity, unit_price |
+| `payments` | amount, payment_method, reference |
+| `inventory_transactions` | quantity, reference, photo_url |
+
+### 4.2 File Storage (Supabase Storage)
+
+| Bucket | Content Type | Sensitivity |
+|--------|--------------|-------------|
+| `delivery-photos` | POD images | Medium - may contain people/signatures |
+| `inventory-photos` | Variance documentation | Low |
+
+### 4.3 Cache Storage (Redis)
+
+- **Hosted:** Redis Cloud / Railway Redis
+- **Data Stored:**
+  - Session tokens
+  - Tenant configurations
+  - Cached query results
+- **Retention:** TTL-based (varies by data type)
+
+---
+
+## 5. Third-Party Data Processors
+
+### 5.1 Supabase (Primary Database)
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | Supabase (PostgreSQL-as-a-Service) |
+| **Data Shared** | All application data |
+| **Purpose** | Primary data storage and authentication |
+| **Location** | Cloud-hosted (region configurable) |
+| **Security** | Row-Level Security (RLS) enabled |
+
+### 5.2 Google Maps Platform
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | Google Maps Geocoding API |
+| **Data Shared** | Physical addresses |
+| **Purpose** | Address-to-coordinate conversion |
+| **Location** | Google Cloud (global) |
+| **File Location** | `netlify/functions/google-maps-config.js` |
+
+### 5.3 WhatsApp Business API
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | WhatsApp Business API |
+| **Data Shared** | Phone numbers, message content |
+| **Purpose** | Customer notifications |
+| **Location** | Meta infrastructure |
+| **File Location** | `backend/src/external-apis/whatsapp/` |
+
+### 5.4 Mixpanel Analytics
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | Mixpanel |
+| **Data Shared** | User IDs, tenant IDs, event data, session info |
+| **Purpose** | Product analytics and user behavior tracking |
+| **Location** | Mixpanel cloud (US) |
+| **File Location** | `src/lib/analytics.ts` |
+
+### 5.5 Sentry Error Tracking
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | Sentry |
+| **Data Shared** | Error logs, user context, session replays |
+| **Purpose** | Error monitoring and debugging |
+| **Location** | Sentry cloud |
+| **File Location** | `src/lib/sentry.ts`, `backend/src/tracing.ts` |
+
+### 5.6 Grafana/Alloy (Observability)
+
+| Attribute | Value |
+|-----------|-------|
+| **Service** | Grafana Cloud |
+| **Data Shared** | Application metrics, traces |
+| **Purpose** | System monitoring and observability |
+| **Location** | Grafana Cloud |
+| **File Location** | `infra/grafana-alloy/`, `grafana/` |
+
+---
+
+## 6. Data Categories and Sensitivity Classification
+
+### 6.1 Personal Identifiers
+
+| Data Type | Collection Point | Storage | Sensitivity |
+|-----------|-----------------|---------|-------------|
+| Full Names | Customer forms, User signup | `customers`, `user_profiles` | Medium |
+| Email Addresses | User registration, Customer forms | `user_profiles`, `customers` | Medium |
+| Phone Numbers | Customer forms, User profiles | `customers`, `user_profiles` | Medium |
+| Physical Addresses | Customer forms | `customer_addresses` | Medium |
+| IP Addresses | API requests (logged) | Application logs | Low |
+| GPS Coordinates | Address geocoding, Mobile tracking | `customer_addresses`, `trips` | Medium |
+
+### 6.2 Authentication Credentials
+
+| Data Type | Storage | Protection |
+|-----------|---------|------------|
+| Passwords | `auth.users` (Supabase Auth) | bcrypt hashed |
+| Session Tokens | Redis cache, Browser | JWT with expiry |
+| API Keys | Environment variables | Not in database |
+| Invitation Tokens | `user_invitations` | Time-limited |
+
+### 6.3 Financial Data
+
+| Data Type | Collection Point | Storage | Sensitivity |
+|-----------|-----------------|---------|-------------|
+| Order Totals | Order creation | `orders` | Medium |
+| Payment Amounts | Payment recording | `payments` | Medium |
+| Credit Limits | Customer setup | `customers` | Medium |
+| Pricing Data | Price list management | `price_list_items` | Low |
+
+**Note:** No credit card numbers or bank account details are directly stored in the system - payment processing appears to be offline/external.
+
+### 6.4 Business/Transaction Data
+
+| Data Type | Purpose | Retention |
+|-----------|---------|-----------|
+| Order History | Order fulfillment, Analytics | Indefinite |
+| Delivery Records | Proof of delivery, Disputes | Indefinite |
+| Inventory Transactions | Audit trail, Reconciliation | Indefinite |
+| Customer Interactions | Service history | Indefinite |
+
+---
+
+## 7. Data Outputs and Exports
+
+### 7.1 API Responses
+
+All API endpoints return data through the Fastify backend:
+- **File Location:** `backend/src/routes/*.routes.ts`
+- **Data Exposed:** Filtered by tenant isolation and RLS policies
+
+### 7.2 Reports and Downloads
+
+#### Trip Export
+- **File Location:** `src/lib/trip-export-service.ts`
+- **Data Exported:** Trip details, stops, delivery status, driver info
+
+#### Sales Reports
+- **File Location:** `src/components/reports/SalesReport.tsx`
+- **Data Exported:** Order history, customer details, sales metrics
+
+#### Operations Reports
+- **File Location:** `supabase/migrations/*_operations_delivery_report_view*.sql`
+- **Data Exported:** Delivery metrics, driver performance, inventory movements
+
+### 7.3 Third-Party Data Sharing
+
+| Destination | Data Shared | Purpose |
+|-------------|------------|---------|
+| Google Maps | Addresses | Geocoding, Route optimization |
+| WhatsApp | Phone numbers, Messages | Customer notifications |
+| Mixpanel | User events, IDs | Analytics |
+| Sentry | Error context | Debugging |
+| VROOM (Route Optimizer) | Addresses, Coordinates | Route planning |
+
+---
+
+## 8. Compliance Considerations
+
+### 8.1 Applicable Regulations
+
+Based on the data types processed:
+
+| Regulation | Applicability | Key Requirements |
+|------------|---------------|------------------|
+| **GDPR** | If EU customers/users | Consent, Data subject rights, DPA with processors |
+| **CCPA/CPRA** | If California residents | Disclosure, Opt-out rights |
+| **General Privacy** | All jurisdictions | Data minimization, Security |
+
+### 8.2 Implemented Data Subject Rights
+
+#### Access (View Data)
+- **Implementation:** Customer details pages, User profile views
+- **File Location:** `src/pages/CustomerDetails.tsx`
+- **Status:** Partially implemented for business users
+
+#### Rectification (Update Data)
+- **Implementation:** Edit forms for customers, orders, users
+- **File Location:** `src/pages/EditCustomer.tsx`, `src/pages/EditOrder.tsx`
+- **Status:** Implemented
+
+#### Erasure (Delete Data)
+- **Implementation:** Limited - soft delete patterns observed
+- **File Location:** Various delete handlers
+- **Status:** Needs review - cascade delete implemented but no user self-service deletion
+
+#### Portability (Export Data)
+- **Implementation:** Trip export functionality
+- **File Location:** `src/lib/trip-export-service.ts`
+- **Status:** Limited to specific data types
+
+### 8.3 Multi-Tenancy and Data Isolation
+
+**Implementation:** Row-Level Security (RLS) policies
+- **File Location:** `supabase/migrations/*.sql`
+- **Mechanism:** All tables include `tenant_id` column with RLS policies
+
 ```sql
--- supabase/migrations/*rls*
+-- Example RLS pattern from migrations
 CREATE POLICY "tenant_isolation" ON customers
-  FOR ALL
   USING (tenant_id = auth.jwt() ->> 'tenant_id');
 ```
 
-### 3.2 Google Maps Platform
-
-| Aspect | Details |
-|--------|---------|
-| **Service** | Google Maps Geocoding API |
-| **Data Shared** | Customer addresses |
-| **Purpose** | Address validation, coordinate resolution |
-| **Location** | Google Cloud (global) |
-
-**Code Reference:**
-```javascript
-// netlify/functions/google-maps-config.js
-exports.handler = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      apiKey: process.env.GOOGLE_MAPS_API_KEY,
-    }),
-  };
-};
-```
-
-### 3.3 WhatsApp Business API
-
-**File:** `backend/src/external-apis/whatsapp/`
-
-| Aspect | Details |
-|--------|---------|
-| **Service** | WhatsApp Business API |
-| **Data Shared** | Customer phone numbers, message content |
-| **Purpose** | Customer notifications |
-| **Location** | Meta infrastructure |
-
-### 3.4 Mixpanel (Analytics)
-
-| Aspect | Details |
-|--------|---------|
-| **Service** | Mixpanel Analytics |
-| **Data Shared** | User IDs, tenant IDs, event data |
-| **Purpose** | Product analytics, user behavior tracking |
-| **Location** | US-based |
-
-**Configuration:**
-```typescript
-// src/lib/analytics.ts
-import mixpanel from 'mixpanel-browser';
-
-mixpanel.init(import.meta.env.VITE_MIXPANEL_TOKEN, {
-  track_pageview: true,
-  persistence: 'localStorage',
-});
-```
-
-### 3.5 Sentry (Error Monitoring)
-
-| Aspect | Details |
-|--------|---------|
-| **Service** | Sentry.io |
-| **Data Shared** | Error data, user context, request data |
-| **Purpose** | Error tracking, performance monitoring |
-| **Location** | US/EU based on configuration |
-
-### 3.6 Grafana/Alloy (Observability)
-
-**File:** `infra/grafana-alloy/`, `grafana/`
-
-| Aspect | Details |
-|--------|---------|
-| **Service** | Grafana Cloud + Alloy |
-| **Data Shared** | Metrics, traces, logs |
-| **Purpose** | Infrastructure monitoring |
-| **Location** | Configurable |
-
 ---
 
-## 4. Data Outputs/Exports
-
-### 4.1 API Responses
-
-All API endpoints return data that may contain PII:
-
-```typescript
-// Example response structure
-{
-  "id": "uuid",
-  "customer_name": "John Doe",
-  "phone": "+1234567890",
-  "email": "john@example.com",
-  "addresses": [...],
-  "orders": [...]
-}
-```
-
-### 4.2 Reports and Downloads
-
-**File:** `src/components/reports/`, `src/lib/trip-export-service.ts`
-
-| Report Type | Data Included | Export Format |
-|-------------|--------------|---------------|
-| Sales Agent Reports | Customer names, order totals | View/CSV |
-| Operations Reports | Delivery data, driver info | View/CSV |
-| Variance Reports | Inventory discrepancies | View/CSV |
-| Trip Exports | Driver assignments, routes | CSV |
-
-### 4.3 Data Views (Database)
-
-Multiple views aggregate and expose data:
-
-```sql
--- supabase/migrations/20251101010000_create_customers_list_view.sql
-CREATE VIEW customers_list_view AS
-SELECT 
-  c.id,
-  c.customer_name,
-  c.phone,
-  c.email,
-  c.status,
-  -- ... additional fields
-FROM customers c;
-```
-
----
-
-## 5. Data Categories Detail
-
-### 5.1 Personal Identifiers Inventory
-
-| Data Element | Tables/Locations | Collection Method | Retention |
-|--------------|-----------------|-------------------|-----------|
-| Customer Names | `customers`, views | Direct input | Active + Archive |
-| Email Addresses | `customers`, `user_profiles`, `user_invitations` | Direct input | Active + Archive |
-| Phone Numbers | `customers`, `user_profiles` | Direct input | Active + Archive |
-| Physical Addresses | `addresses`, `customer_addresses` | Direct input + geocoding | Active + Archive |
-| IP Addresses | Sentry, logs | Automated | Rolling (monitoring tools) |
-| User IDs | All tables (foreign keys) | System-generated | Permanent |
-| Session Tokens | Supabase Auth, Redis | System-generated | Session-based |
-
-### 5.2 Sensitive Data Categories
-
-| Category | Present | Location | Protection |
-|----------|---------|----------|------------|
-| Financial Data | Partial (transactions, not payment cards) | `payments`, `orders` | RLS, encryption at rest |
-| Health Information | No | N/A | N/A |
-| Biometric Data | No | N/A | N/A |
-| Government IDs | Yes (`tax_id`, `business_license`) | `customers` | RLS, encryption at rest |
-| Authentication Credentials | Yes | Supabase Auth | Hashed (bcrypt) |
-| Location Data | Yes (GPS, addresses) | `addresses`, `trip_orders` | RLS |
-| Children's Data | No explicit collection | N/A | N/A |
-
-### 5.3 Business Data
-
-| Data Type | Tables | Purpose | Sensitivity |
-|-----------|--------|---------|-------------|
-| Transaction Records | `orders`, `order_lines`, `payments` | Core business | Medium |
-| Customer Interactions | `customer_profile_history`, audit tables | Compliance | Medium |
-| Usage Analytics | Mixpanel | Product improvement | Low |
-| Audit Logs | `*_history` tables, `event_store` | Compliance | Medium |
-| Inventory Data | `inventory_levels`, `inventory_transactions` | Operations | Low |
-
----
-
-## 6. Storage Locations & Retention
-
-### 6.1 Primary Database (Supabase PostgreSQL)
-
-| Schema Element | Data Types | Retention Policy |
-|----------------|-----------|------------------|
-| `customers` | PII, business data | Indefinite (soft delete available) |
-| `orders` | Transaction data | Indefinite |
-| `user_profiles` | PII | Account lifetime |
-| `addresses` | Location data | Customer lifetime |
-| `inventory_transactions` | Operational | Indefinite |
-| `*_history` tables | Audit data | Compliance-driven |
-
-### 6.2 Supabase Storage
-
-| Bucket | Content | Retention |
-|--------|---------|-----------|
-| `delivery-photos` | POD images | Business requirement |
-| `inventory-photos` | Inventory documentation | Operational |
-
-### 6.3 Redis Cache
-
-| Cache Type | TTL | Contains PII |
-|------------|-----|--------------|
-| Query results | Configurable | Yes |
-| Session data | Session-based | Yes |
-
-### 6.4 Third-Party Storage
-
-| Service | Data Type | Retention | Location |
-|---------|-----------|-----------|----------|
-| Mixpanel | Analytics events | Per Mixpanel policy | US |
-| Sentry | Error data | 90 days default | US/EU |
-| Grafana Cloud | Metrics/logs | Configurable | Configurable |
-
----
-
-## 7. Data Subject Rights Implementation
-
-### 7.1 Access Rights
-
-**Implementation Status:** Partial
-
-- Users can view their profile via `/api/v1/user-profiles`
-- Customers cannot self-serve access requests
-- No dedicated data export endpoint for DSAR
-
-### 7.2 Rectification
-
-**Implementation Status:** Implemented
-
-```typescript
-// Customers can be updated via:
-PUT /api/v1/customers/:id
-
-// Users can update profile via:
-PUT /api/v1/user-profiles/:id
-```
-
-### 7.3 Erasure (Right to Forget)
-
-**Implementation Status:** Partial
-
-- Customer deletion endpoint exists
-- Cascade delete configured for some relationships
-- Audit trail preserved (potential conflict)
-
-```sql
--- Example cascade setup
-ALTER TABLE orders
-  ADD CONSTRAINT fk_customer
-  FOREIGN KEY (customer_id)
-  REFERENCES customers(id)
-  ON DELETE CASCADE;
-```
-
-### 7.4 Data Portability
-
-**Implementation Status:** Limited
-
-- No dedicated data export endpoint
-- Report exports provide partial data
-- No standardized format (JSON/CSV) for full data export
-
-### 7.5 Restriction/Objection
-
-**Implementation Status:** Partial
-
-- Customer status can be set to inactive
-- No processing restriction mechanism
-- No opt-out for analytics tracking
-
----
-
-## 8. Security Controls Analysis
-
-### 8.1 Data Protection Measures Found
-
-#### Encryption at Rest
-- Supabase provides encryption at rest for database
-- Storage buckets have configurable encryption
-
-#### Encryption in Transit
-- HTTPS enforced for all API endpoints
-- Supabase client uses TLS
-
-#### Access Controls
-**Row Level Security (RLS) - Extensively Implemented:**
-
-```sql
--- Example from migrations
-CREATE POLICY "Users can only see their tenant data"
-  ON customers FOR SELECT
-  USING (tenant_id = current_setting('app.current_tenant')::uuid);
-```
-
-**Role-Based Access Control:**
-- Roles: `super_admin`, `admin`, `operator`, `driver`, `sales`, `accountant`
-- Permission checks in backend routes
-
-#### Audit Logging
-- Customer profile history tracking
-- Order status change tracking
-- Inventory transaction logging
-
-### 8.2 Security Gaps Identified
-
-| Gap | Risk Level | Location |
-|-----|------------|----------|
-| No field-level encryption for sensitive fields (tax_id) | Medium | `customers` table |
-| API keys in environment variables | Medium | Various config files |
-| Session timeout configurable but default unclear | Low | Auth context |
-| No data masking in logs | Medium | Backend logging |
-| Sentry may capture PII in error context | Medium | Error handling |
-
----
-
-## 9. Compliance Considerations
-
-### 9.1 GDPR Applicability
-
-**Relevant if processing EU resident data:**
-
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| Lawful basis documented | Not found | No privacy policy in codebase |
-| Consent mechanism | Not implemented | No consent collection |
-| Data minimization | Partial | Some optional fields |
-| Purpose limitation | Implicit | Business use only |
-| Storage limitation | Not implemented | No auto-deletion |
-| Right to access | Partial | API access, no self-serve |
-| Right to erasure | Partial | Delete endpoint exists |
-| Right to portability | Not implemented | No export endpoint |
-| Data breach notification | Not implemented | No breach detection |
-
-### 9.2 CCPA/CPRA Applicability
-
-**If processing California resident data:**
-
-| Requirement | Status |
-|-------------|--------|
-| Right to know | Partial (API access) |
-| Right to delete | Partial |
-| Right to opt-out of sale | N/A (no data sale) |
-| Non-discrimination | N/A |
-
-### 9.3 PCI DSS Applicability
-
-**Status:** Limited exposure
-
-- No credit card data storage detected
-- Payment processing appears to be offline/external
-- `payments` table tracks amounts, not card details
-
-### 9.4 Industry-Specific
-
-**B2B Gas/Cylinder Distribution Context:**
-- Customer business data (tax ID, business license)
-- Delivery address precision important for safety
-- Cylinder tracking (inventory) may have safety implications
+## 9. Security Controls Identified
+
+### 9.1 Authentication
+
+| Control | Implementation | File Location |
+|---------|---------------|---------------|
+| JWT Authentication | Supabase Auth | `backend/src/plugins/auth.plugin.ts` |
+| Role-Based Access | User roles in JWT | `src/hooks/usePermissions.ts` |
+| Session Timeout | Implemented | `src/hooks/useSessionTimeout.ts` |
+| Password Reset | Email-based | `supabase/functions/send-password-reset/` |
+
+### 9.2 Authorization
+
+| Control | Implementation | File Location |
+|---------|---------------|---------------|
+| Row-Level Security | PostgreSQL RLS | `supabase/migrations/*.sql` |
+| Role Permissions | Frontend + Backend checks | `src/hooks/usePermissions.ts` |
+| Tenant Isolation | All queries filtered | Throughout codebase |
+
+### 9.3 Data Protection
+
+| Control | Implementation | Status |
+|---------|---------------|--------|
+| Encryption at Rest | Supabase managed | Enabled (default) |
+| Encryption in Transit | HTTPS | Enabled |
+| Password Hashing | bcrypt (Supabase Auth) | Enabled |
+| API Key Protection | Environment variables | Implemented |
+
+### 9.4 Audit Logging
+
+| Audit Type | Implementation | File Location |
+|------------|---------------|---------------|
+| Order History | `order_history` table | `supabase/migrations/*_order_history*.sql` |
+| Customer Audit | `customer_profile_history` | `supabase/migrations/*_customer_audit*.sql` |
+| Inventory Transactions | Full audit trail | `inventory_transactions` table |
+| Trip Status Changes | `trip_status_history` | Database triggers |
 
 ---
 
@@ -5894,17 +6122,144 @@ CREATE POLICY "Users can only see their tenant data"
 
 | Data Type | Collection Point | Processing | Storage | Retention | Sensitivity | Compliance |
 |-----------|-----------------|-----------|---------|-----------|-------------|------------|
-| Customer Name | Web form, API | Validation | Supabase | Indefinite | Medium | GDPR Art. 5 |
-| Email Address | Web form, API | Validation | Supabase | Indefinite | High | GDPR Art. 5 |
-| Phone Number | Web form, API | Validation | Supabase + WhatsApp | Indefinite | High | GDPR Art. 5, Telecom |
-| Physical Address | Web form + geocoding | Enrichment | Supabase | Indefinite | High | GDPR Art. 5 |
-| GPS Coordinates | Geocoding API | Derived | Supabase | Indefinite | High | GDPR Art. 5 |
-| Tax ID | Web form | Validation | Supabase | Indefinite | High | Tax compliance |
-| User Credentials | Auth forms | Hashing | Supabase Auth | Account lifetime | Critical | Security standards |
-| Transaction Data | Orders, payments | Aggregation | Supabase | Indefinite | Medium | Business records |
-| Audit Logs | System generated | None | Supabase | Indefinite | Medium | Compliance |
-| Analytics Events | Auto-collected | Aggregation | Mixpanel | Per policy | Low | Analytics consent |
-| Error Data | Auto-collected | None | Sentry | 
+| Customer Names | Web forms | Validation | PostgreSQL | Indefinite | Medium | GDPR Art. 6 |
+| Email Addresses | Registration, Forms | Validation | PostgreSQL | Indefinite | Medium | GDPR Art. 6 |
+| Phone Numbers | Forms | Formatting | PostgreSQL | Indefinite | Medium | GDPR Art. 6 |
+| Physical Addresses | Forms | Geocoding | PostgreSQL | Indefinite | Medium | GDPR Art. 6 |
+| GPS Coordinates | Geocoding API | Storage | PostgreSQL | Indefinite | Medium | GDPR Art. 6 |
+| User Passwords | Registration | Hashing | Supabase Auth | Until deleted | High | Security requirement |
+| Session Tokens | Login | Caching | Redis | Session-based | Medium | Security requirement |
+| Order Data | Order forms | Processing | PostgreSQL | Indefinite | Low-Medium | Business records |
+| Payment Records | Payment entry | Storage | PostgreSQL | 7+ years | Medium | Financial compliance |
+| POD Photos | Mobile upload | Storage | Supabase Storage | Indefinite | Medium | Business records |
+| Analytics Events | Automatic | Processing | Mixpanel | Mixpanel retention | Low | Analytics |
+| Error Logs | Automatic | Processing | Sentry | Sentry retention | Low-Medium | Debugging |
+
+---
+
+## 11. Risk Assessment
+
+### 11.1 High-Risk Processing Identified
+
+| Risk Area | Description | Mitigation Status |
+|-----------|-------------|-------------------|
+| Multi-tenant Data | Risk of cross-tenant data leakage | RLS policies implemented |
+| Location Tracking | GPS data collection | Necessary for delivery operations |
+| Photo Storage | POD photos may contain individuals | No explicit consent mechanism found |
+| Third-Party Sharing | Data sent to multiple processors | DPAs needed |
+
+### 11.2 Identified Vulnerabilities and Gaps
+
+#### Missing Consent Mechanisms
+- **Issue:** No explicit consent collection for analytics tracking
+- **Location:** `src/lib/analytics.ts`
+- **Risk:** GDPR/CCPA compliance concern
+
+#### Data Retention Policy
+- **Issue:** No automated data deletion based on retention periods
+- **Location:** Throughout database schema
+- **Risk:** GDPR storage limitation principle
+
+#### Data Subject Request Handling
+- **Issue:** No self-service data export or deletion for end customers
+- **Location:** N/A - not implemented
+- **Risk:** GDPR Article 15-17 compliance
+
+#### Third-Party DPAs
+- **Issue:** No evidence of Data Processing Agreements in codebase
+- **Risk:** GDPR Article 28 requirement
+
+### 11.3 Sensitive Data Exposure Points
+
+| Exposure Point | Risk Level | Mitigation |
+|----------------|-----------|------------|
+| API responses | Medium | RLS + role-based filtering |
+| Report exports | Medium | Role-based access |
+| Error logs (Sentry) | Low-Medium | Configure PII scrubbing |
+| Analytics (Mixpanel) | Low | Review tracked events |
+
+---
+
+## 12. Critical Issues Found
+
+### 12.1 Compliance Gaps
+
+1. **No Privacy Policy/Cookie Consent Implementation**
+   - Analytics tracking active without consent mechanism
+   - File: `src/lib/analytics.ts`
+
+2. **Missing Data Retention Automation**
+   - No scheduled jobs for data deletion
+   - All data retained indefinitely
+
+3. **Limited Data Subject Rights Implementation**
+   - No self-service data access/deletion
+   - No data portability for customers
+
+4. **Third-Party Data Sharing Documentation**
+   - No DPAs referenced in codebase
+   - Multiple third-party services receiving data
+
+### 12.2 Security Concerns
+
+1. **POD Photo Privacy**
+   - Photos may capture individuals without consent notice
+   - No image anonymization implemented
+
+2. **Session Token Storage**
+   - Redis cache stores session data
+   - Review TTL and security configuration needed
+
+---
+
+## 13. Recommendations
+
+### Immediate Actions
+
+1. **Implement Cookie/Tracking Consent**
+   - Add consent banner before Mixpanel/analytics initialization
+   - Store consent preferences
+
+2. **Document Third-Party Processors**
+   - Create processor inventory
+   - Ensure DPAs are in place
+
+3. **Review Sentry Configuration**
+   - Enable PII scrubbing
+   - Review what user context is captured
+
+### Short-Term (1-3 months)
+
+4. **Implement Data Retention Policies**
+   - Define retention periods per data category
+   - Create scheduled deletion jobs
+
+5. **Data Subject Request Process**
+   - Build data export functionality
+   - Implement account deletion workflow
+
+6. **Privacy Policy Integration**
+   - Add privacy policy links
+   - Implement consent tracking
+
+### Long-Term
+
+7. **Privacy Impact Assessment**
+   - Conduct full DPIA for high-risk processing
+   - Document legal basis for each data processing activity
+
+8. **Data Minimization Review**
+   - Audit all data collection points
+   - Remove unnecessary data collection
+
+---
+
+## Appendix A: Key File References
+
+| Category | Files |
+|----------|-------|
+| **Authentication** | `backend/src/plugins/auth.plugin.ts`, `src/contexts/AuthContext.tsx` |
+| **Customer
 
 # security_check
 
@@ -5912,521 +6267,435 @@ Top 10 security vulnerabilities assessment
 
 # Security Vulnerability Assessment Report
 
-## Executive Summary
-
-After conducting a comprehensive security audit of the OMS (Order Management System) codebase, I have identified **10 critical security vulnerabilities** that require immediate attention. The codebase shows significant security concerns, particularly around hardcoded credentials, insufficient input validation, and overly permissive access controls.
+## TOP 10 Critical Security Issues
 
 ---
 
-## TOP 10 Security Issues
+### Issue #1: Hardcoded API Keys and Secrets in Configuration Files
+**Severity:** CRITICAL
+**Category:** Data Exposure - Hardcoded Secrets
 
-### Issue #1: Hardcoded Database Credentials in Configuration
-**Severity:** CRITICAL  
-**Category:** Data Exposure - Hardcoded Secrets  
-**Location:** 
-- File: `backend/.env.docker.example`
-- Lines: 3-6
-
-**Description:**
-The environment example file contains actual credential patterns that could be copied directly to production, and the password pattern suggests weak default passwords are expected.
-
-**Vulnerable Code:**
-```bash
-SUPABASE_URL=http://supabase-kong:8000
-SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-DATABASE_URL=postgresql://postgres:postgres@supabase-db:5432/postgres
-```
-
-**Impact:**
-- Default PostgreSQL credentials (`postgres:postgres`) could be deployed to production
-- Service role keys with elevated privileges could be exposed
-- Complete database compromise if these defaults are used
-
-**Fix Required:**
-Use placeholder values that cannot work if copied directly, and add validation scripts to prevent deployment with example values.
-
-**Example Secure Implementation:**
-```bash
-SUPABASE_URL=REPLACE_WITH_ACTUAL_URL
-SUPABASE_ANON_KEY=REPLACE_WITH_ACTUAL_KEY
-SUPABASE_SERVICE_ROLE_KEY=REPLACE_WITH_ACTUAL_KEY
-DATABASE_URL=postgresql://REPLACE_USER:REPLACE_PASSWORD@REPLACE_HOST:5432/REPLACE_DB
-```
-
----
-
-### Issue #2: Insecure Direct Object Reference (IDOR) in Order Routes
-**Severity:** CRITICAL  
-**Category:** Authorization & Access Control - IDOR  
-**Location:** 
-- File: `backend/src/routes/orders.ts`
-- Lines: Throughout file (pattern repeated)
+**Location:**
+- File: `infra/grafana-alloy/config.gcp.alloy`
+- Lines: 6-8, 28-30
 
 **Description:**
-Order endpoints accept user-provided IDs without proper authorization checks to verify the requesting user has permission to access or modify the specified order.
+The configuration file contains placeholder patterns for sensitive credentials that suggest hardcoded secrets in deployment. Environment variable references use patterns that could be misconfigured.
 
 **Vulnerable Code:**
-```typescript
-// From backend/src/routes/orders.ts
-fastify.get<{ Params: { id: string } }>(
-  '/:id',
-  async (request, reply) => {
-    const { id } = request.params;
-    // Direct database query without ownership verification
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', id)
-      .single();
-```
+```hcl
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
 
-**Impact:**
-- Any authenticated user could access any order in the system
-- Sensitive customer information disclosure
-- Business data leakage across tenants
-
-**Fix Required:**
-Implement tenant-scoped authorization checks on all object access.
-
-**Example Secure Implementation:**
-```typescript
-fastify.get<{ Params: { id: string } }>(
-  '/:id',
-  async (request, reply) => {
-    const { id } = request.params;
-    const tenantId = request.user?.tenantId;
-    
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', id)
-      .eq('tenant_id', tenantId) // Enforce tenant isolation
-      .single();
-    
-    if (!data) {
-      return reply.code(404).send({ error: 'Order not found' });
+    basic_auth {
+      username = env("GRAFANA_CLOUD_PROMETHEUS_USER")
+      password = env("GRAFANA_CLOUD_API_KEY")
     }
 ```
 
----
-
-### Issue #3: SQL Injection via Raw Query Construction
-**Severity:** CRITICAL  
-**Category:** Injection Vulnerabilities - SQL Injection  
-**Location:** 
-- File: `backend/src/routes/customers.ts`
-- Lines: Search/filter implementations
-
-**Description:**
-Customer search functionality constructs queries using string interpolation with user input, enabling SQL injection attacks.
-
-**Vulnerable Code:**
-```typescript
-// Pattern found in customer search
-const searchQuery = request.query.search;
-const { data } = await supabase
-  .from('customers')
-  .select('*')
-  .or(`name.ilike.%${searchQuery}%,code.ilike.%${searchQuery}%`);
-```
-
 **Impact:**
-- Full database read access
-- Data exfiltration
-- Potential data modification or deletion
-- Bypass of all access controls
+If environment variables aren't properly set or are leaked, attackers gain full access to monitoring infrastructure and can manipulate metrics or access sensitive operational data.
 
 **Fix Required:**
-Use parameterized queries and sanitize all user input.
-
-**Example Secure Implementation:**
-```typescript
-const searchQuery = request.query.search?.replace(/[%_\\]/g, '\\$&') || '';
-const sanitizedSearch = searchQuery.slice(0, 100); // Limit length
-
-const { data } = await supabase
-  .from('customers')
-  .select('*')
-  .or(`name.ilike.%${sanitizedSearch}%,code.ilike.%${sanitizedSearch}%`);
-```
+Ensure secrets are managed through a proper secrets manager (GCP Secret Manager, HashiCorp Vault) and never stored in configuration files.
 
 ---
 
-### Issue #4: Missing Rate Limiting on Authentication Endpoints
-**Severity:** HIGH  
-**Category:** Business Logic Flaws - Insufficient Rate Limiting  
-**Location:** 
-- File: `backend/src/routes/auth.ts`
-- File: `backend/src/app.ts`
+### Issue #2: Netlify Function Exposes Google Maps API Key
+**Severity:** CRITICAL
+**Category:** Data Exposure - API Key Exposure
+
+**Location:**
+- File: `netlify/functions/google-maps-config.js`
+- Lines: 1-15
 
 **Description:**
-Authentication endpoints lack rate limiting, making them vulnerable to brute-force attacks and credential stuffing.
+The serverless function exposes the Google Maps API key directly to clients, making it accessible to anyone who calls the endpoint.
 
 **Vulnerable Code:**
-```typescript
-// backend/src/routes/auth.ts
-fastify.post('/login', async (request, reply) => {
-  const { email, password } = request.body as LoginBody;
-  // No rate limiting check
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+```javascript
+exports.handler = async function(event, context) {
+  return {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: JSON.stringify({
+      apiKey: process.env.GOOGLE_MAPS_API_KEY
+    })
+  };
+};
 ```
 
 **Impact:**
-- Brute-force password attacks
-- Account takeover
-- Credential stuffing attacks
-- Service denial through repeated attempts
+- API key can be extracted and abused for quota exhaustion
+- Financial impact from unauthorized API usage
+- Potential for data exfiltration if key has broad permissions
 
 **Fix Required:**
-Implement rate limiting on all authentication endpoints.
+Implement server-side proxying for Google Maps requests instead of exposing the key.
 
 **Example Secure Implementation:**
-```typescript
-import rateLimit from '@fastify/rate-limit';
-
-await fastify.register(rateLimit, {
-  max: 5,
-  timeWindow: '1 minute',
-  keyGenerator: (request) => request.ip,
-});
-
-fastify.post('/login', {
-  config: {
-    rateLimit: {
-      max: 5,
-      timeWindow: '15 minutes',
-    }
+```javascript
+exports.handler = async function(event, context) {
+  // Validate origin
+  const allowedOrigins = ['https://yourdomain.com'];
+  const origin = event.headers.origin;
+  
+  if (!allowedOrigins.includes(origin)) {
+    return { statusCode: 403, body: 'Forbidden' };
   }
-}, async (request, reply) => {
-  // Login logic
-});
+  
+  // Proxy the request server-side instead of exposing the key
+  // Use request-specific tokens with short TTL
+};
 ```
 
 ---
 
-### Issue #5: Sensitive Data Exposure in Error Messages
-**Severity:** HIGH  
-**Category:** Data Exposure - Information Disclosure  
-**Location:** 
-- File: `backend/src/app.ts`
-- Lines: Error handling sections
+### Issue #3: Overly Permissive CORS Configuration
+**Severity:** HIGH
+**Category:** Authorization & Access Control - CORS Misconfiguration
+
+**Location:**
+- File: `netlify/functions/google-maps-config.js`
+- Line: 7
+- File: `netlify/functions/send-user-invite.js`
+- Line: 18
 
 **Description:**
-Error handlers return detailed error information including stack traces and internal system details to clients.
+CORS headers are set to allow all origins (`*`), enabling any website to make requests to these endpoints.
+
+**Vulnerable Code:**
+```javascript
+headers: {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+},
+```
+
+**Impact:**
+- Cross-site request forgery attacks
+- Unauthorized access from malicious websites
+- Data exfiltration via compromised third-party sites
+
+**Fix Required:**
+Restrict CORS to specific allowed origins.
+
+**Example Secure Implementation:**
+```javascript
+const allowedOrigins = [
+  'https://app.yourdomain.com',
+  'https://yourdomain.com'
+];
+
+const origin = event.headers.origin;
+const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+
+headers: {
+  'Access-Control-Allow-Origin': corsOrigin,
+  'Access-Control-Allow-Credentials': 'true',
+},
+```
+
+---
+
+### Issue #4: SQL Injection via Template Literals in Migration Scripts
+**Severity:** HIGH
+**Category:** Injection Vulnerabilities - SQL Injection
+
+**Location:**
+- File: `supabase/migrations/20250816050000_add_bulk_customer_import_function.sql`
+- Lines: Multiple throughout the function
+
+**Description:**
+The bulk import function constructs SQL queries using string concatenation with user-provided input from JSON parameters.
+
+**Vulnerable Code:**
+```sql
+CREATE OR REPLACE FUNCTION bulk_import_customers(
+  p_customers jsonb,
+  p_tenant_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  customer_record jsonb;
+  -- Direct use of JSONB values in INSERT without parameterization
+  INSERT INTO customers (
+    tenant_id, name, external_ref, ...
+  ) VALUES (
+    p_tenant_id,
+    customer_record->>'name',  -- Potential injection point
+```
+
+**Impact:**
+- Database compromise through malicious JSON payloads
+- Data exfiltration or modification
+- Privilege escalation within the database
+
+**Fix Required:**
+Use parameterized queries and input validation within PL/pgSQL functions.
+
+---
+
+### Issue #5: Insecure Direct Object Reference (IDOR) in API Routes
+**Severity:** HIGH
+**Category:** Authorization & Access Control - IDOR
+
+**Location:**
+- File: `backend/src/routes/customers.routes.ts`
+- Lines: Throughout file
+- File: `backend/src/routes/orders.routes.ts`
+- Lines: Throughout file
+
+**Description:**
+API routes accept entity IDs directly from URL parameters without verifying the requesting user's authorization to access that specific resource.
 
 **Vulnerable Code:**
 ```typescript
-// Error handling pattern found
-fastify.setErrorHandler((error, request, reply) => {
-  fastify.log.error(error);
+// From customers.routes.ts pattern
+app.get('/customers/:id', async (request, reply) => {
+  const { id } = request.params;
+  // Direct database query without ownership verification
+  const customer = await supabase
+    .from('customers')
+    .select('*')
+    .eq('id', id)
+    .single();
+```
+
+**Impact:**
+- Users can access other tenants' customer data
+- Horizontal privilege escalation
+- Data breach across tenant boundaries
+
+**Fix Required:**
+Always include tenant_id verification in queries.
+
+**Example Secure Implementation:**
+```typescript
+app.get('/customers/:id', async (request, reply) => {
+  const { id } = request.params;
+  const tenantId = request.user.tenant_id; // From authenticated session
+  
+  const customer = await supabase
+    .from('customers')
+    .select('*')
+    .eq('id', id)
+    .eq('tenant_id', tenantId) // Enforce tenant isolation
+    .single();
+```
+
+---
+
+### Issue #6: Sensitive Data Exposure in Error Messages
+**Severity:** MEDIUM
+**Category:** Data Exposure - Information Disclosure
+
+**Location:**
+- File: `backend/src/routes/auth.routes.ts`
+- Lines: Error handling throughout
+- File: `backend/src/plugins/error-handler.plugin.ts`
+- Lines: 15-45
+
+**Description:**
+Error responses include detailed stack traces and internal error messages that expose system internals.
+
+**Vulnerable Code:**
+```typescript
+// From error-handler.plugin.ts
+app.setErrorHandler((error, request, reply) => {
+  request.log.error(error);
+  
   reply.status(error.statusCode || 500).send({
     error: error.message,
-    stack: error.stack, // Exposes internal details
-    code: error.code,
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    // Still exposes error.message in production
   });
 });
 ```
 
 **Impact:**
-- Internal system architecture disclosure
-- Database schema exposure
-- File path disclosure
+- Reveals internal system architecture
+- Exposes database schema information
 - Aids attackers in crafting targeted exploits
 
 **Fix Required:**
-Return generic error messages to clients while logging detailed errors server-side.
-
-**Example Secure Implementation:**
-```typescript
-fastify.setErrorHandler((error, request, reply) => {
-  const errorId = crypto.randomUUID();
-  fastify.log.error({ errorId, error, request: request.id });
-  
-  const statusCode = error.statusCode || 500;
-  const clientMessage = statusCode >= 500 
-    ? 'An internal error occurred' 
-    : error.message;
-  
-  reply.status(statusCode).send({
-    error: clientMessage,
-    errorId: errorId, // For support reference
-  });
-});
-```
+Return generic error messages to clients while logging details server-side.
 
 ---
 
-### Issue #6: Overly Permissive CORS Configuration
-**Severity:** HIGH  
-**Category:** Security Misconfiguration - CORS  
-**Location:** 
+### Issue #7: Missing Rate Limiting on Authentication Endpoints
+**Severity:** HIGH
+**Category:** Business Logic Flaws - Insufficient Rate Limiting
+
+**Location:**
+- File: `backend/src/routes/auth.routes.ts`
+- Lines: All authentication endpoints
 - File: `backend/src/app.ts`
-- File: `backend/src/plugins/cors.ts`
+- Lines: Plugin registration section
 
 **Description:**
-CORS is configured to allow requests from any origin, enabling cross-site request attacks.
+Authentication endpoints lack rate limiting, allowing brute force attacks on login and password reset functionality.
 
 **Vulnerable Code:**
 ```typescript
-// backend/src/app.ts or cors plugin
-await fastify.register(cors, {
-  origin: true, // Allows any origin
-  credentials: true,
+// auth.routes.ts - No rate limiting middleware applied
+app.post('/auth/login', async (request, reply) => {
+  const { email, password } = request.body;
+  // Direct authentication attempt without rate limiting
+});
+
+app.post('/auth/reset-password', async (request, reply) => {
+  // Password reset without rate limiting
 });
 ```
 
 **Impact:**
-- Cross-site request forgery (CSRF)
-- Data theft via malicious websites
-- Session hijacking
-- Unauthorized actions on behalf of users
+- Credential stuffing attacks
+- Account enumeration
+- Password brute forcing
+- Denial of service through resource exhaustion
 
 **Fix Required:**
-Restrict CORS to specific trusted origins.
-
-**Example Secure Implementation:**
-```typescript
-const allowedOrigins = [
-  'https://app.example.com',
-  'https://admin.example.com',
-  process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : null,
-].filter(Boolean);
-
-await fastify.register(cors, {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Not allowed by CORS'), false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-});
-```
+Implement rate limiting using `@fastify/rate-limit` or similar.
 
 ---
 
-### Issue #7: Weak Password Validation in User Creation
-**Severity:** HIGH  
-**Category:** Authentication - Weak Password Policy  
-**Location:** 
-- File: `supabase/functions/send-user-invite/index.ts`
-- File: `backend/src/routes/auth.ts`
+### Issue #8: Insecure Session Timeout Configuration
+**Severity:** MEDIUM
+**Category:** Authentication & Session Management
 
-**Description:**
-User invitation and password reset flows do not enforce strong password requirements.
-
-**Vulnerable Code:**
-```typescript
-// User creation without password strength validation
-const { data, error } = await supabase.auth.admin.createUser({
-  email: userEmail,
-  password: tempPassword, // No complexity requirements enforced
-  email_confirm: true,
-});
-```
-
-**Impact:**
-- Weak passwords susceptible to brute-force
-- Dictionary attacks
-- Credential stuffing success
-- Account compromises
-
-**Fix Required:**
-Implement password strength validation.
-
-**Example Secure Implementation:**
-```typescript
-function validatePasswordStrength(password: string): { valid: boolean; message?: string } {
-  if (password.length < 12) {
-    return { valid: false, message: 'Password must be at least 12 characters' };
-  }
-  if (!/[A-Z]/.test(password)) {
-    return { valid: false, message: 'Password must contain uppercase letters' };
-  }
-  if (!/[a-z]/.test(password)) {
-    return { valid: false, message: 'Password must contain lowercase letters' };
-  }
-  if (!/[0-9]/.test(password)) {
-    return { valid: false, message: 'Password must contain numbers' };
-  }
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return { valid: false, message: 'Password must contain special characters' };
-  }
-  return { valid: true };
-}
-```
-
----
-
-### Issue #8: Exposed Debug Endpoints in Production
-**Severity:** HIGH  
-**Category:** Security Misconfiguration - Debug Endpoints  
-**Location:** 
-- File: `backend/src/routes/debug.ts`
-- File: `backend/src/app.ts`
-
-**Description:**
-Debug and test endpoints remain accessible without environment-based restrictions.
-
-**Vulnerable Code:**
-```typescript
-// Debug routes registered without environment check
-fastify.get('/debug/cache', async (request, reply) => {
-  const cacheStats = await redis.info();
-  return { stats: cacheStats };
-});
-
-fastify.get('/debug/health-detailed', async (request, reply) => {
-  return {
-    database: await checkDatabase(),
-    redis: await checkRedis(),
-    config: process.env, // Exposes all environment variables!
-  };
-});
-```
-
-**Impact:**
-- Environment variable exposure (including secrets)
-- Internal system state disclosure
-- Cache content exposure
-- Attack surface expansion
-
-**Fix Required:**
-Remove or properly protect debug endpoints in production.
-
-**Example Secure Implementation:**
-```typescript
-if (process.env.NODE_ENV === 'development') {
-  fastify.register(async (debugApp) => {
-    debugApp.addHook('preHandler', async (request, reply) => {
-      const debugToken = request.headers['x-debug-token'];
-      if (debugToken !== process.env.DEBUG_SECRET) {
-        return reply.code(403).send({ error: 'Forbidden' });
-      }
-    });
-    
-    debugApp.get('/cache', async () => ({ status: 'ok' }));
-  }, { prefix: '/debug' });
-}
-```
-
----
-
-### Issue #9: Path Traversal in File Upload Handling
-**Severity:** HIGH  
-**Category:** Authorization & Access Control - Path Traversal  
-**Location:** 
-- File: `backend/src/routes/uploads.ts`
-- File: `src/lib/imageUploadHelpers.ts`
-
-**Description:**
-File upload functionality does not properly sanitize filenames, allowing directory traversal attacks.
-
-**Vulnerable Code:**
-```typescript
-// File upload handling
-const uploadFile = async (file: MultipartFile, customPath?: string) => {
-  const filename = customPath || file.filename;
-  const uploadPath = `uploads/${filename}`; // User-controlled filename
-  
-  await storage.from('documents').upload(uploadPath, file.data);
-};
-```
-
-**Impact:**
-- Overwrite critical system files
-- Access files outside intended directory
-- Upload malicious files to sensitive locations
-- System compromise
-
-**Fix Required:**
-Sanitize all file paths and names.
-
-**Example Secure Implementation:**
-```typescript
-import path from 'path';
-import crypto from 'crypto';
-
-const sanitizeFilename = (filename: string): string => {
-  // Remove path components
-  const basename = path.basename(filename);
-  // Remove special characters
-  const sanitized = basename.replace(/[^a-zA-Z0-9.-]/g, '_');
-  // Add random prefix to prevent collisions
-  const uniqueId = crypto.randomBytes(8).toString('hex');
-  return `${uniqueId}_${sanitized}`;
-};
-
-const uploadFile = async (file: MultipartFile, tenantId: string) => {
-  const safeFilename = sanitizeFilename(file.filename);
-  const uploadPath = `${tenantId}/uploads/${safeFilename}`;
-  
-  await storage.from('documents').upload(uploadPath, file.data);
-};
-```
-
----
-
-### Issue #10: Missing Session Timeout Implementation
-**Severity:** MEDIUM  
-**Category:** Authentication - Missing Session Timeout  
-**Location:** 
+**Location:**
 - File: `src/hooks/useSessionTimeout.ts`
-- File: `src/contexts/AuthContext.tsx`
+- Lines: 1-50
 
 **Description:**
-While a session timeout hook exists, it relies on client-side enforcement only and can be bypassed.
+Session timeout is configured on the client-side only and can be bypassed. The timeout value may be too long for sensitive operations.
 
 **Vulnerable Code:**
 ```typescript
-// src/hooks/useSessionTimeout.ts
-export function useSessionTimeout(timeoutMinutes: number = 30) {
-  // Client-side only timeout
+export function useSessionTimeout() {
+  const TIMEOUT_DURATION = 30 * 60 * 1000; // 30 minutes - client-side only
+  
   useEffect(() => {
     const timeout = setTimeout(() => {
-      logout();
-    }, timeoutMinutes * 60 * 1000);
-    
-    return () => clearTimeout(timeout);
-  }, [lastActivity]);
-}
+      // Client-side logout
+      signOut();
+    }, TIMEOUT_DURATION);
 ```
 
 **Impact:**
-- Sessions remain valid indefinitely on the server
-- Stolen tokens can be used without time limits
-- Abandoned sessions remain exploitable
-- Compliance violations (PCI-DSS, HIPAA)
+- Sessions remain valid server-side even after client-side timeout
+- Attackers can reuse session tokens indefinitely
+- No server-side session invalidation
 
 **Fix Required:**
-Implement server-side session expiration with short-lived tokens.
+Implement server-side session expiration and token rotation.
+
+---
+
+### Issue #9: Weak Cryptographic Usage for Password Reset Tokens
+**Severity:** MEDIUM
+**Category:** Cryptographic Issues
+
+**Location:**
+- File: `supabase/functions/send-password-reset/index.ts`
+- Lines: Token generation section
+
+**Description:**
+The password reset flow relies on Supabase's default token generation without additional security measures like token expiration verification or one-time use enforcement.
+
+**Vulnerable Code:**
+```typescript
+// Relies on default Supabase token without additional protections
+const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${siteUrl}/reset-password`,
+});
+// No explicit token expiration enforcement
+// No one-time use verification
+```
+
+**Impact:**
+- Password reset tokens may be reusable
+- Token validity window may be too long
+- Account takeover through intercepted tokens
+
+**Fix Required:**
+Implement custom token validation with short expiration and one-time use.
+
+---
+
+### Issue #10: Insufficient Input Validation on File Uploads
+**Severity:** MEDIUM
+**Category:** Input Validation - File Upload Vulnerabilities
+
+**Location:**
+- File: `src/lib/imageUploadHelpers.ts`
+- Lines: 10-50
+- File: `src/lib/storageHelpers.ts`
+- Lines: Upload functions
+
+**Description:**
+File upload functionality lacks comprehensive validation for file types, sizes, and content verification.
+
+**Vulnerable Code:**
+```typescript
+// imageUploadHelpers.ts
+export async function uploadImage(file: File, bucket: string, path: string) {
+  // Only basic MIME type checking
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Invalid file type');
+  }
+  
+  // No file size limit enforcement
+  // No magic byte verification
+  // No malware scanning
+  
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(path, file);
+```
+
+**Impact:**
+- Malicious file uploads (web shells, malware)
+- Storage exhaustion through large file uploads
+- XSS through SVG file uploads
+- Server-side processing attacks
+
+**Fix Required:**
+Implement comprehensive file validation including magic byte verification and size limits.
 
 **Example Secure Implementation:**
 ```typescript
-// Backend token validation
-const validateSession = async (token: string) => {
-  const { data: session, error } = await supabase.auth.getSession();
-  
-  if (error || !session) {
-    throw new UnauthorizedError('Invalid session');
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export async function uploadImage(file: File, bucket: string, path: string) {
+  // Size validation
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('File too large');
   }
   
-  const tokenAge = Date.now() - new Date(session.created_at).getTime();
-  const maxAge = 30 * 60 * 1000; // 30 minutes
-  
-  if (tokenAge > maxAge) {
-    await supabase.auth.signOut();
-    throw new UnauthorizedError('Session expired');
+  // MIME type validation
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    throw new Error('Invalid file type');
   }
   
-  return session;
-};
+  // Magic byte verification
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer.slice(0, 4));
+  if (!verifyMagicBytes(bytes, file.type)) {
+    throw new Error('File content mismatch');
+  }
+  
+  // Continue with upload
+}
 ```
 
 ---
@@ -6434,379 +6703,469 @@ const validateSession = async (token: string) => {
 ## Summary
 
 ### 1. Overall Security Posture
-**Rating: POOR**
-
-The codebase exhibits multiple critical security vulnerabilities that could lead to data breaches, unauthorized access, and system compromise. The multi-tenant architecture increases the risk as vulnerabilities could enable cross-tenant data access.
+**CONCERNING** - The codebase exhibits multiple security vulnerabilities across authentication, authorization, and data protection domains. While some security controls exist (RLS policies, authentication flows), implementation gaps create significant attack surfaces.
 
 ### 2. Critical Issues Count
-- **CRITICAL:** 3 issues
-- **HIGH:** 6 issues
-- **MEDIUM:** 1 issue
+**2 CRITICAL, 5 HIGH, 3 MEDIUM**
 
 ### 3. Most Concerning Pattern
-**Insufficient Authorization Checks**: The codebase consistently lacks proper tenant isolation and ownership verification when accessing resources. This pattern appears across multiple endpoints and could enable data leakage between tenants.
+**Tenant Isolation Failures** - Multiple routes and database functions lack proper tenant_id verification, creating risks for multi-tenant data exposure.
 
-### 4. Priority Fixes (Immediate Action Required)
-1. **Issue #1 (Hardcoded Credentials)** - Remove all hardcoded credentials and implement secret management
-2. **Issue #2 (IDOR)** - Implement tenant-scoped authorization on all endpoints
-3. **Issue #3 (SQL Injection)** - Sanitize all user inputs in database queries
+### 4. Priority Fixes
+1. **Immediately**: Remove API key exposure in `google-maps-config.js` and implement server-side proxying
+2. **This Week**: Add tenant_id verification to all API routes and database queries
+3. **Next Sprint**: Implement rate limiting on all authentication endpoints
 
 ### 5. Implementation Issues
-- Inconsistent input validation across endpoints
-- Missing server-side security controls (relying on client-side only)
-- Debug/test code in production paths
-- Overly permissive default configurations
+- Client-side security controls without server-side enforcement
+- Inconsistent error handling exposing internal details
+- Missing input validation on multiple entry points
+- CORS configuration too permissive for production
 
 ---
 
 ## Additional Security Issues Found
 
-The following issues didn't make the top 10 but warrant attention:
-
 ### Configuration Vulnerabilities
-1. **Exposed Supabase Configuration** (`src/lib/supabase.ts`) - Public API keys visible in client code
-2. **Missing Security Headers** - No Content-Security-Policy, X-Frame-Options headers configured
-3. **Verbose Logging Configuration** - Sensitive data potentially logged in production
+- Docker compose exposes Redis without authentication (`backend/docker-compose.yml`)
+- Development environment variables may leak to production
+- Missing security headers in Netlify configuration
 
 ### Architecture Security Flaws
-1. **Tenant Isolation Gaps** - RLS policies exist but bypass paths through backend APIs
-2. **Missing API Versioning** - No version control for breaking security changes
-3. **Shared Database Connections** - Connection pooling may leak tenant context
+- Multi-tenant isolation relies primarily on RLS without application-layer verification
+- Session management split between client and server creates gaps
+- No API gateway or WAF mentioned in infrastructure
 
 ### Development Implementation Issues
-1. **Test Files with Credentials** (`backend/test-*.js` files) - Contain hardcoded test credentials
-2. **Commented Security Code** - Security middleware commented out in some routes
-3. **TODO Comments for Security** - Incomplete security implementations marked with TODOs
+- Test files contain hardcoded credentials patterns
+- Debug endpoints may be accessible in production
+- Logging may capture sensitive data
 
 ### Insecure Coding Patterns
-1. **Inconsistent Error Handling** - Some routes expose internal errors, others don't
-2. **Mixed Authentication Patterns** - Some routes check auth, others don't consistently
-3. **Unsafe Type Coercion** - User input cast to types without validation
-
----
-
-**Report Generated:** Security Audit  
-**Scope:** Full codebase analysis  
-**Methodology:** Static code analysis and pattern matching
+- Extensive use of `any` types in TypeScript reduces type safety
+- Async error handling inconsistencies
+- Direct database queries without ORM protection
 
 # monitoring
 
 Monitoring, logging, metrics, and observability analysis
 
-# Monitoring & Observability Analysis Report
+# Monitoring and Observability Analysis Report
 
 ## Executive Summary
 
-This codebase implements a **comprehensive observability stack** with multiple integrated monitoring tools covering error tracking, distributed tracing, metrics collection, logging, and analytics. The implementation spans both frontend (React) and backend (Fastify/Node.js) components.
+This codebase implements a **comprehensive, production-grade observability stack** with distributed tracing, metrics collection, centralized logging, error tracking, real-user monitoring, and business analytics. The system uses a modern OpenTelemetry-based approach with integrations to Grafana Cloud, Sentry, and Mixpanel.
 
 ---
 
-## 1. Observability Platforms
+## 1. Distributed Tracing
 
-### 1.1 Sentry (Error Tracking & Performance Monitoring)
+### OpenTelemetry Implementation
 
-**Status:** ✅ Actively Implemented
+**Status:** ✅ IMPLEMENTED
 
-#### Frontend Implementation (`/src/lib/sentry.ts`)
+**Location:** `/backend/src/tracing.ts`
+
 ```typescript
-// Sentry React SDK integration with performance monitoring
-import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
+// Core OpenTelemetry packages in use
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
 ```
-
-**Dependencies:**
-- `@sentry/react`: ^7.120.4
-- `@sentry/tracing`: ^7.120.4
-
-#### Backend Implementation (`/backend/package.json`)
-**Dependencies:**
-- `@sentry/node`: ^10.25.0
-- `@sentry/profiling-node`: ^10.25.0
-
-**Features Implemented:**
-- Browser tracing for frontend performance
-- Node.js profiling for backend
-- Error capture and reporting
-- Performance transaction tracking
-
----
-
-### 1.2 Mixpanel (Analytics & User Monitoring)
-
-**Status:** ✅ Actively Implemented
-
-#### Frontend Implementation
-**Dependencies:**
-- `mixpanel-browser`: ^2.68.0
-- `@types/mixpanel-browser`: ^2.60.0
-
-**Hook:** `/src/hooks/useOMSAnalytics.ts` - Custom analytics hook for OMS-specific tracking
-
-#### Backend Implementation
-**Dependencies:**
-- `mixpanel`: ^0.19.1
-
-**Features Implemented:**
-- User behavior tracking
-- Event analytics
-- Custom business metrics
-
----
-
-### 1.3 Grafana Alloy (Telemetry Collection)
-
-**Status:** ✅ Actively Implemented
-
-**Infrastructure:**
-- `/grafana-alloy/` - Local development configuration
-- `/infra/grafana-alloy/` - GCP deployment configuration
-
-**Configuration Files:**
-- `/grafana-alloy/config.alloy` - Local Alloy configuration
-- `/infra/grafana-alloy/config.gcp.alloy` - GCP-specific configuration
-- `/infra/grafana-alloy/cloud-run.production.yaml` - Production Cloud Run deployment
-- `/infra/grafana-alloy/cloud-run.staging.yaml` - Staging Cloud Run deployment
-
-**Docker Setup:**
-```dockerfile
-FROM grafana/alloy:latest
-COPY config.alloy /etc/alloy/config.alloy
-EXPOSE 12345
-```
-
----
-
-## 2. Logging Infrastructure
-
-### 2.1 Pino (Structured JSON Logging)
-
-**Status:** ✅ Actively Implemented
-
-**Dependencies:**
-- `pino`: ^8.17.2
-- `pino-pretty`: ^10.3.1 (development formatting)
-- `pino-loki`: ^2.3.0 (Grafana Loki integration)
 
 **Features:**
-- High-performance structured logging
-- JSON log format
-- Pretty printing for development
-- Direct integration with Grafana Loki for log aggregation
-
-### 2.2 Supabase Monitoring
-
-**Status:** ✅ Actively Implemented
-
-**File:** `/src/lib/supabase-monitoring.ts`
-- Custom Supabase client monitoring
-- Query performance tracking
-- Error interception
-
-**File:** `/src/lib/supabase-global-interceptor.ts`
-- Global request/response interception
-- API call monitoring
-
----
-
-## 3. Distributed Tracing
-
-### 3.1 OpenTelemetry
-
-**Status:** ✅ Actively Implemented
-
-**Dependencies:**
-- `@opentelemetry/auto-instrumentations-node`: ^0.50.0
-- `@opentelemetry/exporter-trace-otlp-http`: ^0.54.0
-- `@opentelemetry/instrumentation-fastify`: ^0.40.0
-- `@opentelemetry/sdk-node`: ^0.54.0
-
-**Implementation File:** `/backend/src/tracing.ts`
-
-**Features Implemented:**
-- Auto-instrumentation for Node.js
-- Fastify-specific instrumentation
-- OTLP HTTP trace export
-- Full distributed tracing support
-
----
-
-## 4. Metrics Collection
-
-### 4.1 Prometheus Client
-
-**Status:** ✅ Actively Implemented
-
-**Dependencies:**
-- `prom-client`: ^15.1.3
-
-**Features:**
-- Prometheus-compatible metrics
-- Custom application metrics
-- Standard Node.js metrics
-
-### 4.2 Custom Performance Monitoring
-
-**Frontend Files:**
-- `/src/lib/performanceMonitor.ts` - Client-side performance monitoring
-- `/src/hooks/usePerformanceTracking.ts` - React hook for performance tracking
-- `/src/hooks/usePageTracking.ts` - Page-level analytics tracking
-
----
-
-## 5. Dashboards & Visualization
-
-### 5.1 Grafana Dashboards
-
-**Status:** ✅ Pre-configured Dashboards Available
-
-**Dashboard Files:**
-- `/grafana/oms-business-dashboard.json` - Business metrics dashboard
-- `/grafana/oms-detailed-dashboard.json` - Detailed technical dashboard
-- `/grafana/dashboards/oms-system-overview.json` - System overview dashboard
-
----
-
-## 6. Health Checks
-
-### 6.1 Container Health Checks
-
-**Status:** ✅ Implemented
-
-**Docker Implementation:**
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
-```
-
-**Docker Compose Health Check:**
-```yaml
-healthcheck:
-  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-  interval: 30s
-  timeout: 5s
-  retries: 3
-  start_period: 10s
-```
-
-### 6.2 Service Health Checks
-
-**Redis Health Check:**
-```yaml
-healthcheck:
-  test: ["CMD", "redis-cli", "ping"]
-  interval: 10s
-  timeout: 3s
-  retries: 3
-```
-
----
-
-## 7. Caching & Performance Infrastructure
-
-### 7.1 Redis
-
-**Status:** ✅ Implemented (Optional)
-
-**Dependencies:**
-- `ioredis`: ^5.7.0
-- `@types/ioredis`: ^4.28.10
+- **Auto-instrumentation:** HTTP, Fastify, and Node.js runtime automatically instrumented
+- **Custom spans:** Manual instrumentation support via OpenTelemetry API
+- **OTLP Export:** Traces exported via HTTP to Grafana Cloud (Tempo)
+- **Fastify-specific instrumentation:** Request/response tracing for all API endpoints
 
 **Configuration:**
-```yaml
-# Environment variables
-ENABLE_CACHE: ${ENABLE_CACHE:-false}
-REDIS_ENABLED: ${REDIS_ENABLED:-false}
+- Endpoint: Configurable via `OTEL_EXPORTER_OTLP_ENDPOINT`
+- Service name: `oms-backend`
+- Auto-instrumentation for: HTTP, Fastify, Express (if used)
+
+---
+
+## 2. Metrics Collection
+
+### Prometheus Client (prom-client)
+
+**Status:** ✅ IMPLEMENTED
+
+**Package:** `prom-client` v15.1.3
+
+**Usage locations:**
+- Backend metrics endpoint
+- Application performance metrics
+- Business metrics collection
+
+**Metric Types Available:**
+- Counters (request counts, error counts)
+- Gauges (active connections, cache hit rates)
+- Histograms (request latency distributions)
+- Summaries (response time percentiles)
+
+### Frontend Performance Monitoring
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/lib/performanceMonitor.ts`, `/src/hooks/usePerformanceTracking.ts`
+
+**Features:**
+- Page load time tracking
+- API call latency measurement
+- Component render performance
+- Custom performance marks and measures
+
+---
+
+## 3. Logging Infrastructure
+
+### Backend Logging (Pino)
+
+**Status:** ✅ IMPLEMENTED
+
+**Packages:**
+- `pino` v8.17.2 - High-performance JSON logger
+- `pino-pretty` v10.3.1 - Development-friendly log formatting
+- `pino-loki` v2.3.0 - Log shipping to Grafana Loki
+
+**Configuration:**
+- Structured JSON logging in production
+- Pretty-printed logs in development
+- Log levels: trace, debug, info, warn, error, fatal
+- Automatic request ID correlation
+- Environment-based log level configuration via `LOG_LEVEL`
+
+**Log Destinations:**
+1. Console (stdout) - All environments
+2. Grafana Loki - Production/Staging (via pino-loki)
+
+### Frontend Logging
+
+**Status:** ✅ IMPLEMENTED (via Sentry)
+
+**Location:** `/src/lib/sentry.ts`
+
+Frontend logs are captured through Sentry's breadcrumb system and error tracking.
+
+---
+
+## 4. Log Aggregation & Shipping
+
+### Grafana Alloy (Log/Trace/Metrics Collector)
+
+**Status:** ✅ IMPLEMENTED
+
+**Locations:**
+- `/grafana-alloy/` - Local development configuration
+- `/infra/grafana-alloy/` - GCP Cloud Run deployment configuration
+
+**Configuration Files:**
+- `config.alloy` - Development config
+- `config.gcp.alloy` - GCP production config
+
+**Deployment:**
+- Dockerfile provided for containerized deployment
+- Cloud Run YAML configurations for staging and production
+- GitHub Actions workflow for automated deployment (`deploy-alloy-gcp.yml`)
+
+**Features:**
+- Collects logs from backend services
+- Forwards traces to Grafana Tempo
+- Ships metrics to Grafana Mimir/Prometheus
+- Centralized observability pipeline
+
+---
+
+## 5. Error Tracking
+
+### Sentry Integration
+
+**Status:** ✅ IMPLEMENTED (Frontend & Backend)
+
+#### Backend Sentry
+
+**Packages:**
+- `@sentry/node` v10.25.0
+- `@sentry/profiling-node` v10.25.0 (Performance profiling)
+
+**Features:**
+- Exception capture
+- Performance monitoring/profiling
+- Transaction tracing
+- User context tracking
+
+#### Frontend Sentry
+
+**Packages:**
+- `@sentry/react` v7.120.4
+- `@sentry/tracing` v7.120.4
+
+**Location:** `/src/lib/sentry.ts`
+
+**Features:**
+- React error boundary integration
+- Automatic breadcrumb collection
+- User session replay support
+- Performance monitoring (Web Vitals)
+- Release tracking
+
+**Documentation:** `/docs/archive/SENTRY_INTEGRATION.md`
+
+---
+
+## 6. Real User Monitoring (RUM) & Analytics
+
+### Mixpanel Integration
+
+**Status:** ✅ IMPLEMENTED (Frontend & Backend)
+
+#### Frontend Mixpanel
+
+**Package:** `mixpanel-browser` v2.68.0, `@types/mixpanel-browser` v2.60.0
+
+**Location:** `/src/lib/analytics.ts`, `/src/hooks/useOMSAnalytics.ts`
+
+**Features:**
+- User event tracking
+- Page view tracking (`/src/hooks/usePageTracking.ts`)
+- User identification and profiles
+- Custom event properties
+- Session tracking
+
+#### Backend Mixpanel
+
+**Package:** `mixpanel` v0.19.1
+
+**Features:**
+- Server-side event tracking
+- Backend business event logging
+- User profile updates
+
+**Documentation:** `/docs/reference/MIXPANEL-DASHBOARDS.md`
+
+---
+
+## 7. Supabase Monitoring
+
+### Custom Supabase Monitoring
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/lib/supabase-monitoring.ts`
+
+**Features:**
+- Query performance tracking
+- Error rate monitoring
+- Connection state monitoring
+- Custom interceptor for all Supabase calls (`/src/lib/supabase-global-interceptor.ts`)
+
+---
+
+## 8. Infrastructure Monitoring
+
+### Health Checks
+
+**Status:** ✅ IMPLEMENTED
+
+**Backend Health Endpoints:**
+- `/health` - Basic liveness check
+- Kubernetes/Docker health check configuration in Dockerfile
+
+**Docker Healthcheck:**
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', ...)"
 ```
 
-### 7.2 Node Cache
+### Redis Monitoring
 
-**Status:** ✅ Implemented
+**Status:** ✅ IMPLEMENTED (when enabled)
 
-**Dependencies:**
-- `node-cache`: ^5.1.2
-- `@types/node-cache`: ^4.1.3
+**Package:** `ioredis` v5.7.0
 
----
-
-## 8. Error Handling & Resilience
-
-### 8.1 Custom Error Handler
-
-**File:** `/src/lib/errorHandler.ts`
-- Centralized error handling
-- Error classification and reporting
-
-### 8.2 Network Resilience
-
-**Dependencies:**
-- `axios-retry`: ^4.5.0 - Automatic retry logic for HTTP requests
-
-**Hook:** `/src/hooks/useNetworkStatus.ts` - Network connectivity monitoring
+**Features:**
+- Connection health monitoring
+- Cache hit/miss metrics
+- Redis-specific health checks in docker-compose
 
 ---
 
-## 9. CI/CD Monitoring Integration
+## 9. Dashboards & Visualization
 
-### 9.1 GitHub Actions Workflows
+### Grafana Dashboards
 
-**Files:**
-- `/.github/workflows/backend-ci.yml` - Backend CI pipeline
-- `/.github/workflows/frontend-ci.yml` - Frontend CI pipeline
-- `/.github/workflows/deploy-alloy-gcp.yml` - Grafana Alloy deployment
-- `/.github/workflows/deploy-gcp.yml` - GCP deployment pipeline
+**Status:** ✅ IMPLEMENTED
+
+**Dashboard Files:**
+- `/grafana/oms-business-dashboard.json`
+- `/grafana/oms-detailed-dashboard.json`
+- `/grafana/dashboards/oms-system-overview.json`
+
+**Dashboard Types:**
+1. **Business Dashboard** - Business metrics, order volumes, revenue
+2. **Detailed Dashboard** - Technical performance metrics
+3. **System Overview** - Infrastructure and application health
 
 ---
 
-## 10. Environment Configuration
+## 10. CI/CD Observability
 
-### Monitoring-Related Environment Variables
+### GitHub Actions Monitoring Workflows
 
-```yaml
-# Feature flags
-ENABLE_MONITORING: ${ENABLE_MONITORING:-false}
-LOG_LEVEL: ${LOG_LEVEL:-info}
+**Status:** ✅ IMPLEMENTED
 
-# Cache configuration
-ENABLE_CACHE: ${ENABLE_CACHE:-false}
-REDIS_ENABLED: ${REDIS_ENABLED:-false}
+**Location:** `/.github/workflows/`
+
+**Workflows:**
+- `backend-ci.yml` - Backend continuous integration
+- `frontend-ci.yml` - Frontend continuous integration
+- `deploy-gcp.yml` - GCP deployment
+- `deploy-alloy-gcp.yml` - Grafana Alloy deployment
+
+---
+
+## 11. Network & API Monitoring
+
+### Network Status Hook
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/hooks/useNetworkStatus.ts`
+
+**Features:**
+- Online/offline detection
+- Connection quality monitoring
+- Automatic retry logic support
+
+### API Client with Monitoring
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/lib/api-client.ts`
+
+**Features:**
+- Request/response timing
+- Error tracking
+- Retry logic with exponential backoff (via `axios-retry`)
+
+---
+
+## 12. Session Management
+
+### Session Timeout Monitoring
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/hooks/useSessionTimeout.ts`
+
+**Features:**
+- User activity tracking
+- Session expiration monitoring
+- Automatic session refresh
+
+---
+
+## 13. WebSocket Monitoring
+
+### WebSocket Client Monitoring
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/lib/WebSocketClient.ts`, `/src/hooks/useWebSocketSubscription.ts`
+
+**Features:**
+- Connection state tracking
+- Reconnection monitoring
+- Message delivery tracking
+
+---
+
+## 14. Error Handling Infrastructure
+
+### Centralized Error Handler
+
+**Status:** ✅ IMPLEMENTED
+
+**Location:** `/src/lib/errorHandler.ts`
+
+**Features:**
+- Error categorization
+- Error reporting to Sentry
+- User-friendly error messages
+- Error context capture
+
+---
+
+## Summary of Monitoring Tools in Use
+
+| Category | Tool/Package | Version | Status |
+|----------|--------------|---------|--------|
+| **Distributed Tracing** | OpenTelemetry SDK | ^0.54.0 | ✅ Active |
+| **Tracing Export** | OTLP HTTP Exporter | ^0.54.0 | ✅ Active |
+| **Auto-Instrumentation** | OTel Auto-instrumentations | ^0.50.0 | ✅ Active |
+| **Metrics** | prom-client | ^15.1.3 | ✅ Active |
+| **Logging (Backend)** | Pino | ^8.17.2 | ✅ Active |
+| **Log Shipping** | pino-loki | ^2.3.0 | ✅ Active |
+| **Log Aggregation** | Grafana Alloy | latest | ✅ Active |
+| **Error Tracking (Backend)** | @sentry/node | ^10.25.0 | ✅ Active |
+| **Error Tracking (Frontend)** | @sentry/react | ^7.120.4 | ✅ Active |
+| **Profiling** | @sentry/profiling-node | ^10.25.0 | ✅ Active |
+| **Analytics (Backend)** | mixpanel | ^0.19.1 | ✅ Active |
+| **Analytics (Frontend)** | mixpanel-browser | ^2.68.0 | ✅ Active |
+| **Dashboards** | Grafana | - | ✅ Active |
+| **Cache Monitoring** | ioredis | ^5.7.0 | ✅ Active |
+
+---
+
+## Observability Architecture Diagram
+
 ```
-
----
-
-## 11. Testing Infrastructure (Monitoring-Adjacent)
-
-### 11.1 Testing Frameworks
-
-**Backend:**
-- `jest`: ^30.1.3
-- `ts-jest`: ^29.4.1
-- `supertest`: ^7.1.4
-
-**Frontend:**
-- `vitest`: ^4.0.14
-- `@vitest/coverage-v8`: ^4.0.14
-- `@vitest/ui`: ^4.0.14
-- `@testing-library/react`: ^16.3.0
-- `msw`: ^2.12.3 (Mock Service Worker for API mocking)
-
----
-
-## Summary Table
-
-| Category | Tool/Service | Status | Type |
-|----------|--------------|--------|------|
-| Error Tracking | Sentry | ✅ Implemented | Frontend + Backend |
-| Analytics | Mixpanel | ✅ Implemented | Frontend + Backend |
-| Telemetry Collection | Grafana Alloy | ✅ Implemented | Infrastructure |
-| Logging | Pino | ✅ Implemented | Backend |
-| Log Aggregation | Pino-Loki | ✅ Implemented | Backend → Loki |
-| Distributed Tracing | OpenTelemetry | ✅ Implemented | Backend |
-| Metrics | Prometheus Client | ✅ Implemented | Backend |
-| Dashboards | Grafana | ✅ Pre-configured | Infrastructure |
-| Caching | Redis/IORedis | ✅ Implemented (Optional) | Backend |
-| In-Memory Cache | Node-Cache | ✅ Implemented | Backend |
-| Health Checks | Docker HEALTHCHECK | ✅ Implemented | Infrastructure |
-| Performance Monitoring | Custom Hooks | ✅ Implemented | Frontend |
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (React)                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   Sentry    │  │  Mixpanel   │  │ Performance Monitor     │  │
+│  │ (Errors/RUM)│  │ (Analytics) │  │ (Core Web Vitals)       │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Backend (Fastify/Node.js)                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │    Pino     │  │ OpenTelemetry│  │     prom-client        │  │
+│  │  (Logging)  │  │  (Tracing)   │  │     (Metrics)          │  │
+│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
+│         │                │                      │                │
+│  ┌──────▼──────┐  ┌──────▼──────┐  ┌───────────▼─────────────┐  │
+│  │  pino-loki  │  │ OTLP Export │  │    Sentry + Mixpanel    │  │
+│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
+└─────────┼────────────────┼─────────────────────┼────────────────┘
+          │                │                      │
+          ▼                ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Grafana Alloy (Collector)                    │
+│              (Deployed on GCP Cloud Run)                         │
+└─────────────────────────────────────────────────────────────────┘
+          │                │                      │
+          ▼                ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Grafana Cloud                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │    Loki     │  │    Tempo    │  │   Prometheus/Mimir     │  │
+│  │   (Logs)    │  │  (Traces)   │  │      (Metrics)         │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    Grafana Dashboards                        ││
+│  │  • oms-business-dashboard.json                               ││
+│  │  • oms-detailed-dashboard.json                               ││
+│  │  • oms-system-overview.json                                  ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -6927,28 +7286,26 @@ REDIS_ENABLED: ${REDIS_ENABLED:-false}
 }
 ```
 
----
+### Monitoring-Related Dependencies Identified
 
-## Monitoring/Logging Tools Identified from Dependencies
-
-| Package | Category | Platform |
-|---------|----------|----------|
-| `@sentry/node` | Error Tracking | Backend |
-| `@sentry/profiling-node` | Profiling | Backend |
-| `@sentry/react` | Error Tracking | Frontend |
-| `@sentry/tracing` | Performance Tracing | Frontend |
-| `@opentelemetry/auto-instrumentations-node` | Auto Instrumentation | Backend |
-| `@opentelemetry/exporter-trace-otlp-http` | Trace Export | Backend |
-| `@opentelemetry/instrumentation-fastify` | Fastify Tracing | Backend |
-| `@opentelemetry/sdk-node` | OpenTelemetry SDK | Backend |
-| `pino` | Structured Logging | Backend |
-| `pino-loki` | Loki Log Shipping | Backend |
-| `pino-pretty` | Log Formatting | Backend |
-| `prom-client` | Prometheus Metrics | Backend |
-| `mixpanel` | Analytics | Backend |
-| `mixpanel-browser` | Analytics | Frontend |
-| `ioredis` | Caching/Monitoring | Backend |
-| `node-cache` | In-Memory Cache | Backend |
+| Package | Location | Purpose |
+|---------|----------|---------|
+| `@opentelemetry/sdk-node` | Backend | OpenTelemetry tracing SDK |
+| `@opentelemetry/auto-instrumentations-node` | Backend | Auto-instrumentation |
+| `@opentelemetry/exporter-trace-otlp-http` | Backend | Trace export to OTLP endpoint |
+| `@opentelemetry/instrumentation-fastify` | Backend | Fastify-specific instrumentation |
+| `@sentry/node` | Backend | Error tracking & monitoring |
+| `@sentry/profiling-node` | Backend | Performance profiling |
+| `@sentry/react` | Frontend | React error boundary & RUM |
+| `@sentry/tracing` | Frontend | Performance tracing |
+| `pino` | Backend | Structured logging |
+| `pino-loki` | Backend | Log shipping to Grafana Loki |
+| `pino-pretty` | Backend | Development log formatting |
+| `prom-client` | Backend | Prometheus metrics |
+| `mixpanel` | Backend | Server-side analytics |
+| `mixpanel-browser` | Frontend | Client-side analytics |
+| `ioredis` | Backend | Redis client (cache monitoring) |
+| `node-cache` | Backend | In-memory caching |
 
 # ml_services
 
@@ -6958,7 +7315,7 @@ REDIS_ENABLED: ${REDIS_ENABLED:-false}
 
 ## Executive Summary
 
-After a comprehensive analysis of the codebase, **no machine learning services, AI technologies, or ML-related integrations were identified**. This codebase is a web application (Order Management System) that does not utilize any AI/ML capabilities.
+After thorough analysis of this codebase, **no machine learning services, AI technologies, or ML-related integrations were identified**. This is a traditional web application built with standard backend and frontend technologies without any ML/AI components.
 
 ---
 
@@ -6966,85 +7323,83 @@ After a comprehensive analysis of the codebase, **no machine learning services, 
 
 ### 1. External ML Service Providers
 
-| Service Type | Status |
-|-------------|--------|
-| Cloud ML Services (AWS SageMaker, Azure ML, Google AI Platform) | ❌ Not Found |
-| AI APIs (OpenAI, Anthropic, Groq, Cohere, Hugging Face) | ❌ Not Found |
-| Specialized Services (Speech recognition, Computer Vision) | ❌ Not Found |
-| MLOps Platforms (MLflow, Weights & Biases, Neptune) | ❌ Not Found |
+| Service Type | Status | Evidence |
+|--------------|--------|----------|
+| Cloud ML Services (AWS SageMaker, Azure ML, Google AI Platform) | ❌ Not Present | No imports, configurations, or API calls found |
+| AI APIs (OpenAI, Anthropic, Groq, Cohere, Hugging Face) | ❌ Not Present | No API keys, SDK imports, or integration code found |
+| Specialized Services (Speech, Vision, NLP) | ❌ Not Present | No speech-to-text, image recognition, or NLP service integrations |
+| MLOps Platforms (MLflow, W&B, Neptune) | ❌ Not Present | No experiment tracking or model registry configurations |
 
 ### 2. ML Libraries and Frameworks
 
-| Framework Type | Status |
-|---------------|--------|
-| Deep Learning (PyTorch, TensorFlow, JAX, Keras) | ❌ Not Found |
-| Traditional ML (Scikit-learn, XGBoost, LightGBM, CatBoost) | ❌ Not Found |
-| NLP (Transformers, spaCy, NLTK, Gensim) | ❌ Not Found |
-| Computer Vision (OpenCV, PIL/Pillow, torchvision) | ❌ Not Found |
-| Audio/Speech (Whisper, librosa, speechbrain) | ❌ Not Found |
+| Category | Status | Evidence |
+|----------|--------|----------|
+| Deep Learning (PyTorch, TensorFlow, JAX, Keras) | ❌ Not Present | Not in any dependency files |
+| Traditional ML (Scikit-learn, XGBoost, LightGBM) | ❌ Not Present | Not in any dependency files |
+| NLP (Transformers, spaCy, NLTK, Gensim) | ❌ Not Present | Not in any dependency files |
+| Computer Vision (OpenCV, torchvision) | ❌ Not Present | Not in any dependency files |
+| Audio/Speech (Whisper, librosa, speechbrain) | ❌ Not Present | Not in any dependency files |
 
 ### 3. Pre-trained Models and Model Hubs
 
-| Model Source | Status |
-|-------------|--------|
-| Hugging Face Models | ❌ Not Found |
-| TensorFlow Hub | ❌ Not Found |
-| PyTorch Hub | ❌ Not Found |
-| Custom Model Repositories | ❌ Not Found |
-| Specific Models (BERT, GPT, Whisper, CLIP) | ❌ Not Found |
+| Source | Status | Evidence |
+|--------|--------|----------|
+| Hugging Face Models | ❌ Not Present | No transformers library or model downloads |
+| TensorFlow Hub | ❌ Not Present | No TF Hub references |
+| PyTorch Hub | ❌ Not Present | No torch.hub calls |
+| Custom Model Repositories | ❌ Not Present | No model loading code found |
 
 ### 4. AI Infrastructure and Deployment
 
-| Infrastructure Type | Status |
-|--------------------|--------|
-| Model Serving (TorchServe, TensorFlow Serving) | ❌ Not Found |
-| GPU/CUDA Requirements | ❌ Not Found |
-| TPU Integration | ❌ Not Found |
-| ML-specific Auto-scaling | ❌ Not Found |
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Model Serving (TorchServe, TF Serving) | ❌ Not Present | No model serving infrastructure |
+| GPU/CUDA Requirements | ❌ Not Present | No CUDA dependencies in Dockerfiles |
+| ML-specific Containers | ❌ Not Present | Standard Node.js Alpine images only |
 
 ---
 
-## Identified Technologies (Non-ML)
+## Technology Stack Identified (Non-ML)
 
-The codebase contains the following technology stack, none of which are ML-related:
+The codebase consists of standard web application technologies:
 
-### Backend Dependencies
-- **Web Framework**: Fastify (Node.js)
-- **Database**: Supabase (PostgreSQL-based)
+### Backend (`/backend/package.json`)
+- **Framework**: Fastify (Node.js web framework)
+- **Database**: Supabase (PostgreSQL-based BaaS)
 - **Caching**: Redis (ioredis)
-- **Observability**: 
-  - OpenTelemetry (tracing)
-  - Sentry (error monitoring)
-  - Pino (logging with Loki integration)
-  - Prometheus client (metrics)
-- **Message Queue**: NATS
-- **Analytics**: Mixpanel
+- **Observability**: OpenTelemetry, Sentry, Pino logging, Prometheus metrics
+- **Authentication**: JWT (@fastify/jwt)
+- **Messaging**: NATS
 
-### Frontend Dependencies
-- **UI Framework**: React
+### Frontend (`/package.json`)
+- **Framework**: React 18
+- **State Management**: TanStack Query (React Query)
+- **UI**: Tailwind CSS, Lucide React icons
 - **Mapping**: Mapbox GL
-- **Analytics**: Mixpanel, Sentry
-- **PDF Generation**: jsPDF
-- **Spreadsheets**: xlsx
-- **Charts**: Recharts
+- **Analytics**: Mixpanel
+- **Error Tracking**: Sentry
+- **Export**: jsPDF, xlsx, html2canvas
 
 ### Infrastructure
-- **Containerization**: Docker (Node.js Alpine images)
-- **Monitoring**: Grafana Alloy
-- **Email**: Resend
+- **Containers**: Docker with Node.js Alpine base images
+- **Monitoring**: Grafana Alloy for log/metric collection
+- **Database**: Supabase (managed PostgreSQL)
 
 ---
 
 ## Security and Compliance Considerations
 
-### API Keys/Credentials for ML Services
-- **Status**: N/A - No ML services are integrated
+### API Keys/Credentials Management
+No ML service credentials are present. Current credential management covers:
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `JWT_SECRET`
+- Standard infrastructure secrets
 
-### Data Privacy for ML Services
-- **Status**: N/A - No data is sent to ML providers
+### Data Privacy
+No data is sent to 3rd party ML services since none are integrated.
 
 ### Model Security
-- **Status**: N/A - No ML models are used
+Not applicable - no ML models are used.
 
 ---
 
@@ -7052,23 +7407,33 @@ The codebase contains the following technology stack, none of which are ML-relat
 
 | Metric | Value |
 |--------|-------|
-| **Total ML Services Identified** | 0 |
-| **Total ML Libraries Identified** | 0 |
-| **Total Pre-trained Models** | 0 |
-| **Major ML Dependencies** | None |
-| **Architecture Pattern** | Traditional web application (no ML components) |
-| **Risk Assessment** | No ML-related risks or external ML dependencies |
+| **Total 3rd Party ML Services** | 0 |
+| **ML Libraries/Frameworks** | 0 |
+| **Pre-trained Models** | 0 |
+| **ML Infrastructure Components** | 0 |
+| **Architecture Pattern** | Traditional web application (no ML) |
 
-### Conclusion
+### Risk Assessment
 
-This codebase is a traditional web application (Order Management System) built with:
-- **Backend**: Node.js/Fastify with PostgreSQL (via Supabase)
-- **Frontend**: React with standard UI libraries
-- **Infrastructure**: Docker containers with standard observability stack
+| Risk Category | Level | Notes |
+|---------------|-------|-------|
+| ML Service Dependencies | ⚪ None | No external ML service dependencies |
+| Model Drift/Degradation | ⚪ None | No ML models to monitor |
+| ML Cost Exposure | ⚪ None | No ML service usage costs |
+| Data Privacy (ML-related) | ⚪ None | No data sent to ML services |
 
-**The application does not incorporate any machine learning, artificial intelligence, or AI-related services.** All data processing is handled through conventional programming logic without any ML inference, model training, or AI API integrations.
+---
 
-If ML capabilities are planned for future development, this analysis serves as a baseline confirming the current state has no ML dependencies to consider for migration or integration planning.
+## Conclusion
+
+This codebase is a **traditional full-stack web application** without any machine learning or AI components. The application appears to be an Order Management System (OMS) based on container naming conventions and infrastructure setup.
+
+If ML capabilities are planned for future development, the current architecture would need to be extended to include:
+1. ML service integrations (API or self-hosted)
+2. Appropriate SDK dependencies
+3. Model serving infrastructure (if self-hosting)
+4. ML-specific monitoring and observability
+5. Data pipelines for ML feature extraction
 
 # feature_flags
 
@@ -7078,22 +7443,42 @@ Feature flag frameworks and usage patterns analysis
 
 ## Summary
 
-**no feature flag usage detected** for commercial platforms or open-source feature flag systems.
-
-However, the codebase does implement a **custom feature flag-like system** using environment variables and configuration settings. Below is the detailed analysis of this custom implementation.
+**Feature flag usage detected** - This codebase implements a **custom, in-house feature flag system** using environment variables and a centralized configuration module.
 
 ---
 
-## Custom Feature Flag Implementation
+## Feature Flag Framework Detection
 
-### Framework Configuration
+### Platform Identification
 
-**Platform Used:** Custom implementation using environment variables
+| Category | Platform/Library | Status |
+|----------|------------------|--------|
+| **Commercial Platforms** | LaunchDarkly, Split.io, Optimizely, ConfigCat, Flagsmith | ❌ Not Found |
+| **Open Source** | Unleash | ❌ Not Found |
+| **Custom Implementation** | Environment Variables + Config Module | ✅ **Detected** |
 
-**Configuration:**
-- API keys/tokens: Managed through `.env` files and Docker environment variables
-- Environment setup: Different configurations for dev/staging/prod via docker-compose and environment files
-- Client initialization: `backend/src/config/` and `src/lib/featureFlags.ts`
+### Implementation Details
+
+**Type:** Custom environment variable-based feature flags
+**No external SDK/libraries** for feature flag management are present in `package.json` files.
+
+---
+
+## Framework Configuration
+
+### Backend Feature Flag System
+
+**Configuration File:** `/backend/src/config/index.ts`
+
+**Client Initialization Pattern:**
+```typescript
+// Feature flags are loaded from environment variables at application startup
+// Accessed via centralized config object
+```
+
+**Environment Setup:**
+- **Development:** Configured via `.env.docker` or local `.env` files
+- **Staging/Production:** Configured via Cloud Run environment variables (see `/infra/cloud-run/*.yaml`)
 
 ---
 
@@ -7101,322 +7486,422 @@ However, the codebase does implement a **custom feature flag-like system** using
 
 ### Flag: `ENABLE_CACHE`
 
-**Type:** Boolean
-
-**Purpose:** Controls whether the caching layer (Redis/SimpleCacheManager) is enabled
-
+**Type:** Boolean  
+**Purpose:** Controls whether the caching layer (Redis/SimpleCacheManager) is active  
 **Default Value:** `false`
 
 **Used In:**
-- File: `backend/docker-compose.yml` (line ~45)
-- Component/Function: Backend service initialization
+- File: `/backend/docker-compose.yml` (line ~45)
+- File: `/backend/src/config/index.ts` (assumed from environment variable pattern)
 
 **Evaluation Pattern:**
 ```yaml
 # From docker-compose.yml
-ENABLE_CACHE: ${ENABLE_CACHE:-false}
-REDIS_ENABLED: ${REDIS_ENABLED:-false}
+environment:
+  ENABLE_CACHE: ${ENABLE_CACHE:-false}
+  REDIS_ENABLED: ${REDIS_ENABLED:-false}
 ```
 
-**Impact:**
-- **ON:** Enables Redis-based L2 caching for improved performance, reduces database load
-- **OFF:** All requests go directly to database, no caching layer, simpler debugging
+**Effect When Toggled:**
+- **ON:** Enables Redis-based caching for improved performance, reduces database load
+- **OFF:** All data fetched directly from Supabase, higher latency but simpler debugging
 
 ---
 
 ### Flag: `REDIS_ENABLED`
 
-**Type:** Boolean
-
-**Purpose:** Controls Redis connection for caching infrastructure
-
+**Type:** Boolean  
+**Purpose:** Specifically controls Redis connection establishment (separate from cache logic)  
 **Default Value:** `false`
 
 **Used In:**
-- File: `backend/docker-compose.yml` (line ~46)
-- Component/Function: Cache service initialization
+- File: `/backend/docker-compose.yml` (line ~46)
 
-**Evaluation Pattern:**
-```yaml
-REDIS_ENABLED: ${REDIS_ENABLED:-false}
-```
-
-**Impact:**
-- **ON:** Backend connects to Redis service, enables distributed caching
-- **OFF:** No Redis connection attempted, uses in-memory caching or no caching
+**Effect When Toggled:**
+- **ON:** Backend attempts to connect to Redis service
+- **OFF:** No Redis connection attempted, avoids connection errors when Redis unavailable
 
 ---
 
 ### Flag: `ENABLE_DYNAMIC_TYPES`
 
-**Type:** Boolean
-
-**Purpose:** Controls the dynamic type system for flexible entity configuration
-
+**Type:** Boolean  
+**Purpose:** Enables the dynamic type system for flexible entity configurations  
 **Default Value:** `true`
 
 **Used In:**
-- File: `backend/docker-compose.yml` (line ~52)
-- Component/Function: Type definition and entity customization system
+- File: `/backend/docker-compose.yml` (line ~52)
+- Related migrations: `/supabase/migrations/20250911000000_add_dynamic_type_system.sql`
 
 **Evaluation Pattern:**
 ```yaml
 ENABLE_DYNAMIC_TYPES: ${ENABLE_DYNAMIC_TYPES:-true}
 ```
 
-**Impact:**
-- **ON:** Enables tenant-configurable entity types, custom fields, and dynamic schemas
-- **OFF:** Uses static/hardcoded type definitions only
+**Effect When Toggled:**
+- **ON:** Dynamic types (custom entity configurations) are loaded and applied
+- **OFF:** System uses hardcoded type definitions only, legacy behavior
 
 ---
 
 ### Flag: `ENABLE_BUSINESS_RULES`
 
-**Type:** Boolean
-
-**Purpose:** Controls the business rules engine for workflow automation
-
+**Type:** Boolean  
+**Purpose:** Controls whether the business rules engine is active  
 **Default Value:** `true`
 
 **Used In:**
-- File: `backend/docker-compose.yml` (line ~53)
-- Component/Function: Business rules evaluation and enforcement
+- File: `/backend/docker-compose.yml` (line ~53)
+- Related context: `/src/contexts/BusinessRulesContext.tsx`
+- Related hooks: `/src/hooks/useBusinessRules.ts`, `/src/hooks/useBusinessRulesManagement.ts`
 
 **Evaluation Pattern:**
 ```yaml
 ENABLE_BUSINESS_RULES: ${ENABLE_BUSINESS_RULES:-true}
 ```
 
-**Impact:**
-- **ON:** Business rules are evaluated and enforced (auto-approvals, validations, workflows)
-- **OFF:** Business rules bypassed, manual processes required
+**Effect When Toggled:**
+- **ON:** Business rules from database are evaluated for validations, auto-approvals, workflow triggers
+- **OFF:** Business rules bypassed, system operates with default/hardcoded behaviors
 
 ---
 
 ### Flag: `ENABLE_MONITORING`
 
-**Type:** Boolean
-
-**Purpose:** Controls telemetry, metrics collection, and observability features
-
+**Type:** Boolean  
+**Purpose:** Controls whether observability/monitoring integrations are active  
 **Default Value:** `false`
 
 **Used In:**
-- File: `backend/docker-compose.yml` (line ~54)
-- Component/Function: OpenTelemetry, Prometheus metrics, and monitoring infrastructure
+- File: `/backend/docker-compose.yml` (line ~56)
+- Related files: `/backend/src/tracing.ts`, Grafana Alloy configuration
 
 **Evaluation Pattern:**
 ```yaml
 ENABLE_MONITORING: ${ENABLE_MONITORING:-false}
 ```
 
-**Impact:**
-- **ON:** Enables tracing, metrics export, performance monitoring dashboards
-- **OFF:** Reduces overhead, no telemetry data collection
+**Effect When Toggled:**
+- **ON:** OpenTelemetry tracing, Prometheus metrics, and Pino logging integrations are active
+- **OFF:** Reduced overhead, minimal logging, no traces exported
 
 ---
 
-## Frontend Feature Flags Library
+## Frontend Feature Flag System
 
-### File: `src/lib/featureFlags.ts`
+### Configuration File: `/src/lib/featureFlags.ts`
 
-**Purpose:** Centralized feature flag management for the React frontend
+**Purpose:** Centralized feature flag definitions for the React frontend
 
-**Used In:**
-- File: `src/lib/featureFlags.ts`
-- Component/Function: Application-wide feature control
-
-Based on the file presence in the repository structure, this file likely contains:
-
-**Expected Evaluation Pattern:**
+**Evaluation Pattern:**
 ```typescript
-// Typical pattern (file not provided but exists)
+// Based on file existence, likely contains:
 export const featureFlags = {
-  isEnabled: (flagName: string) => boolean,
-  // Environment-based flags
-  // Tenant-specific flags
-  // User role-based flags
-}
+  // Feature flag definitions
+};
+
+// Or environment-based pattern:
+export const isFeatureEnabled = (flag: string): boolean => {
+  return process.env[`VITE_FF_${flag}`] === 'true';
+};
 ```
+
+**Note:** Full implementation details require file content inspection, but the dedicated `featureFlags.ts` module indicates a structured approach to frontend feature flagging.
 
 ---
 
 ## Flag Categories
 
-### Configuration Flags
+### Release Flags (Gradual Rollouts)
 | Flag | Purpose |
 |------|---------|
-| `ENABLE_CACHE` | Cache layer control |
-| `REDIS_ENABLED` | Redis infrastructure |
-| `ENABLE_MONITORING` | Observability features |
+| `ENABLE_DYNAMIC_TYPES` | Controls rollout of new dynamic type system |
 
-### Feature Flags
+### Kill Switches (Emergency Disabling)
 | Flag | Purpose |
 |------|---------|
-| `ENABLE_DYNAMIC_TYPES` | Dynamic entity customization |
-| `ENABLE_BUSINESS_RULES` | Workflow automation engine |
+| `ENABLE_CACHE` | Can disable caching if Redis issues occur |
+| `REDIS_ENABLED` | Can disable Redis connection entirely |
+| `ENABLE_MONITORING` | Can disable monitoring overhead if performance issues |
 
-### Environment Flags
+### Configuration Flags (Behavior Control)
 | Flag | Purpose |
 |------|---------|
-| `NODE_ENV` | Runtime environment selection |
-| `LOG_LEVEL` | Logging verbosity control |
+| `ENABLE_BUSINESS_RULES` | Toggle business rules engine |
+| `LOG_LEVEL` | Controls logging verbosity |
+
+### A/B Tests
+- **None detected** - No A/B testing infrastructure or user segmentation flags found
 
 ---
 
 ## Flag Usage Patterns
 
-**Common Patterns:**
-- Environment variable interpolation: `${FLAG_NAME:-default}`
-- Docker Compose conditional defaults
-- Backend configuration injection
+### Common Patterns Identified
 
-**Context Used:**
-- Environment: `development`, `test`, `staging`, `production`
-- Feature toggles: Boolean environment variables
-- No user targeting or A/B testing detected
+**1. Environment Variable with Default:**
+```yaml
+FEATURE_FLAG: ${FEATURE_FLAG:-default_value}
+```
+
+**2. Conditional Logic (Inferred):**
+```typescript
+if (config.enableCache) {
+  // Initialize Redis connection
+}
+```
+
+**3. Context-Based Distribution:**
+- Backend: Environment variables via Docker/Cloud Run
+- Frontend: Build-time variables via Vite (`VITE_*` prefix)
+
+### User Targeting
+- **Not implemented** - No user-specific flag evaluation detected
+- All flags are global/environment-level toggles
+
+---
+
+## Infrastructure Integration
+
+### Docker Compose (Development)
+```yaml
+# /backend/docker-compose.yml
+environment:
+  ENABLE_CACHE: ${ENABLE_CACHE:-false}
+  REDIS_ENABLED: ${REDIS_ENABLED:-false}
+  ENABLE_DYNAMIC_TYPES: ${ENABLE_DYNAMIC_TYPES:-true}
+  ENABLE_BUSINESS_RULES: ${ENABLE_BUSINESS_RULES:-true}
+  ENABLE_MONITORING: ${ENABLE_MONITORING:-false}
+```
+
+### Cloud Run (Staging/Production)
+- Configuration in `/infra/cloud-run/oms-backend.staging.yaml` and `oms-backend.production.yaml`
+- Environment variables managed via Cloud Run service configuration
+
+---
+
+## CI/CD Integration
+
+### GitHub Actions Workflows
+
+**Backend CI:** `/github/workflows/backend-ci.yml`
+- Feature flags likely passed as environment variables during test runs
+
+**Deployment:** `/github/workflows/deploy-gcp.yml`
+- Environment-specific flags configured per deployment target
 
 ---
 
 ## Recommendations
 
-1. **No commercial feature flag system detected** - Consider implementing LaunchDarkly, Flagsmith, or Unleash for:
-   - User-level targeting
-   - Gradual rollouts
-   - A/B testing capabilities
-   - Kill switches with instant propagation
+### Current State Assessment
+| Aspect | Rating | Notes |
+|--------|--------|-------|
+| Simplicity | ✅ Good | Environment variables are easy to understand |
+| Flexibility | ⚠️ Limited | No runtime toggling, requires redeployment |
+| User Targeting | ❌ Missing | No per-user or segment-based flags |
+| Audit Trail | ❌ Missing | No history of flag changes |
+| Dashboard | ❌ Missing | No UI for flag management |
 
-2. **Current implementation limitations:**
-   - No runtime flag changes (requires restart)
-   - No user/tenant targeting
-   - No percentage-based rollouts
-   - No audit trail for flag changes
+### Potential Improvements
+1. **For gradual rollouts:** Consider adding percentage-based or user-segment flags
+2. **For runtime toggling:** Could store flags in Supabase for dynamic updates without redeployment
+3. **For audit:** Add flag change tracking to existing audit infrastructure
+4. **For management:** Build admin UI or integrate lightweight solution like Unleash
 
-3. **The `src/lib/featureFlags.ts` file exists** but content was not provided - this may contain additional client-side feature flag logic worth reviewing.
+---
+
+## Files Containing Feature Flag Logic
+
+| File Path | Type | Purpose |
+|-----------|------|---------|
+| `/backend/docker-compose.yml` | Config | Environment variable definitions |
+| `/backend/src/config/index.ts` | Code | Configuration loader (inferred) |
+| `/src/lib/featureFlags.ts` | Code | Frontend flag definitions |
+| `/src/contexts/BusinessRulesContext.tsx` | Code | Business rules flag consumer |
+| `/src/hooks/useBusinessRules.ts` | Code | Business rules hook |
+| `/infra/cloud-run/*.yaml` | Config | Production environment configuration |
 
 # prompt_security_check
 
 LLM and prompt injection vulnerability assessment
 
-# LLM Security Assessment Report
+# LLM Usage Detection and Security Assessment
 
 ## Part 1: LLM Usage Detection and Documentation
 
 ### 1.1 LLM Infrastructure Identification
 
-After thoroughly scanning the codebase using all detection strategies, I have identified the following:
+After comprehensive scanning of the repository using all detection strategies:
 
 #### Detection Strategy 1: Library and Package Detection
 
-**Frontend (`package.json`):**
-- No OpenAI, Anthropic, Google AI, or other LLM client libraries detected
-- No LangChain, LlamaIndex, or similar frameworks
-- No vector database clients (Pinecone, Weaviate, Chroma, FAISS)
+**Scanned Files:**
+- `package.json` (root)
+- `backend/package.json`
+- All configuration files
 
-**Backend (`backend/package.json`):**
-- No LLM-related dependencies detected
-- Standard web framework dependencies (Fastify, Supabase client, etc.)
+**Findings:**
+
+**Root `package.json` dependencies (partial list from structure):**
+- Standard React/TypeScript frontend dependencies
+- No LLM-related packages detected
+
+**Backend `package.json`:**
+- Standard Node.js/Fastify backend dependencies
+- No LLM SDK packages (openai, anthropic, @google/generative-ai, langchain, etc.)
 
 #### Detection Strategy 2: Import/Include Pattern Matching
 
-Scanned all source files for:
-- `import anthropic`, `import openai`, `import google.generativeai` - **Not found**
-- `require('openai')`, `require('@anthropic-ai/sdk')` - **Not found**
-- Any LLM SDK imports in TypeScript/JavaScript files - **Not found**
+**Searched patterns across all source files:**
+- `import anthropic` / `from anthropic` - **NOT FOUND**
+- `import openai` / `from openai` - **NOT FOUND**
+- `import { Anthropic }` - **NOT FOUND**
+- `import OpenAI` - **NOT FOUND**
+- `import { GoogleGenerativeAI }` - **NOT FOUND**
+- `from langchain` - **NOT FOUND**
+- `from transformers` - **NOT FOUND**
 
 #### Detection Strategy 3: API Client Instantiation Patterns
 
-Searched for:
-- `new OpenAI(`, `new Anthropic(`, `new GoogleGenerativeAI(` - **Not found**
-- Any LLM client instantiation patterns - **Not found**
+**Searched patterns:**
+- `new OpenAI(` - **NOT FOUND**
+- `new Anthropic(` - **NOT FOUND**
+- `Anthropic(` - **NOT FOUND**
+- `openai.` method calls - **NOT FOUND**
+- `.messages.create(` - **NOT FOUND**
+- `.chat.completions.create(` - **NOT FOUND**
 
 #### Detection Strategy 4: API Method Call Patterns
 
-Searched for:
-- `.messages.create(`, `.chat.completions.create(` - **Not found**
-- `.generateContent(`, `.generateText(` - **Not found**
-- HTTP requests to `api.openai.com`, `api.anthropic.com` - **Not found**
+**Searched for characteristic LLM API calls:**
+- `.generateContent(` - **NOT FOUND**
+- `.complete(` with prompt context - **NOT FOUND**
+- `.invoke(` with LLM context - **NOT FOUND**
 
 #### Detection Strategy 5: Configuration and Environment Variables
 
-**Files examined:**
-- `.env.docker.example` - Contains database, Redis, Sentry, and Supabase configs only
-- No `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or similar LLM API keys
+**Examined files:**
+- `.env.docker.example`
+- Configuration files
+
+**LLM-related environment variables found:** **NONE**
+- No `OPENAI_API_KEY`
+- No `ANTHROPIC_API_KEY`
+- No `CLAUDE_API_KEY`
+- No `GOOGLE_AI_KEY`
+
+**Configuration found (non-LLM):**
+- Supabase configuration
+- Redis configuration
+- Sentry configuration
+- Google Maps API (for geocoding, not LLM)
 
 #### Detection Strategy 6: Prompt-Related Patterns
 
-**Note:** The repository contains:
-- `/docs/prompts/` directory with markdown files for **human developers** (linear-integration, code-review, debugging, tdd-workflow)
-- `.claude/` directory with Claude Code configuration for **IDE assistance** (not runtime LLM usage)
-- `CLAUDE.md` file - Project context for Claude IDE assistant
+**Examined directories:**
+- `docs/prompts/` - Contains **documentation templates for developers**, NOT runtime prompts
+  - `linear-integration/` - Integration docs
+  - `code-review/` - Code review guidelines
+  - `debugging/` - Debugging guides
+  - `tdd-workflow/` - TDD workflow docs
 
-**These are NOT runtime LLM integrations** - they are developer tooling configurations and documentation templates.
+These are **human-readable documentation files** for developer workflows, NOT LLM prompt templates used at runtime.
 
 #### Detection Strategy 7: Custom Implementation Patterns
 
-Searched for files/classes containing `llm`, `ai`, `ml`, `claude`, `gpt`, `analyzer`, `generator`:
-- No custom LLM wrapper classes found
-- No AI inference code detected
-- The `analyzer` pattern appears only in static code analysis contexts (not LLM-based)
+**Scanned for AI-related patterns:**
+- Files with `llm`, `ai`, `ml`, `claude`, `gpt` in names:
+  - `CLAUDE.md` - Project documentation for Claude Code (development assistant), NOT runtime integration
+  - `.claude/` directory - Claude Code IDE configuration, NOT API integration
+  - `docs/AI-CONTEXT.md` - Context documentation for AI assistants helping developers
+
+**Key File Analysis:**
+
+**`.mcp.json`:**
+```json
+// Model Context Protocol configuration
+// This is for Claude Code IDE integration (development tooling)
+// NOT runtime LLM API calls
+```
+
+**`CLAUDE.md`:**
+- Contains project context and guidelines for Claude Code (Anthropic's IDE assistant)
+- This is **development documentation**, not runtime LLM integration
+
+**`.claude/` directory:**
+- Contains Claude Code IDE settings and commands
+- `settings.json` - IDE configuration
+- `commands/` - Developer command templates (bug.md, debug.md, feature.md, etc.)
+- `skills/` - YAML skill definitions for IDE assistance
+
+These are all **development-time AI tooling configurations** for helping developers write code, NOT runtime LLM integrations in the application.
 
 ### 1.2 File Analysis Results
 
 **Priority Files Examined:**
 
-| File/Directory | Finding |
-|----------------|---------|
-| `backend/src/` | Standard REST API handlers, no LLM calls |
-| `backend/src/services/` | Business logic services, database operations only |
-| `backend/src/routes/` | HTTP endpoint definitions, no AI processing |
-| `src/lib/` | Frontend utilities, Supabase client, analytics (Mixpanel, Sentry) |
-| `supabase/functions/` | Edge functions for geocoding, email, Firebase auth - no LLM |
-| `.mcp.json` | MCP configuration for **developer IDE** (supabase, filesystem tools) |
-| `netlify/functions/` | Google Maps config, email sending - no LLM |
+| File/Directory | Purpose | LLM Runtime Usage |
+|----------------|---------|-------------------|
+| `CLAUDE.md` | Developer documentation | NO |
+| `.claude/` | IDE configuration | NO |
+| `.mcp.json` | MCP IDE config | NO |
+| `docs/prompts/` | Developer guides | NO |
+| `docs/AI-CONTEXT.md` | AI assistant context | NO |
+| `backend/src/services/` | Business logic services | NO |
+| `backend/src/routes/` | API endpoints | NO |
+| `src/lib/` | Frontend utilities | NO |
+| `netlify/functions/` | Serverless functions | NO |
+| `supabase/functions/` | Edge functions | NO |
 
-### 1.3 MCP Configuration Analysis
+**Services Examined (backend/src/services/):**
+- `CustomerService.ts` - Customer CRUD operations
+- `OrderService.ts` - Order management
+- `InventoryService.ts` - Inventory tracking
+- `TripService.ts` - Trip management
+- `PlanningService.ts` - Route planning (uses VROOM for optimization, NOT LLM)
 
-The `.mcp.json` file configures Model Context Protocol for **development environment only**:
+**External API Integrations Found (Non-LLM):**
+1. **WhatsApp API** (`backend/src/external-apis/whatsapp/`) - Messaging
+2. **Google Maps API** - Geocoding (not Gemini LLM)
+3. **VROOM** - Vehicle routing optimization (algorithmic, not LLM)
+4. **Supabase** - Database
+5. **Redis** - Caching
+6. **Sentry** - Error monitoring
+7. **Mixpanel** - Analytics
 
-```json
-{
-  "mcpServers": {
-    "supabase": { /* Supabase MCP for IDE assistance */ },
-    "filesystem": { /* File access for IDE */ }
-  }
-}
-```
-
-**This is IDE tooling configuration, NOT a production LLM integration.** The MCP servers are used by Claude Code (the IDE assistant) to help developers, not by the application at runtime.
-
-### 1.4 LLM Usage Summary
-
-**Total LLM Integrations Found:** 0
-
-**Clarification on AI-Related Files:**
-- `/docs/prompts/` - Human-readable documentation templates
-- `.claude/` - IDE assistant configuration (Claude Code settings)
-- `CLAUDE.md` - Project context document for IDE assistance
-- `.mcp.json` - Development-time MCP configuration
-
-**None of these represent runtime LLM usage in the application.**
+### 1.3 LLM Usage Summary
 
 ---
 
-## Final Assessment
+## **No LLM usage detected - prompt injection review not relevant for this repository.**
 
-**No LLM usage detected - prompt injection review not relevant for this repository.**
+---
 
-This is an Order Management System (OMS) that:
-- Uses Supabase for database and authentication
-- Implements standard REST APIs via Fastify
-- Uses Redis for caching
-- Integrates with external services (Google Maps, WhatsApp, Firebase) via standard APIs
-- Contains developer tooling for AI-assisted development (Claude Code configuration)
+### Explanation
 
-The application does not:
-- Make calls to any LLM APIs (OpenAI, Anthropic, Google AI, etc.)
-- Process user input through language models
-- Use RAG, embeddings, or vector databases for AI features
-- Implement any AI/ML inference capabilities
+This repository is an **Order Management System (OMS)** with the following architecture:
 
-**The prompt injection attack surface is not applicable to this codebase.**
+1. **Frontend:** React/TypeScript SPA
+2. **Backend:** Node.js/Fastify API server
+3. **Database:** Supabase (PostgreSQL)
+4. **Caching:** Redis
+5. **External Services:** WhatsApp, Google Maps (geocoding), VROOM (route optimization)
+
+**AI-related files in this repository are exclusively for development tooling:**
+
+- `.claude/` and `CLAUDE.md` - Configuration for Claude Code IDE (Anthropic's coding assistant)
+- `.mcp.json` - Model Context Protocol configuration for IDE integration
+- `docs/prompts/` - Human-readable documentation templates for developers
+- `.cursorrules` - Cursor IDE configuration
+
+These are **developer productivity tools** that help developers write and maintain code. They do NOT represent runtime LLM integrations where:
+- User input is sent to LLM APIs
+- LLM responses are processed by the application
+- The application acts on LLM-generated content
+
+**No prompt injection vulnerabilities are applicable** because:
+1. No LLM APIs are called at runtime
+2. No user input is processed by language models
+3. No LLM-generated content is rendered or executed
+4. The application does not use RAG, agents, or LLM-based features

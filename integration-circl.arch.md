@@ -5,76 +5,76 @@ High level overview of the codebase
 # Repository Analysis: integration-circl
 
 ## 0. Repository Name
-**[[integration-circl]]**
+[[integration-circl]]
 
 ---
 
 ## 1. Project Purpose
 
-This project is an **infrastructure integration layer** for a system called "Circl". It provides:
+This repository serves as an **infrastructure integration layer** for the Circl platform. It provides:
 
 - **Event streaming infrastructure** using NATS JetStream for real-time messaging
-- **Geospatial data handling** using Tile38 for location-based services
-- **IoT device integration** with location tracking capabilities
-- **Order Management System (OMS) event streaming**
-- **Dead Letter Queue (DLQ) operations** for failed message handling
+- **Geospatial data management** using Tile38 for location-based services
+- **Monitoring and observability** through Grafana dashboards
+- **Deployment orchestration** for both staging and production environments on GCP (GKE/Cloud Run)
 
-The primary domain appears to be **enterprise IoT and logistics/order management**, with emphasis on:
-- Real-time event-driven communication
-- Geospatial tracking (likely for fleet/asset management)
-- Multi-environment deployment (staging/production)
-- Enterprise-grade authentication and RBAC
+The primary domain appears to be **logistics/fleet management** based on the stream configurations (OMS - Order Management, WMS - Warehouse Management, DMS - Delivery Management, IoT/Location tracking, Voice).
 
 ---
 
 ## 2. Architecture Pattern
 
-**Event-Driven Architecture (EDA)** with **Backend-for-Frontend (BFF)** pattern
+**Event-Driven Architecture (EDA)** with **Infrastructure-as-Code (IaC)** patterns:
 
-Key indicators:
-- NATS JetStream for event streaming
-- Stream definitions for IoT, OMS, and location data
-- BFF design documentation
-- DLQ handling for message reliability
+- Message streaming via NATS JetStream
+- Multiple domain-specific streams for different services
+- Dead Letter Queue (DLQ) for failed message handling
+- Backend-for-Frontend (BFF) pattern indicated in documentation
 
 ---
 
 ## 3. Technology Stack
 
-### Core Technologies
-| Component | Technology |
-|-----------|------------|
-| Message Broker | **NATS JetStream** |
-| Geospatial Database | **Tile38** |
-| Container Orchestration | **Kubernetes (k8s)** |
-| Container Runtime | **Docker** |
-| Cloud Platform | **GCP** (indicated by `setup-gcp-secrets.sh`) |
-| Deployment Platform | **Railway** (PaaS option) |
+### Core Infrastructure
+| Technology | Purpose |
+|------------|---------|
+| **NATS JetStream** | Distributed messaging and event streaming |
+| **Tile38** | Geospatial database for real-time location tracking |
+| **Docker** | Containerization |
+| **Kubernetes (GKE)** | Container orchestration |
+| **GCP Cloud Run** | Serverless container deployment |
 
-### Package Dependencies (from package.json)
-This is a **Node.js** project. While the actual `package.json` content isn't shown, the presence of:
-- `package.json`
-- `package-lock.json`
+### Monitoring & Observability
+| Technology | Purpose |
+|------------|---------|
+| **Grafana** | Dashboards and alerting |
+| **Prometheus** (implied) | Metrics collection |
 
-Indicates Node.js/JavaScript as the primary runtime for any application code.
+### Configuration & Scripting
+| Technology | Purpose |
+|------------|---------|
+| **Bash/Shell** | Deployment and operational scripts |
+| **Kustomize** | Kubernetes configuration management |
+| **JSON** | Stream and dashboard configurations |
 
-### Infrastructure Tools
-- Docker Compose for local development
-- Kubernetes manifests with Kustomize (base/staging/production overlay pattern)
-- Shell scripts for deployment automation
+### Authentication (Planned/Documented)
+- WorkOS integration strategy documented
+- Supabase alerts setup present
+
+**Note:** No Python, Node.js, or application code dependencies found - this is purely an infrastructure configuration repository.
 
 ---
 
 ## 4. Initial Structure Impression
 
-| Directory | Purpose |
-|-----------|---------|
-| `docs/` | Extensive documentation including architecture, deployment guides, operations manuals |
-| `nats/` | NATS message broker configuration, Kubernetes deployments, stream definitions |
-| `tile38/` | Tile38 geospatial database configuration and Kubernetes deployments |
-| Root | Project configuration, environment templates, package management |
+This is an **infrastructure-only repository** with no application source code:
 
-**This is primarily an infrastructure-as-code (IaC) repository** rather than application code. It defines and manages the integration infrastructure for the Circl platform.
+| Component | Description |
+|-----------|-------------|
+| `/nats/` | NATS JetStream configuration and deployment |
+| `/tile38/` | Tile38 geospatial database deployment |
+| `/grafana/` | Monitoring dashboards and alerting |
+| `/docs/` | Extensive documentation and operational guides |
 
 ---
 
@@ -84,191 +84,171 @@ Indicates Node.js/JavaScript as the primary runtime for any application code.
 |------|---------|
 | `.env.example` | Environment variable template |
 | `.gitignore` | Git ignore rules |
-| `package.json` | Node.js project configuration |
-| `package-lock.json` | Dependency lock file |
+| `Makefile` | Build/deployment automation commands |
+| `nats/docker-compose.yml` | Local NATS development setup |
 | `nats/Dockerfile` | Custom NATS container image |
-| `nats/docker-compose.yml` | Local NATS development environment |
 | `nats/config/nats-server.conf` | NATS server configuration |
-| `tile38/docker-compose.yml` | Local Tile38 development environment |
-| `nats/streams-with-circl-prefix/*.json` | JetStream stream definitions (6 files for staging/prod) |
+| `tile38/docker-compose.yml` | Local Tile38 development setup |
+| `nats/k8s/*/kustomization.yaml` | Kubernetes configuration (implied by base/staging/production structure) |
+| `nats/streams-with-circl-prefix/*.json` | Stream definitions (24 files) |
+| `grafana/dashboards/*.json` | Grafana dashboard configurations |
 
 ---
 
-## 6. Directory Structure Analysis
+## 6. Directory Structure
 
-### `/docs/` - Documentation Hub
 ```
-docs/
-├── architecture/     # System design docs (BFF, event streaming, RBAC, overview)
-├── planning/         # Build plans, migration strategy, production readiness
-├── operations/       # NATS authentication, DLQ ops, operational guides
-├── deployment/       # Railway deployment guides and scripts
-├── testing/          # Test plans, gap analysis, phase results
-├── guides/           # Integration guides (backend, frontend, observability)
-├── decisions/        # Architecture Decision Records (ADRs)
-├── archive/          # Historical documentation (2025-11)
-└── *.md              # Various standalone guides (auth, integration, etc.)
-```
-
-### `/nats/` - NATS JetStream Infrastructure
-```
-nats/
-├── config/           # NATS server configuration
-├── scripts/          # Operational scripts (create/delete streams, testing)
-├── streams-with-circl-prefix/  # Stream JSON definitions
-│   ├── iot-{env}.json
-│   ├── iot_location-{env}.json
-│   └── oms-{env}.json
-└── k8s/              # Kubernetes manifests
-    ├── base/         # Base Kustomize resources
-    ├── staging/      # Staging overlays
-    ├── production/   # Production overlays
-    └── monitoring/   # Monitoring configs per environment
-```
-
-### `/tile38/` - Geospatial Database Infrastructure
-```
-tile38/
-└── k8s/              # Kubernetes manifests
-    ├── base/         # Base Kustomize resources
-    ├── staging/      # Staging overlays
-    ├── production/   # Production overlays
-    └── monitoring/   # Monitoring configs per environment
+integration-circl/
+├── docs/                           # Comprehensive documentation
+│   ├── architecture/               # System design docs (BFF, event-streaming, RBAC)
+│   ├── deployment/                 # Railway deployment guides
+│   ├── operations/                 # NATS operational runbooks
+│   ├── planning/                   # Migration and build plans
+│   ├── testing/                    # Test strategies and results
+│   ├── guides/                     # Integration guides
+│   ├── decisions/                  # Architecture Decision Records
+│   ├── tasks/                      # Task specifications
+│   └── archive/                    # Historical documentation
+│
+├── nats/                           # NATS JetStream Infrastructure
+│   ├── config/                     # Server configuration
+│   ├── k8s/                        # Kubernetes manifests
+│   │   ├── base/                   # Base Kustomize configs
+│   │   ├── staging/                # Staging overlays
+│   │   ├── production/             # Production overlays
+│   │   └── monitoring/             # Monitoring configs
+│   ├── streams-with-circl-prefix/  # Stream JSON definitions
+│   └── scripts/                    # Operational scripts
+│
+├── tile38/                         # Tile38 Geospatial Database
+│   └── k8s/                        # Similar structure to NATS
+│       ├── base/
+│       ├── staging/
+│       ├── production/
+│       └── monitoring/
+│
+└── grafana/                        # Observability
+    ├── dashboards/                 # Dashboard JSON exports
+    └── alerting/                   # Alert configuration scripts
 ```
 
-**Organization Pattern:** Infrastructure is organized **by service** (nats, tile38) with nested **by environment** (base/staging/production) using Kustomize overlays.
+**Organization Pattern:** By **infrastructure component** and **environment** (staging/production)
 
 ---
 
 ## 7. High-Level Architecture
 
-### Pattern: **Event-Driven Microservices Integration Layer**
+### Pattern: **Event-Driven Microservices Infrastructure**
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Circl Platform                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │   IoT       │    │    OMS      │    │  Location   │     │
-│  │  Services   │    │  Services   │    │  Services   │     │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
-│         │                  │                   │            │
-│         ▼                  ▼                   ▼            │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │              NATS JetStream                          │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌────────────────────┐   │   │
-│  │  │iot stream│ │oms stream│ │iot_location stream │   │   │
-│  │  └──────────┘ └──────────┘ └────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │              Tile38 (Geospatial)                     │   │
-│  │         Location indexing & geofencing               │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        GCP Platform                              │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
+│  │   Cloud Run │     │     GKE     │     │   Grafana   │       │
+│  │   Services  │     │   Cluster   │     │  Dashboards │       │
+│  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘       │
+│         │                   │                   │               │
+│         ▼                   ▼                   ▼               │
+│  ┌──────────────────────────────────────────────────────┐      │
+│  │                    NATS JetStream                     │      │
+│  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐    │      │
+│  │  │ BFF │ │ OMS │ │ WMS │ │ DMS │ │ IOT │ │ DLQ │    │      │
+│  │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘    │      │
+│  └──────────────────────────────────────────────────────┘      │
+│                            │                                    │
+│                            ▼                                    │
+│  ┌──────────────────────────────────────────────────────┐      │
+│  │                      Tile38                           │      │
+│  │            (Geospatial/Location Data)                │      │
+│  └──────────────────────────────────────────────────────┘      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Evidence Supporting Architecture:
-
-1. **Event-Driven:**
-   - NATS JetStream stream definitions (`iot`, `oms`, `iot_location`)
-   - DLQ operations documentation
-   - Event streaming architecture docs
-
-2. **BFF Pattern:**
-   - `docs/architecture/bff-design.md`
-   - `docs/testing/bff-test-plan.md`
-
-3. **Enterprise-Ready:**
-   - RBAC documentation
-   - WorkOS integration strategy (enterprise SSO)
-   - Multi-environment deployment (staging/production)
-   - GCP secrets management
-
-4. **Kubernetes-Native:**
-   - Kustomize overlay pattern for environment management
-   - Separate monitoring configurations per environment
-   - Deploy scripts for each environment
+1. **Event Streams** - Multiple domain streams (OMS, WMS, DMS, IOT, Voice, Chat)
+2. **DLQ Pattern** - Dead Letter Queue streams for failure handling
+3. **BFF Stream** - Backend-for-Frontend aggregation layer
+4. **Environment Separation** - Distinct staging/production configurations
+5. **Monitoring Integration** - Per-service Grafana dashboards
 
 ---
 
 ## 8. Build, Execution and Test
 
+### Build & Deployment
+
+**Makefile** (primary entry point for automation)
+
+**NATS Deployment:**
+```bash
+# Staging
+./nats/k8s/deploy-staging.sh
+
+# Production  
+./nats/k8s/deploy-production.sh
+```
+
+**Tile38 Deployment:**
+```bash
+# Staging
+./tile38/k8s/deploy-staging.sh
+
+# Production
+./tile38/k8s/deploy-production.sh
+```
+
 ### Local Development
-
-**NATS:**
 ```bash
-cd nats/
-docker-compose up -d
+# NATS local
+cd nats && docker-compose up
+
+# Tile38 local
+cd tile38 && docker-compose up
 ```
 
-**Tile38:**
-```bash
-cd tile38/
-docker-compose up -d
-```
-
-### NATS Stream Operations
+### Stream Operations
 ```bash
 # Create streams
 ./nats/scripts/create-streams.sh
 
-# Delete streams
-./nats/scripts/delete-streams.sh
+# Update streams
+./nats/scripts/update-streams.sh
 
-# Test connection
+# Test connectivity
 ./nats/scripts/test-connection.sh
 
-# Get stream info
+# View stream info
 ./nats/scripts/stream-info.sh
-
-# Get last message
-./nats/scripts/get-last-message.sh
 ```
 
-### Kubernetes Deployment
-
-**Staging:**
+### Alerting Setup
 ```bash
-./nats/k8s/deploy-staging.sh
-./tile38/k8s/deploy-staging.sh
+./grafana/alerting/setup-alerts.sh
+./grafana/alerting/setup-supabase-alerts.sh
 ```
 
-**Production:**
-```bash
-./nats/k8s/deploy-production.sh
-./tile38/k8s/deploy-production.sh
-```
-
-**GCP Secrets Setup:**
+### GCP Secrets
 ```bash
 ./nats/k8s/setup-gcp-secrets.sh
 ```
 
-### Railway Deployment
-Refer to:
-- `docs/deployment/RAILWAY_QUICKSTART.md`
-- `docs/deployment/RAILWAY_DEPLOYMENT.md`
-- `docs/deployment/RAILWAY_SCRIPTS_USAGE.md`
-
 ### Entry Points
-- **Infrastructure:** Docker Compose files and Kubernetes manifests
-- **Stream Definitions:** JSON files in `nats/streams-with-circl-prefix/`
-- **Configuration:** `nats/config/nats-server.conf`
-
-### Testing
-Based on documentation:
-- `docs/testing/test-strategy.md` - Overall testing approach
-- `docs/testing/bff-test-plan.md` - BFF-specific tests
-- `docs/testing/gaps-analysis.md` - Test coverage gaps
-- `docs/testing/phase2-results.md` - Test results documentation
+- **Makefile** - Primary automation interface
+- **deploy-*.sh** - Environment-specific deployments
+- **docker-compose.yml** - Local development environments
 
 ---
 
 ## Summary
 
-**integration-circl** is an infrastructure repository that provisions and manages the event-streaming and geospatial backbone for the Circl platform. It follows cloud-native practices with Kubernetes deployments, environment separation via Kustomize, and comprehensive operational documentation. The architecture is event-driven using NATS JetStream with specialized streams for IoT devices, order management, and location tracking, complemented by Tile38 for geospatial queries.
+This repository is a **pure infrastructure configuration** project that manages:
+- NATS JetStream messaging infrastructure for event-driven microservices
+- Tile38 geospatial database for location tracking
+- Grafana monitoring and alerting
+- Kubernetes deployment configurations for GCP
+
+It follows GitOps principles with clear environment separation (staging/production) and comprehensive operational documentation.
 
 # module_deep_dive
 
@@ -276,147 +256,197 @@ Deep dive into modules
 
 # Detailed Component Breakdown
 
-## 1. `docs/` - Documentation Hub
+## 1. `grafana/` - Monitoring & Alerting Configuration
 
 ### Core Responsibility
-Serves as the central knowledge repository for the integration layer project, containing architectural decisions, operational guides, deployment documentation, and planning materials for team collaboration and onboarding.
+Provides centralized monitoring, visualization dashboards, and alerting configurations for the entire infrastructure stack including GCP Cloud Run, GKE Kubernetes, NATS JetStream, and Tile38.
 
 ### Key Components
 
 | Sub-directory/File | Role |
 |-------------------|------|
-| `INDEX.md` | Main entry point and navigation for all documentation |
+| `alerting/setup-alerts.sh` | Shell script to configure general monitoring alerts |
+| `alerting/setup-supabase-alerts.sh` | Shell script specific to Supabase database alerting |
+| `dashboards/gcp-cloud-run-monitoring-*.json` | Grafana dashboard definitions for Cloud Run services (staging/production) |
+| `dashboards/gke-kubernetes-monitoring-*.json` | Grafana dashboard definitions for GKE cluster monitoring |
+| `dashboards/nats-jetstream-monitoring-*.json` | Grafana dashboard definitions for NATS message streaming metrics |
+| `dashboards/tile38-monitoring-*.json` | Grafana dashboard definitions for Tile38 geospatial database |
+
+### Dependencies & Interactions
+
+**Internal Dependencies:**
+- Monitors `nats/` infrastructure (JetStream streams, connections)
+- Monitors `tile38/` geospatial services
+- Requires metrics from GKE deployments defined in both `nats/k8s/` and `tile38/k8s/`
+
+**External Services:**
+- **GCP Cloud Run** - Pulls metrics via GCP monitoring APIs
+- **GKE/Kubernetes** - Pulls cluster and pod metrics
+- **Supabase** - Database metrics and health monitoring
+- **Grafana Cloud/Instance** - Target platform for dashboard deployment
+
+---
+
+## 2. `docs/` - Documentation Hub
+
+### Core Responsibility
+Serves as the central knowledge repository containing architecture documentation, operational guides, planning documents, deployment instructions, and testing strategies.
+
+### Key Components
+
+| Sub-directory/File | Role |
+|-------------------|------|
+| `INDEX.md` | Master documentation index and navigation |
 | `DOCS_INVENTORY.md` | Catalog of all documentation assets |
-| `INTEGRATION_HANDOFF.md` | Handoff documentation for integration work |
-| `architecture/` | System design docs (`bff-design.md`, `event-streaming.md`, `rbac.md`, `overview.md`) |
-| `planning/` | Project planning (`build-plan.md`, `migration-strategy.md`, `implementation-phases.md`) |
-| `operations/` | Operational runbooks for NATS (`nats-overview.md`, `nats-dlq-operations.md`, `nats-authentication.md`) |
+| `architecture/` | System architecture documents (BFF design, event streaming, RBAC) |
+| `operations/` | Operational runbooks for NATS, DLQ management, production restore |
 | `deployment/` | Railway deployment guides and scripts documentation |
-| `testing/` | Test strategies and gap analysis (`test-strategy.md`, `gaps-analysis.md`) |
-| `guides/` | Integration guides for backend/frontend and observability |
+| `planning/` | Build plans, migration strategies, production readiness checklists |
+| `testing/` | Test strategies, BFF test plans, gap analysis reports |
+| `guides/` | Integration guides for backend, frontend, and observability |
 | `decisions/` | Architecture Decision Records (ADRs) |
-| `archive/` | Historical documentation (e.g., `2025-11/` with 28 archived files) |
+| `tasks/` | Specific task requirements (e.g., NATS UES v2) |
+| `archive/2025-11/` | Historical documentation (28 archived files) |
 
 ### Dependencies & Interactions
-- **Internal:** References configurations and setups from `nats/` and `tile38/` directories
-- **External:** Documents integrations with:
-  - **WorkOS** (authentication provider - see `workos-integration-strategy.md`)
-  - **Railway** (deployment platform)
-  - **GCP** (cloud infrastructure)
+
+**Internal Dependencies:**
+- References `nats/` configuration and stream definitions
+- Documents `tile38/` deployment procedures
+- References `grafana/` monitoring setup
+
+**External Services:**
+- **Railway** - Deployment platform documentation
+- **WorkOS** - Authentication integration strategy docs
+- **Supabase** - User management and auth docs
 
 ---
 
-## 2. `nats/` - Message Streaming Infrastructure
+## 3. `tile38/` - Geospatial Database Infrastructure
 
 ### Core Responsibility
-Provides the NATS JetStream message broker infrastructure for event-driven communication between microservices, handling IoT data streams, order management (OMS), and location tracking.
+Manages the Tile38 geospatial database deployment, providing real-time location data storage, geofencing capabilities, and spatial queries for the application.
 
 ### Key Components
 
-| File/Directory | Role |
-|---------------|------|
-| `Dockerfile` | Container image definition for NATS server |
-| `docker-compose.yml` | Local development environment setup |
-| `config/nats-server.conf` | NATS server configuration (ports, clustering, JetStream settings) |
-| `k8s/base/` | Base Kubernetes manifests (deployments, services, configmaps) |
-| `k8s/staging/` | Staging environment overlays (5 files) |
-| `k8s/production/` | Production environment overlays (5 files) |
-| `k8s/monitoring/` | Prometheus/Grafana monitoring configs for both environments |
-| `k8s/deploy-*.sh` | Deployment scripts for staging/production |
-| `k8s/setup-gcp-secrets.sh` | GCP secret management script |
-| `streams-with-circl-prefix/` | JetStream stream definitions (IoT, OMS, location) for prod/staging |
-| `scripts/` | Operational scripts (`create-streams.sh`, `delete-streams.sh`, `stream-info.sh`, `test-connection.sh`) |
-
-### Dependencies & Interactions
-- **Internal:**
-  - Consumes/produces events for services defined in `docs/architecture/event-streaming.md`
-  - Stream configs reference `circl-` prefixed subjects for IoT and OMS domains
-- **External:**
-  - **GCP Secret Manager** (credentials via `setup-gcp-secrets.sh`)
-  - **Kubernetes** (GKE deployment target)
-  - **Prometheus** (metrics export for monitoring)
-
----
-
-## 3. `tile38/` - Geospatial Data Service
-
-### Core Responsibility
-Provides real-time geospatial indexing and querying capabilities using Tile38, supporting location-based features like geofencing, proximity searches, and fleet/asset tracking.
-
-### Key Components
-
-| File/Directory | Role |
-|---------------|------|
+| Sub-directory/File | Role |
+|-------------------|------|
 | `docker-compose.yml` | Local development environment for Tile38 |
-| `README.md` | Setup and usage documentation |
-| `k8s/base/` | Base Kubernetes manifests (3 files - deployment, service, PVC) |
-| `k8s/staging/` | Staging environment Kustomize overlays (4 files) |
-| `k8s/production/` | Production environment overlays (4 files) |
-| `k8s/monitoring/staging/` | Staging monitoring configuration |
-| `k8s/monitoring/production/` | Production monitoring configuration |
+| `k8s/base/` | Base Kubernetes manifests (shared configurations) |
+| `k8s/staging/` | Staging environment Kubernetes configurations (4 files) |
+| `k8s/production/` | Production environment Kubernetes configurations (4 files) |
+| `k8s/monitoring/staging/` | Staging monitoring configurations |
+| `k8s/monitoring/production/` | Production monitoring configurations |
+| `k8s/deploy-staging.sh` | Automated staging deployment script |
+| `k8s/deploy-production.sh` | Automated production deployment script |
+
+### Dependencies & Interactions
+
+**Internal Dependencies:**
+- Metrics exported to `grafana/dashboards/tile38-monitoring-*.json`
+- Likely receives location data published via `nats/` streams (IoT location streams)
+
+**External Services:**
+- **GKE (Google Kubernetes Engine)** - Deployment target
+- **GCP** - Cloud infrastructure provider
+- **Prometheus** - Metrics exposition (via monitoring configs)
+
+---
+
+## 4. `nats/` - Message Streaming Infrastructure
+
+### Core Responsibility
+Provides the core event-driven messaging infrastructure using NATS JetStream, enabling asynchronous communication between microservices with persistent streams, dead-letter queues, and guaranteed delivery.
+
+### Key Components
+
+| Sub-directory/File | Role |
+|-------------------|------|
+| `Dockerfile` | Custom NATS server container image |
+| `docker-compose.yml` | Local development NATS cluster |
+| `config/nats-server.conf` | NATS server configuration (auth, clustering, JetStream) |
+| `k8s/base/` | Base Kubernetes manifests (4 files) |
+| `k8s/staging/` | Staging K8s configs (5 files) |
+| `k8s/production/` | Production K8s configs (6 files) |
+| `k8s/monitoring/` | Prometheus/metrics configurations |
+| `k8s/setup-gcp-secrets.sh` | GCP secret management setup |
 | `k8s/deploy-staging.sh` | Staging deployment automation |
 | `k8s/deploy-production.sh` | Production deployment automation |
+| `streams-with-circl-prefix/` | JetStream stream definitions (JSON configs) |
+| `scripts/` | Operational scripts for stream management |
+
+#### Stream Definitions (`streams-with-circl-prefix/`)
+
+| Stream | Purpose |
+|--------|---------|
+| `bff-*.json` | Backend-for-Frontend events |
+| `chat-*.json` | Chat/messaging events |
+| `dlq-*.json` | Dead Letter Queue for failed messages |
+| `dms-*.json`, `dms2-*.json` | Document Management System events |
+| `iot-*.json`, `iot_location-*.json` | IoT device and location events |
+| `oms-*.json`, `oms2-*.json` | Order Management System events |
+| `voice-*.json` | Voice/audio communication events |
+| `wms-*.json`, `wms2-*.json` | Warehouse Management System events |
+
+#### Scripts (`scripts/`)
+
+| Script | Purpose |
+|--------|---------|
+| `create-streams.sh` | Initialize JetStream streams |
+| `delete-streams.sh` | Remove streams (cleanup) |
+| `update-streams.sh` | Modify stream configurations |
+| `stream-info.sh` | Query stream metadata/stats |
+| `get-last-message.sh` | Retrieve latest message from stream |
+| `test-connection.sh` | Validate NATS connectivity |
 
 ### Dependencies & Interactions
-- **Internal:**
-  - Likely receives location events from `nats/` streams (specifically `iot_location-*.json` streams)
-  - Referenced in `docs/architecture/` for geospatial design patterns
-- **External:**
-  - **Kubernetes** persistent volumes for data storage
-  - **Prometheus/Grafana** for metrics and dashboards (via `monitoring/` configs)
+
+**Internal Dependencies:**
+- Metrics consumed by `grafana/dashboards/nats-jetstream-monitoring-*.json`
+- Location streams likely feed into `tile38/` for geospatial processing
+- Documented in `docs/operations/nats-*.md` files
+
+**External Services:**
+- **GKE (Google Kubernetes Engine)** - Deployment target
+- **GCP Secret Manager** - Credential storage (via `setup-gcp-secrets.sh`)
+- **Prometheus** - Metrics collection
+- **Multiple Microservices** - Producers/consumers for:
+  - BFF (Backend-for-Frontend)
+  - Chat Service
+  - DMS (Document Management)
+  - OMS (Order Management)
+  - WMS (Warehouse Management)
+  - IoT Services
+  - Voice Services
 
 ---
 
-## 4. Root Configuration Files
-
-### Core Responsibility
-Project-level configuration for dependency management, environment setup, and repository standards.
-
-### Key Components
-
-| File | Role |
-|------|------|
-| `package.json` | Node.js project manifest - defines scripts, dependencies, project metadata |
-| `package-lock.json` | Locked dependency tree for reproducible builds |
-| `.env.example` | Template for environment variables (API keys, connection strings, secrets) |
-| `.gitignore` | Git exclusion rules (node_modules, .env, build artifacts) |
-| `README.md` | Project overview, setup instructions, quick start guide |
-
-### Dependencies & Interactions
-- **Internal:** 
-  - `package.json` likely defines scripts that orchestrate `nats/` and `tile38/` deployments
-  - `.env.example` contains variables consumed by services in other directories
-- **External:**
-  - **npm registry** for Node.js dependencies
-  - **CI/CD systems** (Railway, GitHub Actions) consume these configs
-
----
-
-## Cross-Component Interaction Diagram
+## Cross-Component Dependency Map
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Root Configuration                        │
-│         (package.json, .env.example, README.md)             │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-┌───────────┐  ┌───────────┐  ┌───────────┐
-│   docs/   │  │   nats/   │  │  tile38/  │
-│           │  │           │  │           │
-│ Documents │  │  Message  │  │ Geospatial│
-│ & Guides  │◄─│ Streaming │──│  Queries  │
-└───────────┘  └─────┬─────┘  └─────┬─────┘
-                     │              │
-                     ▼              ▼
-              ┌──────────────────────────┐
-              │   External Services      │
-              │ • GCP (Secrets, GKE)     │
-              │ • Railway (Deployment)   │
-              │ • WorkOS (Auth)          │
-              │ • Prometheus (Metrics)   │
-              └──────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        GRAFANA                                  │
+│                    (Monitoring Hub)                             │
+└─────────────┬───────────────┬───────────────┬──────────────────┘
+              │               │               │
+              ▼               ▼               ▼
+        ┌─────────┐     ┌─────────┐     ┌──────────┐
+        │  NATS   │────▶│ TILE38  │     │   GCP    │
+        │JetStream│     │  Geo DB │     │Cloud Run │
+        └────┬────┘     └─────────┘     └──────────┘
+             │
+             ▼
+    ┌────────────────────┐
+    │  Microservices     │
+    │  (BFF, Chat, DMS,  │
+    │   OMS, WMS, IoT)   │
+    └────────────────────┘
+             │
+             ▼
+    ┌────────────────────┐
+    │       DOCS         │
+    │  (Documentation)   │
+    └────────────────────┘
 ```
 
 # dependencies
@@ -425,173 +455,181 @@ Analyze dependencies and external libraries
 
 # Dependency and Architecture Analysis
 
-## Repository: integration-circl_ebe63a26
+## Repository: integration-circl_a4ffad1e
 
 ---
 
 ## Internal Modules
 
-Based on the repository structure analysis, this project is primarily an **infrastructure integration layer** rather than a traditional application codebase. The internal organization consists of configuration and deployment modules rather than application code modules.
+Based on the repository structure analysis, this project is an **infrastructure/integration configuration repository** rather than a traditional application codebase. It contains deployment configurations, monitoring setups, and operational tooling for distributed systems.
 
 ### Core Internal Components
 
-| Component | Path | Primary Responsibility |
-|-----------|------|------------------------|
-| **NATS Integration** | `/nats/` | Message broker infrastructure setup, including JetStream configuration, stream definitions, authentication, and deployment scripts for staging/production environments |
-| **Tile38 Integration** | `/tile38/` | Geospatial database infrastructure setup, including deployment configurations for Kubernetes (staging/production) and local Docker development |
-| **Documentation** | `/docs/` | Project documentation including architecture decisions, deployment guides, testing strategies, and operational procedures |
-| **NATS Scripts** | `/nats/scripts/` | Operational utilities for NATS stream management (create, delete, info, test connection, message retrieval) |
-| **NATS Streams Configuration** | `/nats/streams-with-circl-prefix/` | JetStream stream definitions for different environments (staging/production) covering IoT, IoT Location, and OMS domains |
-| **Kubernetes Deployments** | `/nats/k8s/`, `/tile38/k8s/` | Kubernetes manifests and deployment scripts organized by environment (base, staging, production) with monitoring configurations |
+| Module/Directory | Primary Responsibility |
+|------------------|----------------------|
+| **nats/** | NATS messaging server configuration and deployment. Contains Docker configurations, Kubernetes manifests, stream definitions, and operational scripts for managing the NATS JetStream messaging infrastructure. |
+| **nats/streams-with-circl-prefix/** | Stream configuration definitions for various services (BFF, Chat, DLQ, DMS, IOT, OMS, Voice, WMS) across staging and production environments. |
+| **nats/scripts/** | Operational scripts for NATS stream management including creation, deletion, updates, and connection testing. |
+| **nats/k8s/** | Kubernetes deployment manifests for NATS across staging and production environments, including monitoring configurations. |
+| **tile38/** | Tile38 geospatial database configuration and deployment. Contains Docker and Kubernetes configurations for geolocation data storage and querying. |
+| **tile38/k8s/** | Kubernetes deployment manifests for Tile38 across staging and production environments, including monitoring configurations. |
+| **grafana/** | Monitoring and observability configurations including dashboards and alerting setup for GCP Cloud Run, GKE Kubernetes, NATS JetStream, and Tile38. |
+| **grafana/dashboards/** | Pre-configured Grafana dashboard JSON files for monitoring various infrastructure components across staging and production. |
+| **grafana/alerting/** | Alert configuration scripts for infrastructure monitoring, including Supabase alerts. |
+| **docs/** | Project documentation covering architecture, operations, deployment guides, testing strategies, and planning documents. |
 
 ---
 
 ## External Dependencies
 
-### JavaScript/Node.js Dependencies
+### Infrastructure Dependencies
 
-**Source:** `/package.json (dev)`
+The following external dependencies were identified from the provided dependency list:
 
-| Dependency | Official Name | Primary Role/Purpose |
-|------------|---------------|----------------------|
-| `@types/js-yaml` | DefinitelyTyped js-yaml | TypeScript type definitions for js-yaml library |
-| `@types/node` | DefinitelyTyped Node.js | TypeScript type definitions for Node.js runtime APIs |
-| `js-yaml` | js-yaml | YAML parser and serializer for JavaScript |
-| `json-schema-to-typescript` | json-schema-to-typescript | Converts JSON Schema definitions to TypeScript interfaces |
-| `ts-json-schema-generator` | ts-json-schema-generator | Generates JSON Schema from TypeScript types |
-| `tsx` | tsx | TypeScript execution engine for Node.js (runs .ts files directly) |
-| `typescript` | TypeScript | Static type-checker and compiler for JavaScript |
-| `yaml` | yaml | YAML parser and stringifier (alternative/modern YAML library) |
+| Dependency | Official Name | Primary Role/Purpose | Source |
+|------------|---------------|---------------------|--------|
+| `nats:2.10-alpine` | **NATS** | High-performance messaging system used as the core event streaming and message broker infrastructure. Provides JetStream for persistent messaging. | `/nats/Dockerfile`, `/nats/docker-compose.yml` |
+| `natsio/nats-box:latest` | **NATS Box** | NATS CLI tooling container used for stream management, administration, and operational tasks. | `/nats/docker-compose.yml` |
+| `tile38/tile38:latest` | **Tile38** | Geospatial database and geofencing server. Provides real-time geolocation data storage, querying, and geofencing capabilities. | `/tile38/docker-compose.yml` |
 
-### Infrastructure/Container Dependencies
+### Base Image Dependencies
 
-**Source:** `/nats/Dockerfile`, `/nats/docker-compose.yml`
+| Dependency | Official Name | Primary Role/Purpose | Source |
+|------------|---------------|---------------------|--------|
+| `alpine` | **Alpine Linux** | Lightweight Linux distribution used as the base for the NATS container image. | `/nats/Dockerfile` (via `nats:2.10-alpine`) |
 
-| Dependency | Official Name | Primary Role/Purpose |
-|------------|---------------|----------------------|
-| `nats:2.10-alpine` | NATS Server | High-performance messaging system used as the core message broker with JetStream for persistent messaging |
-| `natsio/nats-box:latest` | NATS Box | CLI toolbox container for NATS administration and stream management |
+### System Utilities
 
-**Source:** `/tile38/docker-compose.yml`
-
-| Dependency | Official Name | Primary Role/Purpose |
-|------------|---------------|----------------------|
-| `tile38/tile38:latest` | Tile38 | Geospatial database and geofencing server for real-time location data processing |
+| Dependency | Purpose | Source |
+|------------|---------|--------|
+| `wget` | HTTP client installed for container health checks (verifying NATS server availability via HTTP monitoring endpoint). | `/nats/Dockerfile` |
 
 ---
 
 ## Summary
 
-This repository serves as an **integration infrastructure layer** for the "Circl" system, providing:
+This repository serves as an **infrastructure-as-code** project for deploying and managing integration layer components (NATS messaging and Tile38 geospatial database) for the Circl platform. It does not contain application source code but rather:
 
-1. **Messaging Infrastructure**: NATS with JetStream for event streaming across IoT, OMS (Order Management System), and location services
-2. **Geospatial Infrastructure**: Tile38 for location-based data storage and geofencing capabilities
-3. **Development Tooling**: TypeScript-based tooling for schema generation and YAML processing (likely for configuration management)
-4. **Multi-Environment Deployment**: Kubernetes configurations supporting staging and production environments with monitoring
+1. **Container configurations** (Docker, Docker Compose)
+2. **Kubernetes deployment manifests** (staging and production)
+3. **Monitoring dashboards** (Grafana)
+4. **Operational scripts** and documentation
 
-The project contains no application source code in the traditional sense—it is focused entirely on infrastructure provisioning, configuration, and deployment automation.
+The three primary external infrastructure dependencies are **NATS** (messaging), **NATS Box** (CLI tooling), and **Tile38** (geospatial database).
 
 # core_entities
 
 Core entities and their relationships
 
-# Domain Model Analysis: integration-circl Repository
+# Domain Entity Analysis - integration-circl Repository
 
 ## Executive Summary
 
-This repository represents an **integration layer** for a system called "CIRCL" that handles IoT device management, location tracking, and order management. The architecture uses NATS for event streaming and Tile38 for geospatial data.
+This repository is an **infrastructure integration layer** for a logistics/supply chain platform called "Circl". It manages messaging (NATS), geospatial data (Tile38), monitoring (Grafana), and deployment configurations. The domain entities are primarily infrastructure and event-streaming focused rather than traditional business entities.
 
 ---
 
 ## 1. Common Data Entities / Domain Models
 
-Based on the repository structure, configuration files, and documentation, I've identified the following core domain entities:
+### 1.1 NATS Stream
 
-### 1.1 **IoT Device**
-The central entity representing connected devices in the system.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `device_id` | string | Unique identifier for the device |
-| `status` | enum | Device operational status |
-| `metadata` | object | Device-specific configuration/info |
-| `last_seen` | timestamp | Last communication timestamp |
-| `tenant_id` | string | Multi-tenant organization identifier |
-
-### 1.2 **Location / GeoPosition**
-Geospatial data entity managed via Tile38.
+The core messaging entity representing event streams for different business domains.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `object_id` | string | Reference to device or entity being tracked |
-| `latitude` | float | Geographic latitude coordinate |
-| `longitude` | float | Geographic longitude coordinate |
-| `altitude` | float | Optional elevation data |
-| `timestamp` | timestamp | When position was recorded |
-| `accuracy` | float | GPS accuracy in meters |
-| `geofence_ids` | array | Associated geofence boundaries |
+| `name` | string | Stream identifier (e.g., `CIRCL_BFF`, `CIRCL_OMS`) |
+| `subjects` | string[] | Subject patterns the stream captures |
+| `retention` | enum | Message retention policy (`limits`, `interest`, `workqueue`) |
+| `max_consumers` | integer | Maximum allowed consumers |
+| `max_msgs` | integer | Maximum messages to retain |
+| `max_bytes` | integer | Maximum storage in bytes |
+| `max_age` | duration | Maximum message age (nanoseconds) |
+| `max_msg_size` | integer | Maximum individual message size |
+| `storage` | enum | Storage type (`file`, `memory`) |
+| `replicas` | integer | Replication factor |
+| `discard` | enum | Discard policy when limits reached |
+| `duplicate_window` | duration | Window for duplicate detection |
 
-### 1.3 **Order**
-Business entity managed through the Order Management System (OMS).
+### 1.2 Stream Consumer
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `order_id` | string | Unique order identifier |
-| `status` | enum | Order lifecycle status |
-| `customer_id` | string | Reference to customer entity |
-| `items` | array | Order line items |
-| `created_at` | timestamp | Order creation time |
-| `updated_at` | timestamp | Last modification time |
-| `assigned_device_id` | string | IoT device handling this order |
-
-### 1.4 **User / Identity**
-Authentication and authorization entity (managed via WorkOS integration).
+Entity representing consumers that read from NATS streams.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `user_id` | string | Unique user identifier |
-| `email` | string | User email address |
-| `organization_id` | string | Tenant/organization reference |
-| `roles` | array | RBAC role assignments |
-| `permissions` | array | Granular permission set |
-| `auth_provider` | string | SSO/Auth provider identifier |
+| `durable_name` | string | Persistent consumer identifier |
+| `deliver_policy` | enum | Where to start consuming (`all`, `new`, `last`) |
+| `ack_policy` | enum | Acknowledgment requirements |
+| `max_deliver` | integer | Maximum delivery attempts |
+| `filter_subject` | string | Subject filter pattern |
+| `replay_policy` | enum | How to replay messages |
 
-### 1.5 **Event / Message**
-The streaming event entity flowing through NATS.
+### 1.3 Dead Letter Queue (DLQ) Entry
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `event_id` | string | Unique event identifier |
-| `stream` | string | NATS stream name (iot, iot_location, oms) |
-| `subject` | string | Event subject/topic |
-| `payload` | object | Event data payload |
-| `timestamp` | timestamp | Event generation time |
-| `sequence` | integer | Stream sequence number |
-| `headers` | object | Event metadata/headers |
-
-### 1.6 **Dead Letter Queue (DLQ) Entry**
-Failed message entity for error handling.
+Failed messages routed for analysis/retry.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `dlq_id` | string | DLQ entry identifier |
 | `original_stream` | string | Source stream name |
-| `original_subject` | string | Original event subject |
-| `payload` | object | Original message payload |
-| `error_reason` | string | Failure description |
-| `retry_count` | integer | Number of retry attempts |
-| `failed_at` | timestamp | Initial failure timestamp |
+| `original_subject` | string | Original message subject |
+| `failure_reason` | string | Why processing failed |
+| `retry_count` | integer | Number of processing attempts |
+| `timestamp` | datetime | When the message was dead-lettered |
+| `payload` | object | Original message content |
 
-### 1.7 **Organization / Tenant**
-Multi-tenant organization entity.
+### 1.4 Geospatial Object (Tile38)
+
+Location-based entities stored in Tile38.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `organization_id` | string | Unique organization identifier |
-| `name` | string | Organization display name |
-| `settings` | object | Org-specific configurations |
-| `subscription_tier` | enum | Service tier level |
-| `created_at` | timestamp | Organization creation date |
+| `key` | string | Collection/namespace (e.g., `vehicles`, `zones`) |
+| `id` | string | Unique object identifier |
+| `coordinates` | point/polygon | Geographic location or boundary |
+| `fields` | object | Custom metadata fields |
+| `expiration` | integer | TTL in seconds |
+
+### 1.5 Alert Rule (Grafana)
+
+Monitoring alert configurations.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Alert identifier |
+| `condition` | expression | Trigger condition |
+| `threshold` | number | Alert threshold value |
+| `for` | duration | Duration before triggering |
+| `severity` | enum | Alert priority level |
+| `notification_channel` | string | Where to send alerts |
+| `dashboard_uid` | string | Associated dashboard |
+
+### 1.6 Kubernetes Deployment Configuration
+
+Infrastructure deployment entities.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `namespace` | string | K8s namespace (`circl-staging`, `circl-production`) |
+| `replicas` | integer | Number of pod instances |
+| `resources` | object | CPU/memory limits and requests |
+| `environment` | enum | Deployment target (`staging`, `production`) |
+| `image` | string | Container image reference |
+| `secrets` | string[] | GCP/K8s secret references |
+
+### 1.7 Business Domain Stream (Logical Entity)
+
+Logical grouping representing different business modules:
+
+| Stream Name | Domain | Purpose |
+|-------------|--------|---------|
+| `CIRCL_BFF` | Backend-for-Frontend | API gateway events |
+| `CIRCL_OMS` / `CIRCL_OMS2` | Order Management System | Order lifecycle events |
+| `CIRCL_WMS` / `CIRCL_WMS2` | Warehouse Management System | Warehouse operations |
+| `CIRCL_DMS` / `CIRCL_DMS2` | Delivery Management System | Delivery tracking |
+| `CIRCL_IOT` | Internet of Things | Device telemetry |
+| `CIRCL_IOT_LOCATION` | IoT Location | Real-time location updates |
+| `CIRCL_CHAT` | Chat/Messaging | User communications |
+| `CIRCL_VOICE` | Voice | Voice call events |
+| `CIRCL_DLQ` | Dead Letter Queue | Failed message handling |
 
 ---
 
@@ -599,120 +637,195 @@ Multi-tenant organization entity.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ENTITY RELATIONSHIP DIAGRAM                        │
+│                           RELATIONSHIP DIAGRAM                               │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-┌──────────────────┐         1:N          ┌──────────────────┐
-│   Organization   │◄─────────────────────│       User       │
-│    (Tenant)      │                      │    (Identity)    │
-└────────┬─────────┘                      └──────────────────┘
-         │                                         │
-         │ 1:N                                     │ N:M (RBAC)
-         │                                         ▼
-         │                                ┌──────────────────┐
-         │                                │    Role/Perm     │
-         │                                └──────────────────┘
+┌──────────────────┐       1:N        ┌──────────────────┐
+│   NATS Stream    │─────────────────▶│  Stream Consumer │
+│                  │                  │                  │
+│ - CIRCL_OMS      │                  │ - durable_name   │
+│ - CIRCL_WMS      │                  │ - filter_subject │
+│ - CIRCL_DMS      │                  └──────────────────┘
+│ - CIRCL_IOT      │
+│ - CIRCL_BFF      │       1:N        ┌──────────────────┐
+│ - CIRCL_CHAT     │─────────────────▶│   DLQ Entry      │
+│ - CIRCL_VOICE    │  (on failure)    │                  │
+└────────┬─────────┘                  │ - original_stream│
+         │                            │ - failure_reason │
+         │                            └──────────────────┘
          │
-         ├─────────────────────┬──────────────────────┐
-         │ 1:N                 │ 1:N                  │ 1:N
-         ▼                     ▼                      ▼
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│    IoT Device    │  │      Order       │  │     Geofence     │
-└────────┬─────────┘  └────────┬─────────┘  └──────────────────┘
-         │                     │                      ▲
-         │ 1:N                 │ N:1                  │ N:M
-         │                     │                      │
-         ▼                     │              ┌───────┴────────┐
-┌──────────────────┐           │              │                │
-│    Location      │◄──────────┘              │                │
-│  (GeoPosition)   │──────────────────────────┘                │
-└────────┬─────────┘                                           │
-         │                                                     │
-         │ 1:1 (generates)                                     │
-         ▼                                                     │
-┌──────────────────┐                                           │
-│  Event/Message   │───────────────────────────────────────────┘
-│   (NATS Stream)  │           (location events trigger
-└────────┬─────────┘            geofence checks)
-         │
-         │ 1:1 (on failure)
+         │ deployed via
          ▼
+┌──────────────────┐       1:1        ┌──────────────────┐
+│    Kubernetes    │─────────────────▶│   Environment    │
+│   Deployment     │                  │                  │
+│                  │                  │ - staging        │
+│ - namespace      │                  │ - production     │
+│ - replicas       │                  └──────────────────┘
+│ - resources      │
+└────────┬─────────┘
+         │
+         │ monitored by
+         ▼
+┌──────────────────┐       N:M        ┌──────────────────┐
+│  Grafana         │─────────────────▶│   Alert Rule     │
+│  Dashboard       │                  │                  │
+│                  │                  │ - condition      │
+│ - cloud-run      │                  │ - threshold      │
+│ - gke-k8s        │                  │ - severity       │
+│ - nats-jetstream │                  └──────────────────┘
+│ - tile38         │
+└──────────────────┘
+
 ┌──────────────────┐
-│    DLQ Entry     │
+│ Geospatial       │       N:1        ┌──────────────────┐
+│ Object (Tile38)  │─────────────────▶│  IoT Stream      │
+│                  │  (location       │  (CIRCL_IOT_     │
+│ - coordinates    │   updates)       │   LOCATION)      │
+│ - fields         │                  └──────────────────┘
 └──────────────────┘
 ```
 
 ---
 
-## 3. Relationship Descriptions
+## 3. Detailed Relationship Descriptions
 
-### One-to-Many Relationships
+### 3.1 NATS Stream → Stream Consumer (One-to-Many)
+- Each NATS stream can have **multiple consumers** subscribing to its messages
+- Consumers can filter specific subjects within a stream
+- Consumer state (last acknowledged message) is tracked independently
 
-| Parent Entity | Child Entity | Description |
-|--------------|--------------|-------------|
-| **Organization** | **User** | An organization has multiple users |
-| **Organization** | **IoT Device** | An organization owns multiple IoT devices |
-| **Organization** | **Order** | An organization processes multiple orders |
-| **IoT Device** | **Location** | A device generates many location records over time |
-| **Event** | **DLQ Entry** | Failed events create DLQ entries for retry |
+### 3.2 NATS Stream → DLQ Entry (One-to-Many)
+- Failed messages from **any stream** route to the DLQ stream
+- DLQ entries maintain reference to their `original_stream`
+- Enables retry/analysis workflows
 
-### Many-to-Many Relationships
+### 3.3 Kubernetes Deployment → Environment (One-to-One)
+- Each deployment configuration targets exactly one environment
+- Separate configurations exist for `staging` and `production`
+- Resource allocations differ by environment
 
-| Entity A | Entity B | Description |
-|----------|----------|-------------|
-| **User** | **Role/Permission** | Users have multiple roles; roles assigned to multiple users (RBAC) |
-| **Location** | **Geofence** | Locations can be within multiple geofences; geofences contain multiple location points |
+### 3.4 Grafana Dashboard → Alert Rule (Many-to-Many)
+- Dashboards can define multiple alert rules
+- Alert rules can reference metrics from multiple dashboards
+- Both are organized by service type (NATS, Tile38, Cloud Run, GKE)
 
-### Many-to-One Relationships
-
-| Child Entity | Parent Entity | Description |
-|--------------|---------------|-------------|
-| **Order** | **IoT Device** | Orders may be assigned to a device for fulfillment/delivery tracking |
-| **Location** | **Order** | Order tracking generates location updates |
-
----
-
-## 4. NATS Stream Mapping to Entities
-
-Based on the stream configuration files found:
-
-| Stream Name | Primary Entity | Purpose |
-|-------------|----------------|---------|
-| `iot-{env}` | IoT Device | Device status, telemetry, commands |
-| `iot_location-{env}` | Location | Real-time geospatial position updates |
-| `oms-{env}` | Order | Order lifecycle events |
-
----
-
-## 5. Data Flow Context
+### 3.5 Business Domain Streams (Implicit Relationships)
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ IoT Devices │────▶│    NATS     │────▶│     BFF     │
-│  (Edge)     │     │  Streams    │     │  (Backend   │
-└─────────────┘     └─────────────┘     │  for Front) │
-                           │            └─────────────┘
-                           │                   │
-                           ▼                   ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │   Tile38    │     │   WorkOS    │
-                    │  (Geo DB)   │     │   (Auth)    │
-                    └─────────────┘     └─────────────┘
+┌─────────────┐     events      ┌─────────────┐     events      ┌─────────────┐
+│    OMS      │────────────────▶│    WMS      │────────────────▶│    DMS      │
+│   (Orders)  │                 │ (Warehouse) │                 │ (Delivery)  │
+└─────────────┘                 └─────────────┘                 └─────────────┘
+                                       │
+                                       │ location updates
+                                       ▼
+                                ┌─────────────┐
+                                │  IOT/Tile38 │
+                                │ (Tracking)  │
+                                └─────────────┘
 ```
+
+- **OMS → WMS**: Order events trigger warehouse operations
+- **WMS → DMS**: Warehouse dispatch triggers delivery management
+- **DMS ↔ IOT**: Delivery tracking updates location data
+- **BFF**: Aggregates events from all domains for frontend consumption
 
 ---
 
-## 6. Key Observations
+## 4. Environment Partitioning
 
-1. **Multi-Tenancy**: The `Organization` entity serves as the root tenant, with data isolation across all other entities.
+All entities are partitioned by environment:
 
-2. **Event-Driven Architecture**: The `Event` entity is central to the system's communication pattern, with three distinct streams for different domains.
+| Entity Type | Staging | Production |
+|------------|---------|------------|
+| NATS Streams | `*-staging.json` | `*-prod.json` |
+| K8s Configs | `k8s/staging/` | `k8s/production/` |
+| Dashboards | `*-staging.json` | `*-production.json` |
+| Namespaces | `circl-staging` | `circl-production` |
 
-3. **Geospatial Focus**: The `Location` entity and Tile38 integration suggest real-time tracking is a core capability.
+---
 
-4. **Enterprise Authentication**: WorkOS integration indicates enterprise SSO/SAML requirements with RBAC.
+## 5. Key Observations
 
-5. **Resilience Pattern**: DLQ implementation shows consideration for message processing failures and retry mechanisms.
+1. **Event-Driven Architecture**: The system is built around NATS JetStream for async communication between business domains (OMS, WMS, DMS, IOT)
+
+2. **Dual Version Streams**: Several domains have v2 streams (`OMS2`, `WMS2`, `DMS2`), suggesting migration or versioning strategy
+
+3. **Geospatial Focus**: Tile38 integration indicates location tracking is central to the platform (likely for fleet/delivery tracking)
+
+4. **Infrastructure-as-Code**: All configurations are declarative JSON/YAML, enabling GitOps workflows
+
+5. **Observability First**: Comprehensive Grafana dashboards and alerting for all infrastructure components
+
+# state_machines
+
+Entity lifecycle state machines and transitions
+
+# State Machine Analysis Report
+
+After a comprehensive scan of the repository, I'll analyze the codebase for state machines and lifecycle states.
+
+## Analysis Summary
+
+This repository (`integration-circl_545ade04`) is primarily an **infrastructure and integration layer repository** containing:
+
+1. **NATS JetStream configuration** - Message streaming infrastructure
+2. **Tile38** - Geospatial database configuration
+3. **Grafana** - Monitoring dashboards and alerting
+4. **Kubernetes deployment configurations**
+5. **Documentation** for integration patterns
+
+## Detailed Scan Results
+
+### NATS Stream Configurations
+
+The NATS stream JSON files define message streams but **not entity state machines**. They configure:
+- Stream names (BFF, CHAT, DLQ, DMS, IOT, OMS, VOICE, WMS)
+- Subject patterns for message routing
+- Retention policies and replicas
+
+Example from stream configs:
+```json
+{
+  "name": "CIRCL_BFF",
+  "subjects": ["circl.bff.>"],
+  "retention": "limits",
+  "max_consumers": -1
+}
+```
+
+These are **infrastructure configurations**, not domain entity state machines.
+
+### Documentation Review
+
+The documentation references entities like **Orders**, **Deliveries**, and **Shipments** conceptually, but the actual domain model implementations (with status enums, state transitions, validation logic) are **not present in this repository**.
+
+From `docs/architecture/event-streaming.md` and similar files, there are references to event patterns like:
+- `order.created`, `order.updated`
+- `delivery.started`, `delivery.completed`
+- `shipment.dispatched`
+
+However, these are **event naming conventions**, not implemented state machines.
+
+### Kubernetes and Docker Configurations
+
+These contain deployment specs, service definitions, and monitoring configurations - no domain state machines.
+
+### Scripts
+
+The shell scripts handle:
+- Stream creation/deletion
+- Connection testing
+- Deployment automation
+
+No entity lifecycle management.
+
+---
+
+## Conclusion
+
+no state machines
 
 # DBs
 
@@ -720,108 +833,88 @@ databases analysis
 
 # Database Analysis Report
 
-After conducting a comprehensive scan of the provided codebase, I have identified the following databases:
+Based on a comprehensive scan of the provided codebase, I have analyzed all files for database connections, queries, ORM definitions, data persistence logic, schema definitions, and migration scripts.
+
+## Findings
+
+This repository (`integration-circl_545ade04`) is primarily an **infrastructure and integration layer** repository focused on:
+
+1. **NATS JetStream** - A messaging/streaming system (not a database)
+2. **Tile38** - A geospatial database/index
+3. **Grafana** - Monitoring dashboards
+4. **Documentation** for integration patterns
 
 ---
 
-## Database: Tile38
+### Database: Tile38
 
-* **Database Name/Type:** Tile38 (NoSQL - Geospatial Database)
-* **Purpose/Role:** Geospatial data store for location-based services. Used for storing and querying geographic data, likely for IoT device locations, real-time tracking, and geofencing capabilities. Supports real-time geospatial queries and notifications.
+* **Database Name/Type:** Tile38 (NoSQL - Geospatial Database/Index)
+* **Purpose/Role:** Geospatial data store for real-time location tracking and geofencing capabilities. Used to store and query location data for IoT devices, vehicles, or other assets that require spatial indexing and geo-queries.
 * **Key Technologies/Access Methods:** 
-  - Direct TCP/Redis protocol connection (Tile38 uses Redis-compatible protocol)
-  - Kubernetes deployments for production/staging environments
-  - Docker Compose for local development
+    * Direct Tile38 protocol (Redis-compatible RESP protocol)
+    * Kubernetes deployments with persistent storage
+    * Docker Compose for local development
 * **Key Files/Configuration:**
-  * `tile38/docker-compose.yml` (local development setup)
-  * `tile38/k8s/base/` (base Kubernetes configurations)
-  * `tile38/k8s/staging/` (staging environment configs)
-  * `tile38/k8s/production/` (production environment configs)
-  * `tile38/k8s/monitoring/` (monitoring configurations for both environments)
-  * `tile38/README.md` (documentation)
+    * `tile38/docker-compose.yml` (local development setup)
+    * `tile38/k8s/base/` (base Kubernetes configurations)
+    * `tile38/k8s/staging/` (staging environment configs)
+    * `tile38/k8s/production/` (production environment configs)
+    * `tile38/k8s/monitoring/` (Prometheus/monitoring configs)
+    * `grafana/dashboards/tile38-monitoring-production.json` (monitoring dashboard)
+    * `grafana/dashboards/tile38-monitoring-staging.json` (monitoring dashboard)
 * **Schema/Table Structure (for NoSQL):**
-  - Tile38 uses a key-based geospatial structure where:
-    - **Keys** represent collections of geospatial objects (e.g., fleet vehicles, IoT devices)
-    - **IDs** represent individual objects within a key
-    - **Objects** can be points, bounds, hashes, or GeoJSON geometries
-  - Based on the NATS stream configurations (`iot_location-*.json`), likely structures include:
-    - Device/asset locations with coordinates
-    - Geofence boundaries
-    - Real-time position updates
+    * Based on the infrastructure setup, Tile38 uses key-based geospatial objects:
+    * Objects are stored with geographic coordinates (lat/long, GeoJSON)
+    * Supports: Points, Polygons, LineStrings, and other GeoJSON types
+    * Key patterns likely include location data tied to IoT streams (`iot_location` NATS streams reference this)
 * **Key Entities and Relationships:**
-  * **Location Objects:** Represents geographic positions of tracked entities (IoT devices, assets)
-  * **Geofences:** Defined geographic boundaries for triggering events
-  * **Relationships:** Locations are indexed independently; relationships managed at application layer through NATS event streaming
+    * **Location Objects:** Geographic points or shapes representing tracked entities
+    * **Geofences:** Defined geographic boundaries for triggering events
+    * **Relationships:** Location objects are queried against geofences; data flows from IoT streams into Tile38 for spatial indexing
 * **Interacting Components:**
-  * IoT Location Service (based on `iot_location` NATS streams)
-  * IoT Service (based on `iot` NATS streams)
-  * Real-time tracking/monitoring systems
+    * IoT Location Service (based on `iot_location` NATS stream configurations)
+    * Monitoring/Alerting infrastructure via Grafana dashboards
 
 ---
 
-## Database: NATS JetStream
+## Additional Data Systems (Not Traditional Databases)
 
-* **Database Name/Type:** NATS JetStream (NoSQL - Distributed Streaming/Message Store)
-* **Purpose/Role:** Persistent message streaming and event store. Used for event-driven architecture, message persistence, replay capabilities, and inter-service communication. Stores IoT events, location updates, and order management system (OMS) events with configurable retention policies.
-* **Key Technologies/Access Methods:**
-  - NATS CLI tools for stream management
-  - Shell scripts for stream operations
-  - Kubernetes deployments with authentication
-  - Docker Compose for local development
-* **Key Files/Configuration:**
-  * `nats/config/nats-server.conf` (server configuration)
-  * `nats/docker-compose.yml` (local development setup)
-  * `nats/Dockerfile` (container definition)
-  * `nats/k8s/base/` (base Kubernetes configurations)
-  * `nats/k8s/staging/` (staging environment configs)
-  * `nats/k8s/production/` (production environment configs)
-  * `nats/k8s/setup-gcp-secrets.sh` (GCP secrets setup for authentication)
-  * `nats/streams-with-circl-prefix/` (stream definitions)
-  * `nats/scripts/` (operational scripts)
-* **Schema/Table Structure (for NoSQL):**
-  Based on stream configuration files in `nats/streams-with-circl-prefix/`:
-  
-  * **IoT Stream** (`iot-prod.json`, `iot-staging.json`):
-    - Subject pattern: `circl.iot.>` (hierarchical subjects for IoT events)
-    - Stores: Device telemetry, status updates, sensor data
-    
-  * **IoT Location Stream** (`iot_location-prod.json`, `iot_location-staging.json`):
-    - Subject pattern: `circl.iot.location.>` 
-    - Stores: Real-time location updates, GPS coordinates, movement events
-    
-  * **OMS Stream** (`oms-prod.json`, `oms-staging.json`):
-    - Subject pattern: `circl.oms.>` (Order Management System events)
-    - Stores: Order events, status changes, fulfillment updates
+### NATS JetStream (Message Streaming - Not a Database)
 
-* **Key Entities and Relationships:**
-  * **IoT Events:** Device telemetry and status messages
-  * **Location Events:** Geographic position updates from tracked devices
-  * **OMS Events:** Order lifecycle events (creation, updates, fulfillment)
-  * **Relationships:** 
-    - Event streams are independent but can be correlated by device/order IDs
-    - IoT Location events likely correlate with Tile38 geospatial data
-    - Supports consumer groups for parallel processing
-    - Dead Letter Queue (DLQ) support for failed message handling
-* **Interacting Components:**
-  * IoT Service (publishes device events)
-  * IoT Location Service (publishes/consumes location data)
-  * Order Management Service (OMS events)
-  * BFF Layer (Backend-for-Frontend, based on docs)
-  * DLQ Processing (based on `docs/DLQ_OPERATIONS_GUIDE.md`)
+While NATS JetStream is not a traditional database, it does provide **persistent message storage**. For completeness:
+
+* **Type:** Distributed Messaging System with Persistence
+* **Purpose:** Event streaming and message queuing for microservices communication
+* **Streams Configured:**
+    * `bff` - Backend-for-Frontend events
+    * `chat` - Chat messaging
+    * `dlq` - Dead Letter Queue for failed messages
+    * `dms` / `dms2` - Document Management System events
+    * `iot` / `iot_location` - IoT device and location events
+    * `oms` / `oms2` - Order Management System events
+    * `voice` - Voice communication events
+    * `wms` / `wms2` - Warehouse Management System events
+* **Key Files:** `nats/streams-with-circl-prefix/`, `nats/config/nats-server.conf`, `nats/k8s/`
+
+---
+
+## Databases Referenced in Documentation (External to This Codebase)
+
+The documentation references **Supabase** as an external database:
+* `grafana/alerting/setup-supabase-alerts.sh` - Alerting setup for Supabase
+* This indicates the broader system uses Supabase (PostgreSQL-based), but the actual Supabase database configuration, schemas, and access code are **not present in this repository**.
 
 ---
 
 ## Summary
 
-| Database | Type | Primary Purpose |
-|----------|------|-----------------|
-| Tile38 | NoSQL - Geospatial | Real-time location tracking, geofencing, spatial queries |
-| NATS JetStream | NoSQL - Streaming | Event persistence, message streaming, inter-service communication |
+This repository contains infrastructure configuration for **one database**:
 
-Both databases work together in an event-driven architecture where:
-- **NATS JetStream** handles event streaming and message persistence for IoT and OMS domains
-- **Tile38** provides geospatial indexing and queries for location-based features
-- Events flow through NATS streams, with location data potentially being indexed in Tile38 for spatial queries
+| Database | Type | Present in Codebase |
+|----------|------|---------------------|
+| Tile38 | NoSQL (Geospatial) | ✅ Infrastructure/K8s configs |
+| Supabase | SQL (PostgreSQL) | ❌ Only alerting references |
+| NATS JetStream | Message Streaming | ✅ Full configuration (not a DB) |
 
 # APIs
 
@@ -829,42 +922,49 @@ APIs analysis
 
 # API Documentation Analysis
 
-After conducting a comprehensive scan of the provided repository structure and files, I need to analyze the codebase for HTTP API endpoints.
+After conducting a comprehensive scan of the provided codebase, I have analyzed all files and directories (excluding the 'arch-docs' folder as instructed).
 
-## Analysis Summary
+## Findings
 
-The repository `integration-circl_ebe63a26` appears to be an **infrastructure and integration layer project** focused on:
+The repository `integration-circl_545ade04` is an **infrastructure/DevOps configuration repository** that contains:
 
-1. **NATS** - Message streaming/event system configuration
-2. **Tile38** - Geospatial database configuration
-3. **Kubernetes deployment configurations** (k8s folders)
-4. **Docker configurations** (docker-compose files, Dockerfiles)
-5. **Documentation** (docs folder with architecture, deployment, and operational guides)
-6. **Shell scripts** for infrastructure operations (stream creation, deployment scripts)
+1. **NATS JetStream Configuration** (`/nats/`)
+   - Server configuration files
+   - Kubernetes deployment manifests
+   - Stream definitions (JSON configurations)
+   - Shell scripts for stream management
 
-## Files Examined
+2. **Tile38 Geospatial Database Configuration** (`/tile38/`)
+   - Docker Compose files
+   - Kubernetes deployment manifests
 
-- **package.json** - Would typically contain dependencies indicating web frameworks (Express, Fastify, etc.)
-- **No source code directories** (no `src/`, `lib/`, `app/`, `routes/`, `controllers/`, or `handlers/` folders)
-- **Configuration files** are primarily for:
-  - NATS server configuration (`nats-server.conf`)
-  - Kubernetes manifests (YAML files in k8s directories)
-  - Docker Compose configurations
-  - Shell scripts for DevOps operations
+3. **Grafana Monitoring Configuration** (`/grafana/`)
+   - Dashboard JSON definitions
+   - Alerting setup scripts
 
-The repository contains:
-- Infrastructure-as-Code (IaC) configurations
-- Deployment scripts
-- Stream/messaging configurations (JSON files for NATS streams)
-- Documentation for integration patterns
+4. **Documentation** (`/docs/`)
+   - Architecture guides
+   - Deployment instructions
+   - Operations guides
 
----
+5. **Infrastructure Scripts**
+   - Makefile
+   - Shell scripts for deployment and management
 
 ## Conclusion
 
 **no HTTP API**
 
-This repository is an **infrastructure/DevOps configuration repository** that defines messaging infrastructure (NATS), geospatial services (Tile38), and deployment configurations. It does not contain application source code with HTTP API endpoints. The `package.json` likely exists for tooling purposes (scripts, linting, etc.) rather than defining a web server with REST/HTTP endpoints.
+---
+
+The codebase does not contain any application code that exposes HTTP API endpoints. It consists entirely of:
+- Infrastructure-as-Code configurations (Kubernetes YAML, Docker Compose)
+- Monitoring dashboards (Grafana JSON)
+- Shell scripts for DevOps operations
+- Documentation files (Markdown)
+- NATS stream configuration files (JSON)
+
+There are no web frameworks, route definitions, controllers, or handlers that would define HTTP endpoints.
 
 # events
 
@@ -872,554 +972,356 @@ events analysis
 
 # Event Documentation Analysis
 
-After conducting a comprehensive scan of the repository `integration-circl_ebe63a26`, I have identified events related to **NATS JetStream** messaging system. The events are defined through stream configurations and documented in the architecture.
+After analyzing the repository structure, I found that this is an **infrastructure/configuration repository** for a NATS JetStream messaging system. The repository contains:
+
+1. **NATS JetStream stream configuration files** (in `nats/streams-with-circl-prefix/`)
+2. **Infrastructure deployment scripts** (Kubernetes, Docker Compose)
+3. **Documentation and operational guides**
+
+Let me extract the event/stream configurations from the NATS stream definition files.
 
 ---
 
-## Events Found
+## NATS JetStream Streams Configuration
+
+Based on the stream configuration files found in `nats/streams-with-circl-prefix/`, here are the documented event streams:
 
 ---
 
-### Event: IOT Events (Production)
+### Stream: BFF (Backend-for-Frontend)
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.iot.>` (Stream: `circl_iot`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_BFF` (subjects: `circl.bff.>`)
+* **Direction:** Both (stream definition for producing and consuming)
 * **Event Payload:**
     ```json
     {
-      "description": "IOT event payload - structure inferred from stream purpose",
-      "deviceId": "string",
-      "eventType": "string",
-      "timestamp": "date-time",
-      "data": "object"
+      "description": "Stream configuration only - payload schema defined by BFF service implementation"
     }
     ```
-* **Short explanation of what this event is doing:** This stream handles IoT-related events in production. It captures all events under the `circl.iot.>` subject hierarchy with a retention policy of "limits" (max 1GB storage, max 1 million messages, max age of 7 days). Messages are replicated 3 times for high availability.
-
-**Source:** `nats/streams-with-circl-prefix/iot-prod.json`
-```json
-{
-  "name": "circl_iot",
-  "subjects": ["circl.iot.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 1000000,
-  "max_bytes": 1073741824,
-  "max_age": 604800000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 3,
-  "duplicate_window": 120000000000
-}
-```
+* **Short explanation of what this event is doing:** This stream handles events for the Backend-for-Frontend layer, facilitating communication between frontend applications and backend microservices. Available in both staging and production environments.
 
 ---
 
-### Event: IOT Events (Staging)
+### Stream: Chat
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.iot.>` (Stream: `circl_iot`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_CHAT` (subjects: `circl.chat.>`)
+* **Direction:** Both (stream definition for producing and consuming)
 * **Event Payload:**
     ```json
     {
-      "description": "IOT event payload - structure inferred from stream purpose",
-      "deviceId": "string",
-      "eventType": "string",
-      "timestamp": "date-time",
-      "data": "object"
+      "description": "Stream configuration only - payload schema defined by Chat service implementation"
     }
     ```
-* **Short explanation of what this event is doing:** This is the staging environment version of the IoT stream with reduced resources (100MB storage, 100K messages, 1 replica) for testing IoT event flows before production deployment.
-
-**Source:** `nats/streams-with-circl-prefix/iot-staging.json`
-```json
-{
-  "name": "circl_iot",
-  "subjects": ["circl.iot.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 100000,
-  "max_bytes": 104857600,
-  "max_age": 259200000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 1,
-  "duplicate_window": 120000000000
-}
-```
+* **Short explanation of what this event is doing:** This stream handles real-time chat messaging events, enabling communication features within the platform. Available in both staging and production environments.
 
 ---
 
-### Event: IOT Location Events (Production)
+### Stream: DLQ (Dead Letter Queue)
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.iot.location.>` (Stream: `circl_iot_location`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_DLQ` (subjects: `circl.dlq.>`)
+* **Direction:** Consuming (primarily for failed message handling)
 * **Event Payload:**
     ```json
     {
-      "description": "IoT location tracking payload",
-      "deviceId": "string",
-      "latitude": "number",
-      "longitude": "number",
-      "altitude": "number (optional)",
-      "accuracy": "number",
-      "timestamp": "date-time",
-      "speed": "number (optional)",
-      "heading": "number (optional)"
+      "description": "Contains failed messages from other streams with original payload and error metadata"
     }
     ```
-* **Short explanation of what this event is doing:** Dedicated stream for IoT device location tracking events in production. Handles high-volume GPS/location data with 1GB storage limit, 1 million message limit, and 7-day retention. Optimized for geospatial tracking use cases, likely integrated with Tile38 for geofencing.
-
-**Source:** `nats/streams-with-circl-prefix/iot_location-prod.json`
-```json
-{
-  "name": "circl_iot_location",
-  "subjects": ["circl.iot.location.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 1000000,
-  "max_bytes": 1073741824,
-  "max_age": 604800000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 3,
-  "duplicate_window": 120000000000
-}
-```
+* **Short explanation of what this event is doing:** This stream captures messages that failed processing in other streams, enabling retry logic and manual intervention for failed events. Available in both staging and production environments.
 
 ---
 
-### Event: IOT Location Events (Staging)
+### Stream: DMS (Document Management System)
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.iot.location.>` (Stream: `circl_iot_location`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_DMS` / `CIRCL_DMS2` (subjects: `circl.dms.>`, `circl.dms2.>`)
+* **Direction:** Both (stream definition for producing and consuming)
 * **Event Payload:**
     ```json
     {
-      "description": "IoT location tracking payload",
-      "deviceId": "string",
-      "latitude": "number",
-      "longitude": "number",
-      "altitude": "number (optional)",
-      "accuracy": "number",
-      "timestamp": "date-time",
-      "speed": "number (optional)",
-      "heading": "number (optional)"
+      "description": "Stream configuration only - payload schema defined by DMS service implementation"
     }
     ```
-* **Short explanation of what this event is doing:** Staging version of the IoT location stream with reduced resources (100MB, 100K messages, 3-day retention, 1 replica) for testing location tracking functionality.
-
-**Source:** `nats/streams-with-circl-prefix/iot_location-staging.json`
-```json
-{
-  "name": "circl_iot_location",
-  "subjects": ["circl.iot.location.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 100000,
-  "max_bytes": 104857600,
-  "max_age": 259200000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 1,
-  "duplicate_window": 120000000000
-}
-```
+* **Short explanation of what this event is doing:** These streams handle document management events such as document uploads, processing, and retrieval operations. Two versions exist (DMS and DMS2), available in both staging and production environments.
 
 ---
 
-### Event: OMS (Order Management System) Events (Production)
+### Stream: IoT
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.oms.>` (Stream: `circl_oms`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_IOT` (subjects: `circl.iot.>`)
+* **Direction:** Both (stream definition for producing and consuming)
 * **Event Payload:**
     ```json
     {
-      "description": "Order Management System event payload",
-      "orderId": "string",
-      "eventType": "string (e.g., order.created, order.updated, order.fulfilled)",
-      "customerId": "string",
-      "status": "string",
-      "items": [
-        {
-          "productId": "string",
-          "quantity": "integer",
-          "price": "number"
-        }
-      ],
-      "totalAmount": "number",
-      "timestamp": "date-time",
-      "metadata": "object (optional)"
+      "description": "Stream configuration only - payload schema defined by IoT service implementation"
     }
     ```
-* **Short explanation of what this event is doing:** Handles Order Management System events in production. Captures all order-related events (creation, updates, fulfillment, cancellation) under the `circl.oms.>` subject hierarchy. Configured with 1GB storage, 1 million messages, 7-day retention, and 3 replicas for high availability.
-
-**Source:** `nats/streams-with-circl-prefix/oms-prod.json`
-```json
-{
-  "name": "circl_oms",
-  "subjects": ["circl.oms.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 1000000,
-  "max_bytes": 1073741824,
-  "max_age": 604800000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 3,
-  "duplicate_window": 120000000000
-}
-```
+* **Short explanation of what this event is doing:** This stream handles Internet of Things device events, telemetry data, and device communication. Available in both staging and production environments.
 
 ---
 
-### Event: OMS (Order Management System) Events (Staging)
+### Stream: IoT Location
 
 * **Event Type:** NATS JetStream
-* **Event Name/Topic/Queue:** `circl.oms.>` (Stream: `circl_oms`)
-* **Direction:** Both Producing and Consuming (infrastructure definition)
+* **Event Name/Topic/Queue:** `CIRCL_IOT_LOCATION` (subjects: `circl.iot_location.>`)
+* **Direction:** Both (stream definition for producing and consuming)
 * **Event Payload:**
     ```json
     {
-      "description": "Order Management System event payload",
-      "orderId": "string",
-      "eventType": "string (e.g., order.created, order.updated, order.fulfilled)",
-      "customerId": "string",
-      "status": "string",
-      "items": [
-        {
-          "productId": "string",
-          "quantity": "integer",
-          "price": "number"
-        }
-      ],
-      "totalAmount": "number",
-      "timestamp": "date-time",
-      "metadata": "object (optional)"
+      "description": "Stream configuration only - likely contains geolocation data from IoT devices"
     }
     ```
-* **Short explanation of what this event is doing:** Staging version of the OMS stream with reduced resources (100MB, 100K messages, 3-day retention, 1 replica) for testing order management workflows.
+* **Short explanation of what this event is doing:** This stream specifically handles location/GPS data from IoT devices, likely integrating with the Tile38 geospatial database also configured in this repository. Available in both staging and production environments.
 
-**Source:** `nats/streams-with-circl-prefix/oms-staging.json`
-```json
-{
-  "name": "circl_oms",
-  "subjects": ["circl.oms.>"],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": 100000,
-  "max_bytes": 104857600,
-  "max_age": 259200000000000,
-  "max_msg_size": 1048576,
-  "storage": "file",
-  "discard": "old",
-  "num_replicas": 1,
-  "duplicate_window": 120000000000
-}
-```
+---
+
+### Stream: OMS (Order Management System)
+
+* **Event Type:** NATS JetStream
+* **Event Name/Topic/Queue:** `CIRCL_OMS` / `CIRCL_OMS2` (subjects: `circl.oms.>`, `circl.oms2.>`)
+* **Direction:** Both (stream definition for producing and consuming)
+* **Event Payload:**
+    ```json
+    {
+      "description": "Stream configuration only - payload schema defined by OMS service implementation"
+    }
+    ```
+* **Short explanation of what this event is doing:** These streams handle order management events such as order creation, updates, fulfillment status changes, and order lifecycle management. Two versions exist (OMS and OMS2), available in both staging and production environments.
+
+---
+
+### Stream: Voice
+
+* **Event Type:** NATS JetStream
+* **Event Name/Topic/Queue:** `CIRCL_VOICE` (subjects: `circl.voice.>`)
+* **Direction:** Both (stream definition for producing and consuming)
+* **Event Payload:**
+    ```json
+    {
+      "description": "Stream configuration only - payload schema defined by Voice service implementation"
+    }
+    ```
+* **Short explanation of what this event is doing:** This stream handles voice communication events, potentially for VoIP, voice commands, or voice-based interactions within the platform. Available in both staging and production environments.
+
+---
+
+### Stream: WMS (Warehouse Management System)
+
+* **Event Type:** NATS JetStream
+* **Event Name/Topic/Queue:** `CIRCL_WMS` / `CIRCL_WMS2` (subjects: `circl.wms.>`, `circl.wms2.>`)
+* **Direction:** Both (stream definition for producing and consuming)
+* **Event Payload:**
+    ```json
+    {
+      "description": "Stream configuration only - payload schema defined by WMS service implementation"
+    }
+    ```
+* **Short explanation of what this event is doing:** These streams handle warehouse management events such as inventory updates, stock movements, picking/packing operations, and warehouse logistics. Two versions exist (WMS and WMS2), available in both staging and production environments.
 
 ---
 
 ## Summary
 
-| Stream Name | Subject Pattern | Environment | Max Storage | Max Messages | Retention | Replicas |
-|-------------|-----------------|-------------|-------------|--------------|-----------|----------|
-| `circl_iot` | `circl.iot.>` | Production | 1GB | 1M | 7 days | 3 |
-| `circl_iot` | `circl.iot.>` | Staging | 100MB | 100K | 3 days | 1 |
-| `circl_iot_location` | `circl.iot.location.>` | Production | 1GB | 1M | 7 days | 3 |
-| `circl_iot_location` | `circl.iot.location.>` | Staging | 100MB | 100K | 3 days | 1 |
-| `circl_oms` | `circl.oms.>` | Production | 1GB | 1M | 7 days | 3 |
-| `circl_oms` | `circl.oms.>` | Staging | 100MB | 100K | 3 days | 1 |
+| Stream Name | Subject Pattern | Environments | Purpose |
+|-------------|-----------------|--------------|---------|
+| CIRCL_BFF | `circl.bff.>` | Staging, Production | Backend-for-Frontend communication |
+| CIRCL_CHAT | `circl.chat.>` | Staging, Production | Real-time chat messaging |
+| CIRCL_DLQ | `circl.dlq.>` | Staging, Production | Dead letter queue for failed messages |
+| CIRCL_DMS | `circl.dms.>` | Staging, Production | Document management |
+| CIRCL_DMS2 | `circl.dms2.>` | Staging, Production | Document management (v2) |
+| CIRCL_IOT | `circl.iot.>` | Staging, Production | IoT device events |
+| CIRCL_IOT_LOCATION | `circl.iot_location.>` | Staging, Production | IoT geolocation data |
+| CIRCL_OMS | `circl.oms.>` | Staging, Production | Order management |
+| CIRCL_OMS2 | `circl.oms2.>` | Staging, Production | Order management (v2) |
+| CIRCL_VOICE | `circl.voice.>` | Staging, Production | Voice communications |
+| CIRCL_WMS | `circl.wms.>` | Staging, Production | Warehouse management |
+| CIRCL_WMS2 | `circl.wms2.>` | Staging, Production | Warehouse management (v2) |
 
 ---
 
-## Notes
-
-1. **Infrastructure Repository**: This repository appears to be an infrastructure/integration layer that defines NATS JetStream configurations. The actual event producers and consumers are likely in separate application codebases.
-
-2. **Subject Wildcards**: All streams use the `>` wildcard suffix, meaning they capture all sub-subjects (e.g., `circl.iot.temperature`, `circl.iot.humidity`, `circl.oms.order.created`).
-
-3. **Payload Schemas**: Event payloads are inferred based on stream names and common patterns. Actual schemas should be defined in the producing/consuming applications or in a shared schema registry.
-
-4. **DLQ Support**: Based on documentation files (`DLQ_OPERATIONS_GUIDE.md`, `nats-dlq-operations.md`), there is Dead Letter Queue support for failed message handling, though specific DLQ stream configurations were not found in the scanned files.
+**Note:** This repository contains only **infrastructure configuration** for NATS JetStream streams. The actual event payload schemas, producers, and consumers are implemented in separate service repositories. The stream configurations define the messaging infrastructure but not the application-level event contracts.
 
 # service_dependencies
 
 Analyze service dependencies
 
-# External Dependencies Analysis
+# External Dependency Analysis for `integration-circl_545ade04`
 
-## Repository: integration-circl_ebe63a26
+## Executive Summary
+
+This repository appears to be an infrastructure/integration layer project that primarily configures and deploys NATS (message broker) and Tile38 (geospatial database) services, along with Grafana monitoring dashboards. The codebase itself doesn't contain application code but rather deployment configurations, Kubernetes manifests, and operational tooling.
 
 ---
 
-## 1. Development Dependencies (npm packages)
+## Identified External Dependencies
 
-### 1.1 @types/js-yaml
+### 1. NATS Message Broker
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | @types/js-yaml |
-| **Type of Dependency** | Library/Framework (TypeScript Type Definitions) |
-| **Purpose/Role** | Provides TypeScript type definitions for the js-yaml library, enabling type-safe YAML parsing and serialization in TypeScript projects. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^4.0.9`. |
+| **Dependency Name** | NATS JetStream Message Broker |
+| **Type of Dependency** | Message Broker / External Service |
+| **Purpose/Role** | Provides distributed messaging and event streaming capabilities using JetStream for persistent message storage. Used for inter-service communication across multiple domains (BFF, OMS, DMS, IOT, Voice, Chat, WMS). |
+| **Integration Point/Clues** | - `/nats/Dockerfile`: Uses base image `nats:2.10-alpine` <br> - `/nats/docker-compose.yml`: Container configuration with ports 4222 (client), 8222 (HTTP monitoring), 6222 (cluster routing) <br> - `/nats/config/nats-server.conf`: Server configuration <br> - `/nats/streams-with-circl-prefix/`: Multiple stream definitions for different services (bff, chat, dlq, dms, iot, oms, voice, wms) <br> - `/nats/k8s/`: Kubernetes deployment manifests for staging and production |
 
 ---
 
-### 1.2 @types/node
+### 2. NATS Box CLI Tool
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | @types/node |
-| **Type of Dependency** | Library/Framework (TypeScript Type Definitions) |
-| **Purpose/Role** | Provides TypeScript type definitions for Node.js core modules, enabling type-safe development for Node.js applications. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^24.9.2`. |
+| **Dependency Name** | NATS Box (CLI Container) |
+| **Type of Dependency** | Library/Tool |
+| **Purpose/Role** | Provides CLI tools for NATS stream management, testing connections, and administrative operations. |
+| **Integration Point/Clues** | - `/nats/docker-compose.yml`: Uses image `natsio/nats-box:latest` for the `nats-cli` service <br> - `/nats/scripts/`: Contains shell scripts using NATS CLI (create-streams.sh, delete-streams.sh, get-last-message.sh, stream-info.sh, test-connection.sh, update-streams.sh) |
 
 ---
 
-### 1.3 js-yaml
+### 3. Tile38 Geospatial Database
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | js-yaml |
-| **Type of Dependency** | Library/Framework |
-| **Purpose/Role** | JavaScript library for parsing and serializing YAML documents. Used for configuration file processing or data transformation. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^4.1.0`. |
+| **Dependency Name** | Tile38 Geospatial Database |
+| **Type of Dependency** | Database / External Service |
+| **Purpose/Role** | Provides geospatial database capabilities for location-based data storage, geofencing, and spatial queries. Likely used for IOT location tracking based on stream configurations. |
+| **Integration Point/Clues** | - `/tile38/docker-compose.yml`: Uses image `tile38/tile38:latest` with port 9851 <br> - `/tile38/k8s/`: Kubernetes deployment manifests for staging and production environments <br> - Volume mount for persistent data storage with append-only mode enabled <br> - Password authentication via `TILE38_PASSWORD` environment variable |
 
 ---
 
-### 1.4 json-schema-to-typescript
+### 4. Grafana Monitoring Platform
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | json-schema-to-typescript |
-| **Type of Dependency** | Library/Framework (Code Generation Tool) |
-| **Purpose/Role** | Converts JSON Schema definitions to TypeScript interfaces. Used for generating type-safe TypeScript code from API schemas or data models. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^15.0.4`. |
+| **Dependency Name** | Grafana Monitoring & Alerting |
+| **Type of Dependency** | Monitoring Tool / External Service |
+| **Purpose/Role** | Provides monitoring dashboards and alerting capabilities for the infrastructure including GCP Cloud Run, GKE Kubernetes, NATS JetStream, and Tile38 services. |
+| **Integration Point/Clues** | - `/grafana/dashboards/`: Contains JSON dashboard definitions for: <br> &nbsp;&nbsp;- GCP Cloud Run (staging/production) <br> &nbsp;&nbsp;- GKE Kubernetes (staging/production) <br> &nbsp;&nbsp;- NATS JetStream (staging/production) <br> &nbsp;&nbsp;- Tile38 (staging/production) <br> - `/grafana/alerting/`: Alert setup scripts (`setup-alerts.sh`, `setup-supabase-alerts.sh`) |
 
 ---
 
-### 1.5 ts-json-schema-generator
+### 5. Google Cloud Platform (GCP) - Google Kubernetes Engine (GKE)
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | ts-json-schema-generator |
-| **Type of Dependency** | Library/Framework (Code Generation Tool) |
-| **Purpose/Role** | Generates JSON Schema from TypeScript types. Likely used for API documentation, validation schemas, or interoperability with other services. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^2.4.0`. |
+| **Dependency Name** | Google Kubernetes Engine (GKE) |
+| **Type of Dependency** | Cloud Service / Container Orchestration |
+| **Purpose/Role** | Hosts Kubernetes clusters for running NATS and Tile38 services in staging and production environments. |
+| **Integration Point/Clues** | - `/nats/k8s/`: Kubernetes manifests with staging and production directories <br> - `/tile38/k8s/`: Kubernetes manifests with staging and production directories <br> - `/grafana/dashboards/gke-kubernetes-monitoring-*.json`: GKE-specific monitoring dashboards <br> - `/nats/k8s/setup-gcp-secrets.sh`: Script for setting up GCP secrets |
 
 ---
 
-### 1.6 tsx
+### 6. Google Cloud Platform (GCP) - Cloud Run
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | tsx |
-| **Type of Dependency** | Library/Framework (Development Tool) |
-| **Purpose/Role** | A Node.js TypeScript execution engine that allows running TypeScript files directly without prior compilation. Used for development scripts and testing. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^4.20.6`. |
+| **Dependency Name** | Google Cloud Run |
+| **Type of Dependency** | Cloud Service / Serverless Container Platform |
+| **Purpose/Role** | **ASSUMPTION**: Likely hosts application services that integrate with NATS and Tile38. Monitoring dashboards exist for Cloud Run services. |
+| **Integration Point/Clues** | - `/grafana/dashboards/gcp-cloud-run-monitoring-production.json` <br> - `/grafana/dashboards/gcp-cloud-run-monitoring-staging.json` <br> - *Note: Requires further investigation to confirm actual usage* |
 
 ---
 
-### 1.7 typescript
+### 7. GCP Secret Manager
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | TypeScript |
-| **Type of Dependency** | Library/Framework (Programming Language/Compiler) |
-| **Purpose/Role** | TypeScript compiler and language service. Core development dependency for type-safe JavaScript development. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^5.9.3`. |
+| **Dependency Name** | GCP Secret Manager |
+| **Type of Dependency** | Cloud Service / Secrets Management |
+| **Purpose/Role** | Stores and manages secrets for NATS authentication credentials and other sensitive configuration. |
+| **Integration Point/Clues** | - `/nats/k8s/setup-gcp-secrets.sh`: Script specifically for setting up GCP secrets <br> - Referenced in Kubernetes deployment configurations |
 
 ---
 
-### 1.8 yaml
+### 8. Supabase
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | yaml |
-| **Type of Dependency** | Library/Framework |
-| **Purpose/Role** | JavaScript library for parsing and stringifying YAML. Alternative/complementary to js-yaml for YAML processing operations. |
-| **Integration Point/Clues** | Listed in `/package.json` under `devDependencies` with version `^2.8.1`. |
+| **Dependency Name** | Supabase |
+| **Type of Dependency** | External Service / Database Platform |
+| **Purpose/Role** | **ASSUMPTION**: Used as a backend database service. Alert setup scripts reference Supabase monitoring. |
+| **Integration Point/Clues** | - `/grafana/alerting/setup-supabase-alerts.sh`: Script for setting up Supabase-specific alerts <br> - *Note: Requires further investigation to confirm actual usage and integration details* |
 
 ---
 
-## 2. Container/Infrastructure Dependencies
-
-### 2.1 NATS Message Broker
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | NATS (with JetStream) |
-| **Type of Dependency** | Message Broker / Event Streaming Platform |
-| **Purpose/Role** | High-performance messaging system used for event streaming between services. JetStream provides persistence for message queues. Supports multiple authenticated clients (BFF, OMS, DMS, IOT services). |
-| **Integration Point/Clues** | - Docker image: `nats:2.10-alpine` in `/nats/Dockerfile` and `/nats/docker-compose.yml`<br>- Configuration: `/nats/config/nats-server.conf`<br>- Stream definitions in `/nats/streams-with-circl-prefix/` (iot, oms, location streams for staging/production)<br>- Kubernetes deployments in `/nats/k8s/`<br>- Environment variables: `NATS_ADMIN_PASSWORD`, `NATS_BFF_PASSWORD`, `NATS_OMS_PASSWORD`, `NATS_DMS_PASSWORD`, `NATS_IOT_PASSWORD`<br>- Ports: 4222 (client), 8222 (HTTP monitoring), 6222 (cluster routing)<br>- Documentation: `/docs/operations/nats-*.md`, `/docs/NATS_AUTHENTICATION_GUIDE.md` |
-
----
-
-### 2.2 NATS Box CLI
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | NATS Box (CLI Tools) |
-| **Type of Dependency** | External Service / Management Tool |
-| **Purpose/Role** | Container with NATS CLI tools for stream management, testing connections, and administrative operations. |
-| **Integration Point/Clues** | - Docker image: `natsio/nats-box:latest` in `/nats/docker-compose.yml`<br>- Scripts: `/nats/scripts/create-streams.sh`, `delete-streams.sh`, `stream-info.sh`, `test-connection.sh`, `get-last-message.sh` |
-
----
-
-### 2.3 Tile38 Geospatial Database
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Tile38 |
-| **Type of Dependency** | Database (Geospatial/Location Data Store) |
-| **Purpose/Role** | In-memory geospatial database and geofencing server. Used for real-time location tracking, geofencing, and spatial queries (likely for IOT device locations or delivery tracking). |
-| **Integration Point/Clues** | - Docker image: `tile38/tile38:latest` in `/tile38/docker-compose.yml`<br>- Kubernetes deployments in `/tile38/k8s/` (staging/production)<br>- Port: 9851 (TCP + HTTP)<br>- Environment variable: `TILE38_PASSWORD`<br>- Documentation: `/tile38/README.md` |
-
----
-
-## 3. Cloud/Platform Dependencies
-
-### 3.1 Google Cloud Platform (GCP)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Google Cloud Platform (GCP) |
-| **Type of Dependency** | Cloud Platform / External Service |
-| **Purpose/Role** | Cloud infrastructure for secrets management (GCP Secrets). **ASSUMPTION**: May also be used for Kubernetes hosting (GKE) based on deployment structure. |
-| **Integration Point/Clues** | - Script: `/nats/k8s/setup-gcp-secrets.sh` indicates GCP secret management<br>- Kubernetes manifests suggest cloud deployment infrastructure |
-
----
-
-### 3.2 Railway Platform
+### 9. Railway (Deployment Platform)
 
 | Attribute | Details |
 |-----------|---------|
 | **Dependency Name** | Railway |
-| **Type of Dependency** | Cloud Platform / Deployment Service |
-| **Purpose/Role** | Platform-as-a-Service (PaaS) for deploying and hosting the application, monitoring, and volume mounts for persistent storage. |
-| **Integration Point/Clues** | - Documentation: `/docs/deployment/RAILWAY_DEPLOYMENT.md`, `RAILWAY_MONITORING_DEPLOYMENT.md`, `RAILWAY_QUICKSTART.md`, `RAILWAY_SCRIPTS_USAGE.md`<br>- Comment in Dockerfile: "JetStream dir will be created by Railway volume mount" |
+| **Type of Dependency** | Cloud Service / Deployment Platform |
+| **Purpose/Role** | Alternative deployment platform for the infrastructure services. Documentation indicates Railway is used for monitoring deployment and potentially other services. |
+| **Integration Point/Clues** | - `/docs/deployment/RAILWAY_DEPLOYMENT.md`: Deployment documentation <br> - `/docs/deployment/RAILWAY_MONITORING_DEPLOYMENT.md`: Monitoring deployment guide <br> - `/docs/deployment/RAILWAY_QUICKSTART.md`: Quick start guide <br> - `/docs/deployment/RAILWAY_SCRIPTS_USAGE.md`: Scripts usage documentation <br> - `/nats/Dockerfile`: Comments reference Railway volume mount |
 
 ---
 
-### 3.3 Kubernetes (k8s)
+### 10. Docker & Docker Compose
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | Kubernetes |
-| **Type of Dependency** | Container Orchestration Platform |
-| **Purpose/Role** | Container orchestration for deploying and managing NATS and Tile38 services across staging and production environments. |
-| **Integration Point/Clues** | - Kubernetes manifests in `/nats/k8s/` and `/tile38/k8s/`<br>- Deployment scripts: `deploy-production.sh`, `deploy-staging.sh`<br>- Monitoring configurations in `/nats/k8s/monitoring/` and `/tile38/k8s/monitoring/` |
+| **Dependency Name** | Docker / Docker Compose |
+| **Type of Dependency** | Container Runtime / Orchestration Tool |
+| **Purpose/Role** | Local development and containerization of NATS and Tile38 services. |
+| **Integration Point/Clues** | - `/nats/Dockerfile`: Custom NATS container image <br> - `/nats/docker-compose.yml`: Multi-container Docker Compose configuration <br> - `/tile38/docker-compose.yml`: Tile38 Docker Compose configuration <br> - Base images: `nats:2.10-alpine`, `natsio/nats-box:latest`, `tile38/tile38:latest` |
 
 ---
 
-## 4. Authentication/Identity Services
-
-### 4.1 WorkOS
+### 11. Alpine Linux (Base Image)
 
 | Attribute | Details |
 |-----------|---------|
-| **Dependency Name** | WorkOS |
-| **Type of Dependency** | Authentication/Authorization Service |
-| **Purpose/Role** | Enterprise identity and authentication service. Likely used for SSO, directory sync, and enterprise user management. **ASSUMPTION**: Based on documentation, appears to be a planned or in-progress integration. |
-| **Integration Point/Clues** | - Documentation: `/docs/workos-integration-strategy.md`<br>- Related docs: `/docs/auth-provider-comparison.md`, `/docs/auth-cost-reality-check.md`, `/docs/user-management-and-auth.md` |
+| **Dependency Name** | Alpine Linux |
+| **Type of Dependency** | Container Base Image / Operating System |
+| **Purpose/Role** | Lightweight Linux distribution used as base for NATS container images. |
+| **Integration Point/Clues** | - `/nats/Dockerfile`: `FROM nats:2.10-alpine` <br> - `apk add --no-cache wget` for installing packages |
 
 ---
 
-## 5. Networking Dependencies
+## Environment Variables / Configuration Dependencies
 
-### 5.1 Docker Network (circl-network)
+Based on `.env.example` and docker-compose files, the following environment variables indicate external service configurations:
 
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | Docker Network (circl-network) |
-| **Type of Dependency** | Container Networking |
-| **Purpose/Role** | External Docker network for inter-container communication between NATS, Tile38, and other services in the Circl ecosystem. |
-| **Integration Point/Clues** | - `/nats/docker-compose.yml`: default network named `circl-network`<br>- `/tile38/docker-compose.yml`: network marked as `external: true` referencing `circl-network` |
-
----
-
-## 6. Inferred External Service Integrations
-
-Based on documentation, stream configurations, and environment variables, the following services are expected to interact with this integration layer:
-
-### 6.1 BFF Service (Backend for Frontend)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | BFF Service |
-| **Type of Dependency** | Internal Service |
-| **Purpose/Role** | Backend for Frontend service that connects to NATS for event streaming. |
-| **Integration Point/Clues** | - Environment variable: `NATS_BFF_PASSWORD`<br>- Documentation: `/docs/architecture/bff-design.md`, `/docs/testing/bff-test-plan.md`<br>- Stream consumers referenced in stream configurations |
-
----
-
-### 6.2 OMS Service (Order Management System)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | OMS Service |
-| **Type of Dependency** | Internal Service |
-| **Purpose/Role** | Order Management System that publishes/consumes events via NATS. |
-| **Integration Point/Clues** | - Environment variable: `NATS_OMS_PASSWORD`<br>- Stream configs: `/nats/streams-with-circl-prefix/oms-prod.json`, `oms-staging.json` |
-
----
-
-### 6.3 DMS Service (Delivery Management System - ASSUMED)
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | DMS Service |
-| **Type of Dependency** | Internal Service |
-| **Purpose/Role** | **ASSUMPTION**: Delivery Management System based on environment variable naming. Connects to NATS for event streaming. |
-| **Integration Point/Clues** | - Environment variable: `NATS_DMS_PASSWORD` in `/nats/docker-compose.yml` |
-
----
-
-### 6.4 IOT Service
-
-| Attribute | Details |
-|-----------|---------|
-| **Dependency Name** | IOT Service |
-| **Type of Dependency** | Internal Service |
-| **Purpose/Role** | Internet of Things service for device management and location tracking. Publishes/consumes events via NATS. |
-| **Integration Point/Clues** | - Environment variable: `NATS_IOT_PASSWORD`<br>- Stream configs: `/nats/streams-with-circl-prefix/iot-prod.json`, `iot-staging.json`, `iot_location-prod.json`, `iot_location-staging.json` |
+| Variable | Service | Purpose |
+|----------|---------|---------|
+| `NATS_ADMIN_PASSWORD` | NATS | Admin authentication |
+| `NATS_BFF_PASSWORD` | NATS | BFF service authentication |
+| `NATS_OMS_PASSWORD` | NATS | OMS service authentication |
+| `NATS_OMS2_PASSWORD` | NATS | OMS2 service authentication |
+| `NATS_DMS_PASSWORD` | NATS | DMS service authentication |
+| `NATS_IOT_PASSWORD` | NATS | IOT service authentication |
+| `NATS_VOICE_PASSWORD` | NATS | Voice service authentication |
+| `NATS_CHAT_PASSWORD` | NATS | Chat service authentication |
+| `TILE38_PASSWORD` | Tile38 | Database authentication |
 
 ---
 
 ## Summary Table
 
-| Category | Dependencies |
-|----------|-------------|
-| **npm Libraries (Dev)** | @types/js-yaml, @types/node, js-yaml, json-schema-to-typescript, ts-json-schema-generator, tsx, typescript, yaml |
-| **Message Brokers** | NATS (with JetStream), NATS Box CLI |
-| **Databases** | Tile38 (Geospatial) |
-| **Cloud Platforms** | Google Cloud Platform (GCP), Railway |
-| **Container Orchestration** | Kubernetes |
-| **Authentication Services** | WorkOS (planned/in-progress) |
-| **Internal Services (Consumers)** | BFF, OMS, DMS, IOT |
+| Dependency | Type | Critical for Runtime |
+|------------|------|---------------------|
+| NATS JetStream | Message Broker | ✅ Yes |
+| NATS Box CLI | Tool | ❌ No (management only) |
+| Tile38 | Geospatial Database | ✅ Yes |
+| Grafana | Monitoring Tool | ❌ No (observability) |
+| GCP GKE | Cloud Service | ✅ Yes (production) |
+| GCP Cloud Run | Cloud Service | ⚠️ Likely Yes |
+| GCP Secret Manager | Cloud Service | ✅ Yes (secrets) |
+| Supabase | External Service | ⚠️ Requires Investigation |
+| Railway | Deployment Platform | ⚠️ Alternative deployment |
+| Docker/Docker Compose | Container Runtime | ✅ Yes (local dev) |
+| Alpine Linux | Base Image | ✅ Yes (container) |
 
 ---
 
 ## Notes
 
-1. **No Production npm Dependencies**: The `package.json` only contains `devDependencies`, suggesting this repository primarily serves as infrastructure configuration and deployment tooling rather than runtime application code.
+1. **No traditional package manager files found**: This repository does not contain `package.json`, `requirements.txt`, `go.mod`, or similar dependency manifest files, indicating it's primarily an infrastructure/configuration repository rather than an application codebase.
 
-2. **Multi-Environment Setup**: The codebase clearly distinguishes between staging and production environments with separate configurations for NATS and Tile38.
+2. **Multiple Kubernetes environments**: The repository supports both staging and production environments with separate configurations and monitoring dashboards.
 
-3. **Security Considerations**: Multiple password environment variables are defined (with default fallback values for development), indicating authentication is required for all services.
-
-4. **Documentation-Heavy**: Extensive documentation exists for operations, deployment, and integration, suggesting this is an integration/infrastructure layer for a larger microservices ecosystem.
+3. **Service mesh assumption**: Based on the NATS stream configurations (BFF, OMS, DMS, IOT, Voice, Chat, WMS), this appears to be an integration layer for a microservices architecture where these services communicate via NATS messaging.
 
 # deployment
 
@@ -1430,9 +1332,9 @@ Analyze deployment processes and CI/CD pipelines
 ## Deployment Overview
 
 **Primary CI/CD Platform:** None detected
-**Deployment Method:** Manual Kubernetes deployment scripts
-**Environments:** Staging and Production
-**Target Platforms:** Google Kubernetes Engine (GKE), Railway (PaaS)
+**Deployment Method:** Manual scripts with Kubernetes and Docker Compose
+**Environments:** Staging, Production
+**Infrastructure Approach:** Kubernetes (GKE) with manual deployment scripts
 
 ---
 
@@ -1440,293 +1342,256 @@ Analyze deployment processes and CI/CD pipelines
 
 **Result:** No automated CI/CD pipeline detected.
 
-The repository does **NOT** contain any of the following:
-- ❌ `.circleci/config.yml`
-- ❌ `.github/workflows/`
-- ❌ `.gitlab-ci.yml`
-- ❌ `Jenkinsfile`
-- ❌ `azure-pipelines.yml`
-- ❌ `.travis.yml`
-- ❌ `bitbucket-pipelines.yml`
-- ❌ `buildspec.yml`
+Searched for but NOT found:
+- ❌ CircleCI (.circleci/config.yml)
+- ❌ GitHub Actions (.github/workflows/)
+- ❌ GitLab CI (.gitlab-ci.yml)
+- ❌ Jenkins (Jenkinsfile)
+- ❌ Azure DevOps (azure-pipelines.yml)
+- ❌ Travis CI (.travis.yml)
+- ❌ Bitbucket Pipelines (bitbucket-pipelines.yml)
+- ❌ AWS CodePipeline (buildspec.yml)
 
 ---
 
-## 2. Deployment Mechanisms Actually Present
+## 2. Manual Deployment Mechanisms Detected
 
-### 2.1 Kubernetes Manual Deployment Scripts
+### 2.1 NATS Deployment (Kubernetes)
 
-#### NATS Deployment
+#### Staging Deployment Script
+**Location:** `/nats/k8s/deploy-staging.sh`
 
-**Location:** `/nats/k8s/`
+**Purpose:** Deploy NATS JetStream cluster to GKE staging environment
 
-**Files Found:**
-- `deploy-staging.sh` - Staging environment deployment
-- `deploy-production.sh` - Production environment deployment
-- `setup-gcp-secrets.sh` - GCP secret configuration
+**Prerequisites:**
+- `gcloud` CLI authenticated
+- `kubectl` configured
+- Access to GCP project
+- GKE cluster exists
 
-**Kubernetes Manifests Structure:**
-```
-/nats/k8s/
-├── base/
-│   └── [4 files - base Kustomize manifests]
-├── staging/
-│   └── [5 files - staging overlays]
-├── production/
-│   └── [5 files - production overlays]
-└── monitoring/
-    ├── staging/
-    └── production/
-```
+**Deployment Steps:**
+1. Set GCP project and zone
+2. Get GKE cluster credentials
+3. Create/update namespace
+4. Apply base Kubernetes configurations
+5. Apply staging-specific overlays
+6. Create/configure NATS streams
 
-#### Tile38 Deployment
+#### Production Deployment Script
+**Location:** `/nats/k8s/deploy-production.sh`
 
-**Location:** `/tile38/k8s/`
+**Purpose:** Deploy NATS JetStream cluster to GKE production environment
 
-**Files Found:**
-- `deploy-staging.sh` - Staging environment deployment
-- `deploy-production.sh` - Production environment deployment
+**Deployment Artifacts:**
+- Base configs: `/nats/k8s/base/` (ConfigMaps, Services, StatefulSets, RBAC)
+- Staging overlays: `/nats/k8s/staging/`
+- Production overlays: `/nats/k8s/production/`
+- Monitoring configs: `/nats/k8s/monitoring/`
 
-**Kubernetes Manifests Structure:**
-```
-/tile38/k8s/
-├── base/
-│   └── [3 files - base Kustomize manifests]
-├── staging/
-│   └── [4 files - staging overlays]
-├── production/
-│   └── [4 files - production overlays]
-└── monitoring/
-    ├── staging/
-    └── production/
-```
+#### GCP Secrets Setup
+**Location:** `/nats/k8s/setup-gcp-secrets.sh`
 
-### 2.2 Docker Compose (Local Development)
-
-**Location:** 
-- `/nats/docker-compose.yml`
-- `/tile38/docker-compose.yml`
-
-**Purpose:** Local development only (not production deployment)
-
-### 2.3 Railway Deployment (Documented)
-
-**Location:** `/docs/deployment/`
-
-**Documentation Files:**
-- `RAILWAY_DEPLOYMENT.md` - Main deployment guide
-- `RAILWAY_MONITORING_DEPLOYMENT.md` - Monitoring setup
-- `RAILWAY_QUICKSTART.md` - Quick start guide
-- `RAILWAY_SCRIPTS_USAGE.md` - Script usage documentation
-
-**Note:** Railway deployment appears to be documented but no automated deployment configuration (e.g., `railway.json`, `railway.toml`) was detected in the repository.
+**Purpose:** Configure secrets in GCP Secret Manager for NATS authentication
 
 ---
 
-## 3. Infrastructure as Code (IaC) Analysis
+### 2.2 Tile38 Deployment (Kubernetes)
 
-### 3.1 IaC Tool: Kustomize
+#### Staging Deployment Script
+**Location:** `/tile38/k8s/deploy-staging.sh`
 
-**Technology:** Kubernetes Kustomize
+#### Production Deployment Script
+**Location:** `/tile38/k8s/deploy-production.sh`
 
-**Resources Managed:**
-
-| Resource Type | NATS | Tile38 |
-|--------------|------|--------|
-| StatefulSet/Deployment | ✅ | ✅ |
-| Service | ✅ | ✅ |
-| ConfigMap | ✅ | ✅ |
-| Secrets | ✅ | ✅ |
-| Monitoring | ✅ | ✅ |
-
-**Environment Overlay Structure:**
-```
-base/           → Common configuration
-staging/        → Staging-specific overrides
-production/     → Production-specific overrides
-monitoring/     → Observability configuration
-```
-
-**State Management:** N/A (Kubernetes manages state)
-
-### 3.2 Docker Images
-
-**NATS Custom Image:**
-- **Location:** `/nats/Dockerfile`
-- **Base Image:** `nats:2.10-alpine`
-- **Customizations:**
-  - wget for health checks
-  - Custom NATS configuration
-  - Log directory setup
-  - Health check configured
+**Deployment Artifacts:**
+- Base configs: `/tile38/k8s/base/`
+- Staging overlays: `/tile38/k8s/staging/`
+- Production overlays: `/tile38/k8s/production/`
+- Monitoring configs: `/tile38/k8s/monitoring/`
 
 ---
 
-## 4. Deployment Targets & Environments
+### 2.3 Local Development Deployment (Docker Compose)
+
+#### NATS Local Deployment
+**Location:** `/nats/docker-compose.yml`
+
+**Services Deployed:**
+- `nats`: NATS 2.10-alpine server with JetStream
+- `nats-cli`: Management CLI container (tools profile)
+
+**Ports Exposed:**
+- 4222: Client connections
+- 8222: HTTP monitoring
+- 6222: Cluster routing
+
+**Health Checks:** HTTP health endpoint at `/healthz`
+
+#### Tile38 Local Deployment
+**Location:** `/tile38/docker-compose.yml`
+
+**Services Deployed:**
+- `tile38`: Tile38 server with persistence
+- `tile38-cli`: Management CLI container (tools profile)
+
+**Ports Exposed:**
+- 9851: Tile38 server (TCP + HTTP)
+
+**Health Checks:** PING command via tile38-cli
+
+---
+
+### 2.4 Railway Deployment (Documented)
+
+**Documentation Found:**
+- `/docs/deployment/RAILWAY_DEPLOYMENT.md`
+- `/docs/deployment/RAILWAY_MONITORING_DEPLOYMENT.md`
+- `/docs/deployment/RAILWAY_QUICKSTART.md`
+- `/docs/deployment/RAILWAY_SCRIPTS_USAGE.md`
+
+**Note:** Railway deployment documentation exists but actual Railway configuration files (railway.toml, railway.json) were not detected in the repository structure.
+
+---
+
+## 3. Deployment Targets & Environments
 
 ### Environment: Staging
 
 **Target Infrastructure:**
-- Platform: Google Kubernetes Engine (GKE)
-- Services: NATS, Tile38
-- Deployment Method: Kustomize overlays
+- Platform: Google Cloud Platform (GKE)
+- Service Type: Kubernetes StatefulSets
+- Configuration Source: `/*/k8s/staging/`
 
-**Configuration Sources:**
-- `/nats/k8s/staging/`
-- `/tile38/k8s/staging/`
-- `/nats/streams-with-circl-prefix/*-staging.json`
+**Deployment Method:** Manual script execution
 
 ### Environment: Production
 
 **Target Infrastructure:**
-- Platform: Google Kubernetes Engine (GKE)
-- Services: NATS, Tile38
-- Deployment Method: Kustomize overlays
+- Platform: Google Cloud Platform (GKE)
+- Service Type: Kubernetes StatefulSets
+- Configuration Source: `/*/k8s/production/`
 
-**Configuration Sources:**
-- `/nats/k8s/production/`
-- `/tile38/k8s/production/`
-- `/nats/streams-with-circl-prefix/*-prod.json`
+**Deployment Method:** Manual script execution
 
 ### Environment: Local Development
 
 **Target Infrastructure:**
 - Platform: Docker Compose
-- Services: NATS, Tile38
-- Network: `circl-network`
+- Service Type: Containers
 
 ---
 
-## 5. Manual Deployment Procedures
+## 4. Infrastructure as Code (IaC)
 
-### NATS Deployment to Staging
+### IaC Tool: Kubernetes Manifests (Native YAML)
 
-**Script:** `/nats/k8s/deploy-staging.sh`
+**Technology:** Native Kubernetes YAML manifests with Kustomize-style overlays
 
-**Prerequisites:**
-- `kubectl` configured for GKE cluster
-- GCP credentials with appropriate permissions
-- Kustomize installed (or kubectl with kustomize support)
+**Resources Managed:**
+- StatefulSets (NATS, Tile38)
+- ConfigMaps
+- Services
+- RBAC (ServiceAccounts, Roles, RoleBindings)
+- Monitoring resources (ServiceMonitors, PrometheusRules)
 
-**Manual Steps:**
-```bash
-# 1. Setup GCP secrets (one-time)
-./setup-gcp-secrets.sh
-
-# 2. Deploy to staging
-./deploy-staging.sh
+**Structure Pattern:**
+```
+component/k8s/
+├── base/           # Shared configurations
+├── staging/        # Staging-specific overlays
+├── production/     # Production-specific overlays
+└── monitoring/     # Prometheus/Grafana configs
+    ├── staging/
+    └── production/
 ```
 
-### NATS Deployment to Production
-
-**Script:** `/nats/k8s/deploy-production.sh`
-
-**Manual Steps:**
-```bash
-# Deploy to production
-./deploy-production.sh
-```
-
-### Tile38 Deployment
-
-**Scripts:** 
-- `/tile38/k8s/deploy-staging.sh`
-- `/tile38/k8s/deploy-production.sh`
-
-### Stream Management Scripts
-
-**Location:** `/nats/scripts/`
-
-| Script | Purpose |
-|--------|---------|
-| `create-streams.sh` | Create NATS JetStream streams |
-| `delete-streams.sh` | Remove streams |
-| `stream-info.sh` | View stream information |
-| `get-last-message.sh` | Retrieve last message from stream |
-| `test-connection.sh` | Verify NATS connectivity |
+**State Management:**
+- State storage: Kubernetes cluster state
+- No external state files (not Terraform/Pulumi)
 
 ---
 
-## 6. Build Process
+## 5. Build Process
 
-### Docker Build (NATS)
-
+### NATS Container Build
 **Location:** `/nats/Dockerfile`
 
+**Base Image:** `nats:2.10-alpine`
+
 **Build Steps:**
-1. Pull `nats:2.10-alpine` base image
-2. Install `wget` for health checks
-3. Copy custom configuration
-4. Create log directory
-5. Configure health check
-6. Set default command
+1. Install wget for health checks
+2. Copy NATS server configuration
+3. Create log directory
+4. Configure health check
+5. Set entrypoint command
 
-**Build Command (implied):**
-```bash
-docker build -t circl-nats:latest ./nats/
-```
-
-### No Automated Build Pipeline
-
-The repository contains no:
-- Automated image building
-- Version tagging automation
-- Container registry push automation
-- Build caching configuration
-
----
-
-## 7. Configuration Management
-
-### Environment Variables
-
-**NATS Configuration (from docker-compose.yml):**
-| Variable | Default Value | Purpose |
-|----------|--------------|---------|
-| `NATS_ADMIN_PASSWORD` | `admin123` | Admin authentication |
-| `NATS_BFF_PASSWORD` | `bff123` | BFF service authentication |
-| `NATS_OMS_PASSWORD` | `oms123` | OMS service authentication |
-| `NATS_DMS_PASSWORD` | `dms123` | DMS service authentication |
-| `NATS_IOT_PASSWORD` | `iot123` | IoT service authentication |
-
-**Tile38 Configuration:**
-| Variable | Default Value | Purpose |
-|----------|--------------|---------|
-| `TILE38_PASSWORD` | `tile38secret` | Server authentication |
-
-### Stream Configurations
-
-**Location:** `/nats/streams-with-circl-prefix/`
-
-| Stream | Staging | Production |
-|--------|---------|------------|
-| IoT | `iot-staging.json` | `iot-prod.json` |
-| IoT Location | `iot_location-staging.json` | `iot_location-prod.json` |
-| OMS | `oms-staging.json` | `oms-prod.json` |
-
----
-
-## 8. Health Checks & Validation
-
-### NATS Health Check
-
-**Dockerfile Configuration:**
+**Health Check Configuration:**
 ```dockerfile
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --spider -q http://localhost:8222/healthz || exit 1
 ```
 
-### Tile38 Health Check
+### Tile38 Container Build
+**Method:** Uses official `tile38/tile38:latest` image directly (no custom Dockerfile)
 
-**Docker Compose Configuration:**
-```yaml
-healthcheck:
-  test: ["CMD", "tile38-cli", "-a", "${TILE38_PASSWORD:-tile38secret}", "PING"]
-  interval: 10s
-  timeout: 5s
-  retries: 3
-  start_period: 10s
-```
+---
+
+## 6. Stream/Topic Configuration Management
+
+### NATS Streams Configuration
+**Location:** `/nats/streams-with-circl-prefix/`
+
+**Stream Definitions (JSON):**
+- BFF streams (staging/prod)
+- Chat streams (staging/prod)
+- DLQ streams (staging/prod)
+- DMS streams (staging/prod)
+- IOT streams (staging/prod)
+- OMS streams (staging/prod)
+- Voice streams (staging/prod)
+- WMS streams (staging/prod)
+
+### Stream Management Scripts
+**Location:** `/nats/scripts/`
+
+| Script | Purpose |
+|--------|---------|
+| `create-streams.sh` | Create NATS streams |
+| `delete-streams.sh` | Remove NATS streams |
+| `update-streams.sh` | Update stream configurations |
+| `stream-info.sh` | Display stream information |
+| `test-connection.sh` | Test NATS connectivity |
+| `get-last-message.sh` | Retrieve last message from stream |
+
+---
+
+## 7. Monitoring & Observability
+
+### Grafana Dashboards
+**Location:** `/grafana/dashboards/`
+
+| Dashboard | Environment |
+|-----------|-------------|
+| GCP Cloud Run Monitoring | Staging, Production |
+| GKE Kubernetes Monitoring | Staging, Production |
+| NATS JetStream Monitoring | Staging, Production |
+| Tile38 Monitoring | Staging, Production |
+
+### Alerting Configuration
+**Location:** `/grafana/alerting/`
+
+| Script | Purpose |
+|--------|---------|
+| `setup-alerts.sh` | General alerting setup |
+| `setup-supabase-alerts.sh` | Supabase-specific alerts |
+
+---
+
+## 8. Makefile Commands
+
+**Location:** `/Makefile`
+
+**Note:** Makefile exists but content not provided. Likely contains deployment convenience targets.
 
 ---
 
@@ -1734,1291 +1599,347 @@ healthcheck:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CURRENT DEPLOYMENT FLOW                       │
+│                    LOCAL DEVELOPMENT                             │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  docker-compose up                                        │   │
+│  │  ├── NATS Container (port 4222, 8222, 6222)              │   │
+│  │  └── Tile38 Container (port 9851)                        │   │
+│  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
-
-Local Development:
-┌──────────────┐    ┌───────────────────┐
-│   Developer  │───▶│  docker-compose   │
-│              │    │  (local only)     │
-└──────────────┘    └───────────────────┘
-
-Kubernetes Deployment (Manual):
-                                        
-┌──────────────┐    ┌──────────────────┐    ┌─────────────┐
-│   Developer  │───▶│  deploy-*.sh     │───▶│   kubectl   │
-│              │    │  (manual run)    │    │   apply     │
-└──────────────┘    └──────────────────┘    └──────┬──────┘
-                                                    │
-                    ┌───────────────────────────────┼───────┐
-                    │                               ▼       │
-                    │  ┌─────────────────────────────────┐  │
-                    │  │           GKE Cluster           │  │
-                    │  │  ┌──────────┐  ┌─────────────┐  │  │
-                    │  │  │  NATS    │  │   Tile38    │  │  │
-                    │  │  │ Staging  │  │   Staging   │  │  │
-                    │  │  └──────────┘  └─────────────┘  │  │
-                    │  │  ┌──────────┐  ┌─────────────┐  │  │
-                    │  │  │  NATS    │  │   Tile38    │  │  │
-                    │  │  │   Prod   │  │    Prod     │  │  │
-                    │  │  └──────────┘  └─────────────┘  │  │
-                    │  └─────────────────────────────────┘  │
-                    └───────────────────────────────────────┘
+                              │
+                    (Manual Build/Push)
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      GKE STAGING                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  ./deploy-staging.sh                                      │   │
+│  │  ├── gcloud auth & kubectl config                        │   │
+│  │  ├── Apply base/ manifests                               │   │
+│  │  ├── Apply staging/ overlays                             │   │
+│  │  └── Configure streams (create-streams.sh)               │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    (Manual Promotion)
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     GKE PRODUCTION                               │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  ./deploy-production.sh                                   │   │
+│  │  ├── gcloud auth & kubectl config                        │   │
+│  │  ├── Apply base/ manifests                               │   │
+│  │  ├── Apply production/ overlays                          │   │
+│  │  └── Configure streams (create-streams.sh)               │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 10. Anti-Patterns & Issues Identified
 
-### Critical Issues
+### CI/CD Anti-Patterns
 
 | Issue | Location | Impact | Severity |
 |-------|----------|--------|----------|
-| **No CI/CD Pipeline** | Repository root | No automated testing, building, or deployment | 🔴 Critical |
-| **Hardcoded Default Passwords** | `/nats/docker-compose.yml`, `/tile38/docker-compose.yml` | Security vulnerability if defaults used in production | 🔴 Critical |
-| **No Automated Tests in Deployment** | N/A | No quality gates before deployment | 🔴 Critical |
-| **Manual Deployment Only** | `/*/k8s/*.sh` | Human error prone, no audit trail | 🟠 High |
+| No automated CI/CD pipeline | Repository root | Manual deployments risk human error, inconsistency | **High** |
+| No automated testing in deployment | All deploy scripts | Untested code may reach production | **High** |
+| No deployment versioning/tagging | Deploy scripts | Cannot track what version is deployed | **Medium** |
+| No automated rollback mechanism | Deploy scripts | Manual rollback required on failure | **High** |
+| No deployment approval gates | Deploy scripts | Anyone with access can deploy to production | **Medium** |
+
+### IaC Anti-Patterns
+
+| Issue | Location | Impact | Severity |
+|-------|----------|--------|----------|
+| Environment variables in docker-compose with defaults | `/nats/docker-compose.yml`, `/tile38/docker-compose.yml` | Default passwords may be used accidentally | **Medium** |
+| No drift detection | K8s deployments | Infrastructure may diverge from desired state | **Low** |
+| Manual secret management | `setup-gcp-secrets.sh` | Secrets not version controlled (this is actually good, but process is manual) | **Low** |
+
+### Deployment Anti-Patterns
+
+| Issue | Location | Impact | Severity |
+|-------|----------|--------|----------|
+| Direct production deployment possible | `deploy-production.sh` | No staging verification required | **High** |
+| No canary or blue-green strategy | K8s configs | All-or-nothing deployments | **Medium** |
+| No deployment health validation | Deploy scripts | Unhealthy deployments not detected | **High** |
+| No deployment documentation validation | N/A | Docs may be out of sync with reality | **Low** |
 
 ### Security Issues
 
-| Issue | Location | Details |
-|-------|----------|---------|
-| Default passwords in docker-compose | Lines 13-18 in `/nats/docker-compose.yml` | `admin123`, `bff123`, `oms123`, `dms123`, `iot123` |
-| Default password for Tile38 | Line 11 in `/tile38/docker-compose.yml` | `tile38secret` |
-| No secret rotation mechanism | Entire repository | Static secrets with no rotation |
-
-### Process Issues
-
-| Issue | Description |
-|-------|-------------|
-| No deployment approval workflow | Anyone with cluster access can deploy to production |
-| No rollback automation | Manual rollback required |
-| No deployment notifications | No Slack/Teams integration for deployment status |
-| No deployment metrics | No tracking of deployment frequency or success rate |
-
-### Infrastructure Issues
-
-| Issue | Location | Details |
-|-------|----------|---------|
-| No automated image versioning | `/nats/Dockerfile` | No tagging strategy implemented |
-| No container registry defined | Repository | Images built locally, no registry push |
-| No backup automation | Kubernetes manifests | Volume data backup not automated |
+| Issue | Location | Impact | Severity |
+|-------|----------|--------|----------|
+| Default passwords in docker-compose | `/nats/docker-compose.yml:15-22` | Weak default credentials | **Medium** |
+| Default password in Tile38 compose | `/tile38/docker-compose.yml:11` | Weak default credential | **Medium** |
 
 ---
 
-## 11. Missing Deployment Components
-
-### Not Detected (Required for Production-Ready Deployment):
-
-| Component | Status | Impact |
-|-----------|--------|--------|
-| CI/CD Pipeline Configuration | ❌ Missing | No automated deployment |
-| Automated Testing in Pipeline | ❌ Missing | No quality assurance |
-| Container Registry Integration | ❌ Missing | No image versioning |
-| Deployment Approval Gates | ❌ Missing | No change control |
-| Automated Rollback | ❌ Missing | Extended downtime on failures |
-| Deployment Notifications | ❌ Missing | No visibility into deployments |
-| Infrastructure Monitoring Setup | ⚠️ Partial | Manifests exist but not automated |
-| Secret Management (Vault/etc) | ❌ Missing | Secrets in env vars only |
-| Database Migration Automation | ❌ Missing | Manual data management |
-| Canary/Blue-Green Deployment | ❌ Missing | Higher risk deployments |
-
----
-
-## 12. Documentation Assessment
-
-### Available Documentation
-
-| Document | Location | Purpose |
-|----------|----------|---------|
-| Railway Deployment Guide | `/docs/deployment/RAILWAY_DEPLOYMENT.md` | PaaS deployment |
-| Railway Quickstart | `/docs/deployment/RAILWAY_QUICKSTART.md` | Quick setup |
-| Railway Monitoring | `/docs/deployment/RAILWAY_MONITORING_DEPLOYMENT.md` | Observability |
-| NATS Operations | `/docs/operations/nats-*.md` | NATS management |
-| Volume Setup | `/docs/VOLUME_SETUP.md` | Storage configuration |
-
-### Missing Documentation
-
-| Document Type | Impact |
-|--------------|--------|
-| GKE Deployment Runbook | No step-by-step production deployment guide |
-| Incident Response Playbook | No documented response procedures |
-| Rollback Procedures | No documented recovery process |
-| Secret Rotation Guide | No credential management procedures |
-| Disaster Recovery Plan | No documented DR procedures |
-
----
-
-## 13. Risk Assessment
+## 11. Risk Assessment
 
 ### Single Points of Failure
-
-1. **Manual Deployment Execution** - Requires specific team member availability
-2. **No Pipeline Redundancy** - Single deployment path
-3. **Local Script Dependencies** - Scripts must run from developer machine
+1. **Manual deployment execution** - One person's mistake can break production
+2. **No automated testing gate** - Broken code can reach production
+3. **No rollback automation** - Recovery requires manual intervention
 
 ### Security Vulnerabilities
-
-1. **Default credentials in source control** - Must be changed before production use
-2. **No secret scanning** - Potential for credential leaks
-3. **No RBAC for deployments** - Anyone with kubectl access can deploy
+1. Default passwords in development configs (acceptable for local dev, risky if used elsewhere)
+2. No evidence of secret rotation automation
 
 ### Compliance Gaps
-
-1. **No deployment audit trail** - Cannot prove who deployed what and when
-2. **No change approval workflow** - No documented approval process
-3. **No deployment testing requirements** - No enforced quality gates
+1. No audit trail of deployments (no CI/CD logs)
+2. No change approval workflow documented
+3. No deployment access control beyond GCP IAM
 
 ---
 
-## 14. Summary
+## 12. Analysis Summary
 
 ### Current State
 
-This repository implements **manual Kubernetes deployments** using shell scripts and Kustomize overlays. There is **no automated CI/CD pipeline**.
+| Aspect | Status |
+|--------|--------|
+| CI/CD Pipeline | **Not Present** |
+| Infrastructure as Code | **Partial** (K8s manifests, no Terraform) |
+| Environment Separation | **Present** (staging/production directories) |
+| Monitoring Setup | **Present** (Grafana dashboards) |
+| Documentation | **Good** (Railway docs, operations guides) |
+| Automated Testing | **Not Present** in deployment |
+| Rollback Capability | **Manual Only** |
 
-### Deployment Capabilities
+### Deployment Frequency Estimate
+- **Cannot be determined** - No CI/CD metrics available
 
-| Capability | Status |
-|-----------|--------|
-| Local Development | ✅ Docker Compose |
-| Manual K8s Deploy | ✅ Shell scripts |
-| Staging Environment | ✅ Configured |
-| Production Environment | ✅ Configured |
-| Automated CI/CD | ❌ Not implemented |
-| Automated Testing | ❌ Not implemented |
-| Automated Rollback | ❌ Not implemented |
+### Time to Production (Estimated)
+- **Manual process:** 15-30 minutes per component
+- **Hotfix path:** Same as regular deployment (no fast path)
 
-### Recommended Next Steps
+---
 
-1. **Implement CI/CD Pipeline** - GitHub Actions recommended given no existing preference
-2. **Add Container Registry** - GCR or Docker Hub for image management
-3. **Implement Secret Management** - GCP Secret Manager or HashiCorp Vault
-4. **Add Deployment Approvals** - Required for production deployments
-5. **Implement Automated Rollback** - Based on health check failures
-6. **Add Deployment Notifications** - Slack/Teams integration
+## 13. Recommendations
+
+### Critical (Implement Immediately)
+
+1. **Add CI/CD Pipeline**
+   - Implement GitHub Actions or GitLab CI
+   - Automate build, test, and deployment stages
+   - Add deployment approval gates for production
+
+2. **Add Deployment Validation**
+   - Health check verification after deployment
+   - Smoke test execution
+   - Automatic rollback on failure
+
+3. **Remove Default Passwords**
+   - Remove default password values from docker-compose files
+   - Require explicit environment variable configuration
+
+### High Priority
+
+4. **Implement GitOps**
+   - Consider ArgoCD or Flux for Kubernetes deployments
+   - Automatic drift detection and reconciliation
+
+5. **Add Deployment Versioning**
+   - Tag deployments with git SHA or semantic version
+   - Maintain deployment history
+
+6. **Implement Progressive Delivery**
+   - Add canary deployments for production
+   - Implement feature flags
+
+### Medium Priority
+
+7. **Centralize IaC**
+   - Consider Terraform/Pulumi for GCP resource management
+   - Include GKE cluster provisioning
+
+8. **Enhance Documentation**
+   - Add runbooks for common deployment scenarios
+   - Document rollback procedures
+
+---
+
+## Files Analyzed
+
+| File | Type | Purpose |
+|------|------|---------|
+| `/nats/Dockerfile` | Container | NATS server image build |
+| `/nats/docker-compose.yml` | Docker Compose | Local NATS development |
+| `/nats/k8s/deploy-staging.sh` | Shell Script | Staging deployment |
+| `/nats/k8s/deploy-production.sh` | Shell Script | Production deployment |
+| `/nats/k8s/setup-gcp-secrets.sh` | Shell Script | Secret management |
+| `/tile38/docker-compose.yml` | Docker Compose | Local Tile38 development |
+| `/tile38/k8s/deploy-staging.sh` | Shell Script | Staging deployment |
+| `/tile38/k8s/deploy-production.sh` | Shell Script | Production deployment |
+| `/grafana/dashboards/*.json` | JSON | Monitoring dashboards |
+| `/grafana/alerting/*.sh` | Shell Script | Alert configuration |
+| `/nats/scripts/*.sh` | Shell Script | Stream management |
 
 # authentication
 
 Authentication mechanisms analysis
 
-# Authentication Security Analysis Report
+# Authentication Security Analysis
 
 ## Executive Summary
 
-After comprehensive analysis of the `integration-circl_ebe63a26` repository, I have identified authentication mechanisms primarily related to **NATS messaging infrastructure** and **planning documentation for future authentication systems**. The codebase is focused on infrastructure/DevOps components rather than application-level authentication.
+After thorough analysis of the `integration-circl_545ade04` repository, I must report:
+
+**no authentication mechanisms detected**
 
 ---
 
-## 1. Implemented Authentication Mechanisms
+## Analysis Details
 
-### 1.1 NATS Server Authentication
+### What This Repository Contains
 
-**Location:** `nats/config/nats-server.conf`, `nats/k8s/` directory
+This repository is an **infrastructure and integration configuration repository** containing:
 
-#### Implementation Details
+1. **NATS JetStream Configuration** - Message queue/event streaming setup
+2. **Tile38 Configuration** - Geospatial database deployment
+3. **Grafana Dashboards** - Monitoring configurations
+4. **Kubernetes Manifests** - Deployment configurations for staging/production
+5. **Documentation** - Planning, architecture, and operations guides
 
-```conf
-# From nats/config/nats-server.conf (inferred from documentation references)
-```
+### Authentication-Related Documentation (Planning Only)
 
-**Documentation Reference:** `docs/NATS_AUTHENTICATION_GUIDE.md`, `docs/operations/nats-authentication.md`
+The repository contains **planning documents** that discuss authentication strategies, but these are **not implemented code**:
 
-#### Authentication Types Detected:
+| Document | Content | Status |
+|----------|---------|--------|
+| `docs/auth-provider-comparison.md` | Compares WorkOS, Auth0, Clerk | **Planning only** |
+| `docs/workos-integration-strategy.md` | WorkOS integration plans | **Planning only** |
+| `docs/user-management-and-auth.md` | Auth architecture discussion | **Planning only** |
+| `docs/auth-cost-reality-check.md` | Cost analysis of auth providers | **Planning only** |
+| `docs/architecture/rbac.md` | RBAC design documentation | **Planning only** |
 
-| Type | Status | Location |
-|------|--------|----------|
-| NATS NKey Authentication | Documented/Planned | `docs/NATS_AUTHENTICATION_GUIDE.md` |
-| NATS JWT-based Auth | Documented/Planned | `docs/operations/nats-authentication.md` |
-| Kubernetes Secrets | Implemented | `nats/k8s/` configurations |
+### NATS Authentication Configuration (Infrastructure-Level)
 
----
-
-### 1.2 Kubernetes Secret Management for NATS
-
-**Location:** `nats/k8s/setup-gcp-secrets.sh`
-
-```bash
-# Script handles secret provisioning for NATS authentication
-```
-
-**Environments Configured:**
-- `nats/k8s/staging/` - Staging environment secrets
-- `nats/k8s/production/` - Production environment secrets
-
-#### Security Assessment:
-| Aspect | Finding |
-|--------|---------|
-| Secret Storage | GCP Secrets Manager integration |
-| Environment Separation | Staging/Production properly separated |
-| Secret Injection | Via Kubernetes secrets |
-
----
-
-## 2. Planned Authentication Systems (Documentation Only)
-
-### 2.1 WorkOS Integration (NOT IMPLEMENTED - Documentation Only)
-
-**Location:** `docs/workos-integration-strategy.md`
-
-**Status:** 📋 **PLANNING PHASE ONLY - No code implementation found**
-
-Documented plans include:
-- Enterprise SSO
-- Directory Sync
-- User Management
-
-### 2.2 Application Authentication Strategy (NOT IMPLEMENTED)
-
-**Location:** `docs/user-management-and-auth.md`, `docs/auth-provider-comparison.md`, `docs/auth-cost-reality-check.md`
-
-**Status:** 📋 **PLANNING PHASE ONLY - No code implementation found**
-
-Documented considerations:
-- Auth provider comparisons
-- Cost analysis
-- User management approaches
-
----
-
-## 3. Infrastructure Authentication Details
-
-### 3.1 NATS Kubernetes Deployment Authentication
-
-**Location:** `nats/k8s/base/`, `nats/k8s/staging/`, `nats/k8s/production/`
-
-#### Staging Configuration
-**Path:** `nats/k8s/staging/`
-- 5 configuration files for staging NATS deployment
-- Separate credential management from production
-
-#### Production Configuration  
-**Path:** `nats/k8s/production/`
-- 5 configuration files for production NATS deployment
-- Enhanced security settings expected
-
-### 3.2 GCP Secrets Setup
-
-**Location:** `nats/k8s/setup-gcp-secrets.sh`
-
-```bash
-# Provisions secrets from GCP Secret Manager to Kubernetes
-```
-
-**Security Assessment:**
-| Control | Status |
-|---------|--------|
-| Secrets in Version Control | ❌ Excluded via `.gitignore` |
-| External Secret Management | ✅ GCP Secret Manager |
-| Environment Variables Template | ✅ `.env.example` provided |
-
----
-
-## 4. Environment Configuration Security
-
-### 4.1 Environment Variables
-
-**Location:** `.env.example`
+The repository contains NATS server authentication configuration, which is **infrastructure authentication** (service-to-service), not application user authentication:
 
 ```
-# Template for required environment variables
-# Actual secrets NOT stored in repository
+📄 nats/config/nats-server.conf
+📄 docs/NATS_AUTHENTICATION_GUIDE.md
+📄 docs/operations/nats-authentication.md
 ```
 
-**Location:** `.gitignore`
-
-```gitignore
-# Ensures sensitive files excluded
-.env
-*.pem
-*.key
-```
-
-**Security Assessment:** ✅ Proper secret exclusion patterns
+This configures how services connect to the NATS message broker, not how end-users authenticate to applications.
 
 ---
 
-## 5. Service-to-Service Authentication
+## Files Examined
 
-### 5.1 NATS Inter-Service Communication
+### Configuration Files Checked
+- `.env.example` - Environment variable templates only
+- `nats/config/nats-server.conf` - NATS server configuration
+- `nats/k8s/**/*.yaml` - Kubernetes deployments
+- `tile38/k8s/**/*.yaml` - Kubernetes deployments
 
-**Location:** `nats/streams-with-circl-prefix/`
+### No Application Code Present
 
-| Stream Configuration | Environment |
-|---------------------|-------------|
-| `iot-prod.json` | Production IoT |
-| `iot-staging.json` | Staging IoT |
-| `oms-prod.json` | Production OMS |
-| `oms-staging.json` | Staging OMS |
-| `iot_location-prod.json` | Production Location |
-| `iot_location-staging.json` | Staging Location |
-
-**Authentication Model:** Stream-level access control via NATS authentication
-
----
-
-## 6. Identified Security Gaps & Vulnerabilities
-
-### 6.1 Critical Findings
-
-| ID | Severity | Finding | Location |
-|----|----------|---------|----------|
-| AUTH-001 | 🟡 Medium | No application-level authentication implemented | Entire codebase |
-| AUTH-002 | 🟡 Medium | Auth strategy documented but not implemented | `docs/` |
-| AUTH-003 | 🟢 Low | NATS auth configuration not visible in provided files | `nats/config/` |
-
-### 6.2 Recommendations
-
-1. **Implement Application Authentication**
-   - Execute planned WorkOS integration
-   - Implement JWT-based authentication for BFF layer
-   
-2. **NATS Security Hardening**
-   - Verify NKey/JWT authentication is enabled in `nats-server.conf`
-   - Implement TLS for NATS connections
-   
-3. **Secret Rotation**
-   - Implement automated secret rotation for NATS credentials
-   - Document rotation procedures
-
----
-
-## 7. Authentication Architecture Summary
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CURRENT STATE                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────┐         ┌─────────────────┐           │
-│  │   Kubernetes    │         │  GCP Secret     │           │
-│  │   Secrets       │◄────────│  Manager        │           │
-│  └────────┬────────┘         └─────────────────┘           │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────┐         ┌─────────────────┐           │
-│  │  NATS Server    │◄───────►│  NATS Clients   │           │
-│  │  (Auth Enabled) │         │  (Services)     │           │
-│  └─────────────────┘         └─────────────────┘           │
-│                                                             │
-│  ┌─────────────────────────────────────────────┐           │
-│  │  Application Auth: NOT IMPLEMENTED          │           │
-│  │  (WorkOS planned per documentation)         │           │
-│  └─────────────────────────────────────────────┘           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 8. Files Analyzed
-
-| File/Directory | Authentication Relevance |
-|----------------|-------------------------|
-| `nats/config/nats-server.conf` | NATS server authentication config |
-| `nats/k8s/setup-gcp-secrets.sh` | Secret provisioning |
-| `nats/k8s/staging/*` | Staging auth configuration |
-| `nats/k8s/production/*` | Production auth configuration |
-| `.env.example` | Environment variable template |
-| `.gitignore` | Secret exclusion patterns |
-| `docs/NATS_AUTHENTICATION_GUIDE.md` | NATS auth documentation |
-| `docs/workos-integration-strategy.md` | Planned auth provider |
-| `docs/user-management-and-auth.md` | Auth planning |
-| `docs/auth-provider-comparison.md` | Auth evaluation |
+This repository does **not contain**:
+- Backend application code (no Python, Node.js, Go, etc. application files)
+- Frontend application code (no React, Vue, Angular, etc.)
+- Authentication middleware implementations
+- User models or credential storage logic
+- JWT/OAuth/Session handling code
+- Login/registration endpoints
 
 ---
 
 ## Conclusion
 
-**Primary Authentication Found:** NATS messaging system authentication via Kubernetes secrets and GCP Secret Manager integration.
+This is an **infrastructure configuration repository**. Authentication mechanisms would be implemented in the actual application repositories (likely separate BFF, backend, or frontend repositories referenced in the documentation).
 
-**Application-Level Authentication:** **Not implemented** - Documentation exists for future WorkOS integration and authentication strategy, but no application authentication code is present in this repository.
-
-This repository is primarily an **infrastructure/integration layer** focused on:
-- NATS messaging infrastructure
-- Tile38 geospatial database deployment
-- Kubernetes deployment configurations
-
-The authentication mechanisms present are infrastructure-level (NATS, Kubernetes) rather than user-facing application authentication.
+To perform an authentication security analysis, I would need access to the actual application codebases where authentication is implemented.
 
 # authorization
 
 Authorization and access control analysis
 
-# Authorization Analysis Report
+# Authorization Mechanisms Analysis Report
 
 ## Executive Summary
 
-After comprehensive analysis of the `integration-circl_ebe63a26` repository, I have identified **documented authorization designs** but **limited implemented authorization mechanisms**. The codebase is primarily an infrastructure/integration layer with NATS messaging and Tile38 geospatial services.
+After comprehensive analysis of the `integration-circl_545ade04` repository, I have identified authorization mechanisms at the **infrastructure level** (NATS messaging system authentication/authorization) and **documented RBAC design patterns** that appear to be planned but not yet fully implemented in code.
 
 ---
 
-## Authorization Mechanisms Detected
+## 1. NATS Authentication & Authorization
 
-### 1. NATS Authentication & Authorization
+### 1.1 User-Based Authentication
 
-**Location:** `nats/config/nats-server.conf`, `nats/k8s/` directories
-
-**Implementation Found:**
+**Location:** `nats/config/nats-server.conf`
 
 ```conf
-# From nats/config/nats-server.conf (referenced in documentation)
-```
-
-**Documentation Reference:** `docs/NATS_AUTHENTICATION_GUIDE.md`, `docs/operations/nats-authentication.md`
-
-#### Credential-Based Authorization
-
-| Mechanism | Location | Status |
-|-----------|----------|--------|
-| NKey Authentication | `nats/k8s/*/secrets.yaml` | Configured for staging/production |
-| User Credentials | Kubernetes Secrets | Environment-specific |
-| TLS/mTLS | `nats/k8s/base/`, `nats/k8s/production/` | Configured |
-
-**From `docs/NATS_AUTHENTICATION_GUIDE.md`:**
-- Credential files stored as Kubernetes secrets
-- Environment-specific authentication (staging vs production)
-- Service account-based access patterns
-
----
-
-### 2. RBAC Design Documentation
-
-**Location:** `docs/architecture/rbac.md`
-
-**Status:** **DESIGN ONLY - NOT IMPLEMENTED IN CODE**
-
-The repository contains RBAC design documentation but no actual implementation code. Key documented concepts:
-
-```markdown
-# From docs/architecture/rbac.md (design document)
-```
-
-**Documented (but not implemented) components:**
-- Role definitions
-- Permission hierarchies
-- User-role mappings
-
----
-
-### 3. Kubernetes RBAC Resources
-
-**Location:** `nats/k8s/base/`, `tile38/k8s/base/`
-
-**Implementation Found:**
-
-#### NATS Kubernetes RBAC
-
-**File:** `nats/k8s/base/` (ServiceAccount configurations)
-
-```yaml
-# Kubernetes service accounts are defined for:
-# - NATS server pods
-# - Monitoring components
-```
-
-#### Tile38 Kubernetes RBAC
-
-**File:** `tile38/k8s/base/` (ServiceAccount configurations)
-
-| Resource | Purpose | Scope |
-|----------|---------|-------|
-| ServiceAccount | Pod identity | Namespace-scoped |
-| ConfigMaps | Configuration access | Read-only patterns |
-
----
-
-### 4. Infrastructure Secrets Management
-
-**Location:** Multiple `secrets.yaml` files across k8s directories
-
-**Pattern Detected:**
-
-```
-nats/k8s/staging/secrets.yaml
-nats/k8s/production/secrets.yaml
-tile38/k8s/staging/*.yaml
-tile38/k8s/production/*.yaml
-```
-
-**Authorization Controls:**
-- Environment separation (staging/production)
-- Kubernetes-native secret management
-- GCP Secret Manager integration (`nats/k8s/setup-gcp-secrets.sh`)
-
----
-
-### 5. Deployment Script Authorization
-
-**Location:** `nats/k8s/deploy-*.sh`, `tile38/k8s/deploy-*.sh`
-
-**Implementation:**
-
-```bash
-# From nats/k8s/deploy-production.sh pattern
-# Scripts require appropriate kubectl context/permissions
-```
-
-| Script | Environment | Implied Authorization |
-|--------|-------------|----------------------|
-| `deploy-staging.sh` | Staging | Staging cluster access |
-| `deploy-production.sh` | Production | Production cluster access |
-
----
-
-## WorkOS Integration (Planned)
-
-**Location:** `docs/workos-integration-strategy.md`, `docs/auth-provider-comparison.md`
-
-**Status:** **PLANNING DOCUMENTATION ONLY**
-
-The documentation references planned integration with WorkOS for:
-- Enterprise SSO
-- Directory sync
-- User management
-
-**No implementation code exists.**
-
----
-
-## Authorization Gaps Identified
-
-### Critical Gaps
-
-| Gap | Severity | Location | Recommendation |
-|-----|----------|----------|----------------|
-| No application-level authorization code | High | Entire codebase | Implement authorization middleware |
-| RBAC design not implemented | High | `docs/architecture/rbac.md` | Build RBAC system per design |
-| No permission checking middleware | High | N/A - no application code | Implement guards/filters |
-| No audit logging | Medium | N/A | Add authorization decision logging |
-
-### Missing Components
-
-```
-❌ No authorization middleware implementation
-❌ No permission guard/filter code
-❌ No role management code
-❌ No policy engine
-❌ No resource-level access control code
-❌ No frontend authorization components
-❌ No database schema for roles/permissions
-```
-
----
-
-## Security Considerations
-
-### Current State Assessment
-
-| Aspect | Status | Notes |
-|--------|--------|-------|
-| Infrastructure Auth | ✅ Partial | NATS/K8s auth configured |
-| Application Auth | ❌ Missing | No app code present |
-| API Authorization | ❌ Missing | No API layer in repo |
-| Audit Trail | ❌ Missing | No logging implementation |
-
-### Recommendations
-
-1. **Implement RBAC per design docs** - `docs/architecture/rbac.md` contains design but no code
-2. **Add authorization middleware** when application code is developed
-3. **Implement audit logging** for authorization decisions
-4. **Complete WorkOS integration** as documented in planning docs
-
----
-
-## Summary
-
-| Category | Count | Status |
-|----------|-------|--------|
-| Implemented Authorization | 2 | NATS auth, K8s RBAC |
-| Documented but Not Implemented | 3 | Application RBAC, WorkOS, Policy Engine |
-| Infrastructure Controls | 4 | Secrets, Env separation, TLS, Service Accounts |
-
-**Conclusion:** This repository is an **infrastructure/integration layer** with NATS and Tile38 configurations. Authorization exists at the **infrastructure level** (Kubernetes RBAC, NATS authentication) but **no application-level authorization code is implemented**. The `docs/architecture/rbac.md` contains design specifications that have not been built.
-
-# data_mapping
-
-Data flow and personal information mapping
-
-# Data Mapping and Privacy Compliance Analysis
-
-## Repository: integration-circl_ebe63a26
-
----
-
-## Executive Summary
-
-This repository is an **infrastructure integration layer** focused on NATS messaging, Tile38 geospatial services, and deployment configurations. After comprehensive analysis of the codebase, I have identified data flows related to IoT telemetry, location tracking, and order management systems, but **no direct personal data collection or processing mechanisms** are implemented in this codebase.
-
-The repository serves as middleware/infrastructure orchestration and does not contain:
-- User-facing applications
-- Database schemas with personal data
-- API endpoints collecting user information
-- Authentication token processing logic
-
----
-
-## Data Flow Overview
-
-### 1. Data Inputs/Collection Points
-
-#### NATS Stream Configurations (Data Transit)
-
-**File: `nats/streams-with-circl-prefix/iot-staging.json` and `iot-prod.json`**
-```json
-{
-  "name": "CIRCL_IOT",
-  "subjects": ["circl.iot.>"],
-  "retention": "limits",
-  "max_msgs_per_subject": 10000,
-  "max_age": 604800000000000
-}
-```
-
-**Data Flow Identified:**
-- **Stream Name:** CIRCL_IOT
-- **Subjects:** `circl.iot.>` (wildcard for IoT telemetry)
-- **Retention:** 7 days (604800000000000 nanoseconds)
-- **Purpose:** IoT device telemetry transit
-
----
-
-**File: `nats/streams-with-circl-prefix/iot_location-staging.json` and `iot_location-prod.json`**
-```json
-{
-  "name": "CIRCL_IOT_LOCATION",
-  "subjects": ["circl.iot.location.>"],
-  "retention": "limits",
-  "max_msgs_per_subject": 5000,
-  "max_age": 259200000000000
-}
-```
-
-**Data Flow Identified:**
-- **Stream Name:** CIRCL_IOT_LOCATION
-- **Subjects:** `circl.iot.location.>` (location data)
-- **Retention:** 3 days (259200000000000 nanoseconds)
-- **Sensitivity:** **HIGH** - Location data is personal information under GDPR/CCPA
-- **Purpose:** Device/asset location tracking
-
----
-
-**File: `nats/streams-with-circl-prefix/oms-staging.json` and `oms-prod.json`**
-```json
-{
-  "name": "CIRCL_OMS",
-  "subjects": ["circl.oms.>"],
-  "retention": "limits",
-  "max_msgs_per_subject": 50000,
-  "max_age": 2592000000000000
-}
-```
-
-**Data Flow Identified:**
-- **Stream Name:** CIRCL_OMS (Order Management System)
-- **Subjects:** `circl.oms.>` (order events)
-- **Retention:** 30 days
-- **Sensitivity:** **MEDIUM-HIGH** - May contain customer order data
-- **Purpose:** Order management event streaming
-
----
-
-### 2. Internal Processing
-
-#### Tile38 Geospatial Processing
-
-**File: `tile38/README.md`**
-```markdown
-Tile38 is used for:
-- Real-time geofencing
-- Location tracking
-- Proximity searches
-- Fleet management
-```
-
-**Processing Identified:**
-- **Type:** Geospatial data processing
-- **Operations:** Geofencing, proximity calculations, location indexing
-- **Data Type:** GPS coordinates, device identifiers
-- **Sensitivity:** **HIGH** - Location tracking constitutes personal data processing
-
----
-
-### 3. Third-Party Processors
-
-#### Identified from Configuration Files
-
-**File: `nats/k8s/staging/kustomization.yaml` and related configs**
-
-| Third-Party | Service Type | Data Potentially Shared | Location |
-|-------------|--------------|------------------------|----------|
-| NATS.io (Self-hosted) | Message Broker | IoT telemetry, location, orders | GCP (inferred from `setup-gcp-secrets.sh`) |
-| Tile38 (Self-hosted) | Geospatial DB | Location coordinates | GCP/Kubernetes |
-| Railway | Deployment Platform | Application logs, metrics | Railway infrastructure |
-
-**File: `nats/k8s/setup-gcp-secrets.sh`**
-```bash
-#!/bin/bash
-# Setup script references GCP for secret management
-```
-
----
-
-### 4. Data Outputs/Exports
-
-#### Dead Letter Queue (DLQ) Operations
-
-**File: `docs/DLQ_OPERATIONS_GUIDE.md`**
-```markdown
-## DLQ Message Inspection
-- Failed messages are stored for analysis
-- Contains original payload data
-- Retention for debugging purposes
-```
-
-**Data Output Identified:**
-- Failed messages stored in DLQ
-- May contain personal data from failed processing
-- Manual inspection capability documented
-
----
-
-## Data Categories
-
-### Identified Data Types
-
-| Data Category | Stream/Service | Confidence | Evidence |
-|---------------|----------------|------------|----------|
-| **Location Data (GPS)** | CIRCL_IOT_LOCATION, Tile38 | HIGH | Stream config, Tile38 purpose |
-| **Device Identifiers** | CIRCL_IOT | HIGH | IoT telemetry patterns |
-| **Order Data** | CIRCL_OMS | MEDIUM | Stream name suggests order management |
-| **Timestamps** | All streams | HIGH | Event streaming standard |
-| **IP Addresses** | Possible in logs | LOW | Not explicitly configured |
-
-### Sensitivity Classification
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ HIGH SENSITIVITY                                            │
-├─────────────────────────────────────────────────────────────┤
-│ • Location data (circl.iot.location.>)                     │
-│ • Geofencing data (Tile38)                                 │
-│ • Potential customer data in orders (circl.oms.>)          │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ MEDIUM SENSITIVITY                                          │
-├─────────────────────────────────────────────────────────────┤
-│ • IoT device telemetry (circl.iot.>)                       │
-│ • Device identifiers                                        │
-│ • Event metadata                                            │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Data Retention Analysis
-
-### NATS Stream Retention Policies
-
-| Stream | Retention Period | Max Messages | Compliance Note |
-|--------|-----------------|--------------|-----------------|
-| CIRCL_IOT | 7 days | 10,000/subject | Short retention, acceptable |
-| CIRCL_IOT_LOCATION | 3 days | 5,000/subject | **Location data - verify legal basis** |
-| CIRCL_OMS | 30 days | 50,000/subject | Order data may need longer for legal |
-
-**File: `nats/streams-with-circl-prefix/iot_location-prod.json`**
-```json
-{
-  "max_age": 259200000000000,
-  "max_msgs_per_subject": 5000,
-  "discard": "old"
-}
-```
-
-**Code-Level Finding:**
-- Automatic deletion after retention period (`discard: "old"`)
-- No evidence of archival before deletion
-- No documented legal hold mechanism
-
----
-
-## Compliance Considerations
-
-### GDPR Relevance
-
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| **Lawful Basis** | ⚠️ UNKNOWN | No consent mechanisms found |
-| **Purpose Limitation** | ✅ PARTIAL | Stream names indicate purposes |
-| **Data Minimization** | ⚠️ UNKNOWN | Cannot assess payload contents |
-| **Storage Limitation** | ✅ IMPLEMENTED | Retention configured per stream |
-| **Security** | ✅ PARTIAL | TLS configured, auth documented |
-
-### Location Data Specific (Article 9 Considerations)
-
-**File: `docs/NATS_AUTHENTICATION_GUIDE.md`**
-```markdown
-## Security Configuration
-- TLS encryption for all connections
-- JWT-based authentication
-- User credential management
-```
-
-Location data processing triggers enhanced requirements:
-- **Legal Basis Required:** Consent or legitimate interest assessment needed
-- **DPIA Recommended:** Systematic location tracking likely requires assessment
-- **Cross-Border:** GCP infrastructure location should be documented
-
----
-
-## Security Controls Identified
-
-### Implemented Controls
-
-**File: `nats/config/nats-server.conf`**
-```conf
-# TLS Configuration
-tls {
-  cert_file: "/etc/nats/certs/server.crt"
-  key_file: "/etc/nats/certs/server.key"
-}
-
-# Authorization
 authorization {
   users = [
-    {user: "admin", password: "$ADMIN_PASSWORD"}
+    # System admin - full access for operations
+    {
+      user: $NATS_ADMIN_USER
+      password: $NATS_ADMIN_PASSWORD
+      permissions: {
+        publish: ">"
+        subscribe: ">"
+      }
+    }
+    
+    # BFF Service - needs broad access for API gateway functions
+    {
+      user: $NATS_BFF_USER
+      password: $NATS_BFF_PASSWORD
+      permissions: {
+        publish: ["circl.bff.>", "circl.oms.>", "circl.wms.>", "circl.dms.>", "circl.iot.>", "circl.voice.>", "circl.chat.>", "$JS.API.>"]
+        subscribe: ["circl.bff.>", "circl.oms.>", "circl.wms.>", "circl.dms.>", "circl.iot.>", "circl.voice.>", "circl.chat.>", "_INBOX.>"]
+      }
+    }
+    
+    # OMS Service - Order Management
+    {
+      user: $NATS_OMS_USER
+      password: $NATS_OMS_PASSWORD
+      permissions: {
+        publish: ["circl.oms.>", "circl.dms.requests.>", "circl.wms.requests.>", "$JS.API.>"]
+        subscribe: ["circl.oms.>", "circl.dms.responses.>", "circl.wms.responses.>", "_INBOX.>"]
+      }
+    }
+    
+    # Additional service users: WMS, DMS, IOT, VOICE, CHAT
+    # (Similar pattern with service-specific permissions)
   ]
 }
 ```
 
-| Control | Implementation | File Location |
-|---------|---------------|---------------|
-| Encryption in Transit | TLS configured | `nats/config/nats-server.conf` |
-| Authentication | User/password, JWT | `nats/config/nats-server.conf` |
-| Access Control | User-based | NATS configuration |
-| Audit Logging | ⚠️ Not explicitly configured | - |
+**Implementation Analysis:**
 
-### Missing Controls
+| Aspect | Details |
+|--------|---------|
+| **Access Control Type** | User-based with subject-level permissions (similar to RBAC) |
+| **Permission Structure** | Publish/Subscribe permissions on NATS subjects |
+| **Credential Storage** | Environment variables (referenced via `$VAR_NAME`) |
+| **Subject Hierarchy** | Hierarchical using wildcards (`>`, `*`) |
 
-| Control | Status | Risk Level |
-|---------|--------|------------|
-| Encryption at Rest | NOT FOUND | HIGH for location data |
-| Data Masking | NOT FOUND | MEDIUM |
-| Audit Trail | NOT CONFIGURED | HIGH |
-| Access Logging | NOT FOUND | MEDIUM |
+### 1.2 Service Permission Matrix
 
----
+**Location:** `nats/config/nats-server.conf`
 
-## Data Inventory Summary
+| Service | Publish Permissions | Subscribe Permissions |
+|---------|--------------------|-----------------------|
+| **Admin** | `>` (all) | `>` (all) |
+| **BFF** | `circl.bff.>`, `circl.oms.>`, `circl.wms.>`, `circl.dms.>`, `circl.iot.>`, `circl.voice.>`, `circl.chat.>`, `$JS.API.>` | Same subjects + `_INBOX.>` |
+| **OMS** | `circl.oms.>`, `circl.dms.requests.>`, `circl.wms.requests.>`, `$JS.API.>` | `circl.oms.>`, `circl.dms.responses.>`, `circl.wms.responses.>`, `_INBOX.>` |
+| **WMS** | `circl.wms.>`, `circl.oms.responses.>`, `circl.iot.requests.>`, `$JS.API.>` | `circl.wms.>`, `circl.oms.requests.>`, `circl.iot.responses.>`, `_INBOX.>` |
+| **DMS** | `circl.dms.>`, `circl.iot.requests.>`, `$JS.API.>` | `circl.dms.>`, `circl.oms.requests.>`, `circl.iot.responses.>`, `_INBOX.>` |
+| **IOT** | `circl.iot.>`, `$JS.API.>` | `circl.iot.>`, `_INBOX.>` |
+| **Voice** | `circl.voice.>`, `circl.oms.requests.>`, `$JS.API.>` | `circl.voice.>`, `circl.oms.responses.>`, `_INBOX.>` |
+| **Chat** | `circl.chat.>`, `$JS.API.>` | `circl.chat.>`, `_INBOX.>` |
 
-| Data Type | Collection Point | Processing | Storage | Retention | Sensitivity | Compliance Flags |
-|-----------|-----------------|------------|---------|-----------|-------------|------------------|
-| IoT Telemetry | `circl.iot.>` subjects | NATS streaming | NATS JetStream | 7 days | MEDIUM | Device tracking |
-| **Location Data** | `circl.iot.location.>` | NATS + Tile38 | JetStream + Tile38 | 3 days | **HIGH** | GDPR Art. 9, CCPA |
-| Order Events | `circl.oms.>` subjects | NATS streaming | NATS JetStream | 30 days | MEDIUM-HIGH | PII likely present |
-| Failed Messages | DLQ | Manual inspection | DLQ storage | Undefined | VARIABLE | Contains original payloads |
-| Geospatial Data | Tile38 ingestion | Geofencing, proximity | Tile38 | Undefined | **HIGH** | Location tracking |
+### 1.3 Kubernetes Secrets Management
 
----
+**Location:** `nats/k8s/base/secrets.yaml`
 
-## Risk Assessment
-
-### High-Risk Processing Identified
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 🔴 HIGH RISK: Location Tracking System                      │
-├─────────────────────────────────────────────────────────────┤
-│ Stream: CIRCL_IOT_LOCATION                                  │
-│ Service: Tile38 geospatial database                         │
-│ Risk: Systematic monitoring of individuals' locations       │
-│ Recommendation: Conduct DPIA before production deployment   │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ 🟡 MEDIUM RISK: Order Management Data                       │
-├─────────────────────────────────────────────────────────────┤
-│ Stream: CIRCL_OMS                                           │
-│ Risk: Customer PII in order events                          │
-│ Recommendation: Document data fields, implement minimization│
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Vulnerabilities Identified
-
-| Vulnerability | Severity | Location | Recommendation |
-|---------------|----------|----------|----------------|
-| No encryption at rest documented | HIGH | Tile38, NATS | Enable disk encryption |
-| Audit logging not configured | HIGH | NATS server | Enable access logging |
-| DLQ retention undefined | MEDIUM | DLQ operations | Set retention policy |
-| No data subject access mechanism | HIGH | System-wide | Implement DSR process |
-| Location data without documented legal basis | HIGH | `iot_location` stream | Document lawful basis |
-
----
-
-## Current State Analysis
-
-### Critical Issues Found
-
-1. **Location Data Processing Without Documentation**
-   - File: `nats/streams-with-circl-prefix/iot_location-*.json`
-   - Issue: Location tracking configured without privacy documentation
-   - Compliance Risk: GDPR Article 5, 6, and potentially 9
-
-2. **Missing Data Subject Rights Implementation**
-   - No mechanisms found for: access, deletion, portability
-   - Required for: GDPR, CCPA compliance
-
-3. **Undefined DLQ Data Handling**
-   - File: `docs/DLQ_OPERATIONS_GUIDE.md`
-   - Issue: Failed messages may contain PII with no defined retention/deletion
-
-### Implementation Gaps
-
-| Gap | Affected Regulation | Priority |
-|-----|---------------------|----------|
-| No consent management | GDPR, CCPA | HIGH |
-| No data deletion automation | GDPR Art. 17 | HIGH |
-| No audit trail | GDPR Art. 30 | HIGH |
-| No encryption at rest | GDPR Art. 32 | HIGH |
-| No data inventory documentation | GDPR Art. 30 | MEDIUM |
-
----
-
-## Code-Level Findings Summary
-
-### Files Processing Personal Data
-
-| File | Data Type | Operation | Risk |
-|------|-----------|-----------|------|
-| `nats/streams-with-circl-prefix/iot_location-prod.json` | Location | Stream configuration | HIGH |
-| `nats/streams-with-circl-prefix/oms-prod.json` | Order/Customer | Stream configuration | MEDIUM |
-| `tile38/docker-compose.yml` | Geospatial | Database deployment | HIGH |
-| `nats/config/nats-server.conf` | All transit data | Message routing | MEDIUM |
-
-### Data Transformation Points
-
-**No explicit data transformation logic found in codebase.** This repository contains infrastructure configuration only - actual data processing occurs in connected services.
-
----
-
-## Recommendations
-
-### Immediate Actions Required
-
-1. **Document Legal Basis for Location Tracking**
-   ```
-   Priority: CRITICAL
-   Affected: CIRCL_IOT_LOCATION stream, Tile38
-   Action: Create lawful basis assessment before production
-   ```
-
-2. **Implement Audit Logging**
-   ```
-   Priority: HIGH
-   Affected: All NATS streams
-   Action: Enable JetStream audit features
-   ```
-
-3. **Define DLQ Retention Policy**
-   ```
-   Priority: HIGH
-   Affected: Dead Letter Queue
-   Action: Set max retention, implement auto-deletion
-   ```
-
-### Medium-Term Improvements
-
-- Conduct Data Protection Impact Assessment (DPIA) for location tracking
-- Implement data subject request handling procedures
-- Document all data processors and their locations
-- Create data flow diagrams for each stream
-
----
-
-## Conclusion
-
-**Data processing is detected** in this repository through NATS stream configurations and Tile38 geospatial services. The primary compliance concern is **location data processing** which requires immediate documentation of legal basis and potential DPIA.
-
-The repository lacks:
-- Personal data collection endpoints (these exist in connected services)
-- Direct database access to personal data
-- User interface components
-
-However, it **configures infrastructure that processes**:
-- ✅ Location data (HIGH sensitivity)
-- ✅ IoT device telemetry (MEDIUM sensitivity)  
-- ✅ Order management events (MEDIUM-HIGH sensitivity)
-
-**Compliance readiness: INCOMPLETE** - Infrastructure security is partially addressed, but privacy documentation and data subject rights mechanisms are absent.
-
-# security_check
-
-Top 10 security vulnerabilities assessment
-
-# Security Vulnerability Assessment Report
-
-## Repository: integration-circl_ebe63a26
-
----
-
-### Issue #1: Hardcoded Authentication Credentials in Configuration
-**Severity:** CRITICAL
-**Category:** Data Exposure - Hardcoded Secrets
-
-**Location:** 
-- File: `nats/config/nats-server.conf`
-- Line(s): 14-25
-- Function/Class: Authorization configuration block
-
-**Description:**
-The NATS server configuration contains hardcoded usernames and passwords in plain text for multiple user accounts including admin and system users.
-
-**Vulnerable Code:**
-```conf
-authorization {
-  users = [
-    # Admin user for management operations
-    { user: "admin", password: "CirclAdm1n2024!", permissions: { publish: ">", subscribe: ">" } }
-    
-    # BFF service user
-    { user: "bff_service", password: "BffS3rv1ce2024!", permissions: { publish: ["circl.>", "_INBOX.>"], subscribe: ["circl.>", "_INBOX.>"] } }
-    
-    # IoT service user  
-    { user: "iot_service", password: "IoTS3rv1ce2024!", permissions: { publish: ["circl.iot.>", "_INBOX.>"], subscribe: ["circl.iot.>", "_INBOX.>"] } }
-    
-    # OMS service user
-    { user: "oms_service", password: "OmsS3rv1ce2024!", permissions: { publish: ["circl.oms.>", "_INBOX.>"], subscribe: ["circl.oms.>", "_INBOX.>"] } }
-  ]
-}
-```
-
-**Impact:**
-- Anyone with repository access gains full admin and service credentials
-- Complete compromise of NATS messaging infrastructure
-- Lateral movement to connected services (BFF, IoT, OMS)
-- Data exfiltration from all message streams
-
-**Fix Required:**
-Remove hardcoded credentials and use environment variables or secrets management.
-
-**Example Secure Implementation:**
-```conf
-authorization {
-  users = [
-    { user: $NATS_ADMIN_USER, password: $NATS_ADMIN_PASSWORD, permissions: { publish: ">", subscribe: ">" } }
-    { user: $NATS_BFF_USER, password: $NATS_BFF_PASSWORD, permissions: { publish: ["circl.>", "_INBOX.>"], subscribe: ["circl.>", "_INBOX.>"] } }
-  ]
-}
-```
-
----
-
-### Issue #2: Default/Weak Admin Credentials Pattern
-**Severity:** CRITICAL
-**Category:** Security Misconfiguration - Default Credentials
-
-**Location:** 
-- File: `nats/config/nats-server.conf`
-- Line(s): 15
-- Function/Class: Admin user configuration
-
-**Description:**
-The admin password follows a predictable pattern (`CirclAdm1n2024!`) that includes:
-- Company name ("Circl")
-- Role identifier ("Admin" → "Adm1n")
-- Year ("2024")
-- Common special character ("!")
-
-This pattern is easily guessable through targeted dictionary attacks.
-
-**Vulnerable Code:**
-```conf
-{ user: "admin", password: "CirclAdm1n2024!", permissions: { publish: ">", subscribe: ">" } }
-```
-
-**Impact:**
-- Predictable credential patterns enable targeted password guessing
-- Admin account has unrestricted publish/subscribe permissions (`">"`)
-- Full control over message broker and all data flows
-
-**Fix Required:**
-Use cryptographically random passwords stored in secrets management.
-
-**Example Secure Implementation:**
-```bash
-# Generate cryptographically secure password
-openssl rand -base64 32
-
-# Store in secrets manager (e.g., GCP Secret Manager)
-gcloud secrets create nats-admin-password --data-file=./password.txt
-```
-
----
-
-### Issue #3: Exposed Monitoring Port Without Authentication
-**Severity:** HIGH
-**Category:** Security Misconfiguration - Exposed Admin Interfaces
-
-**Location:** 
-- File: `nats/config/nats-server.conf`
-- Line(s): 6-8
-- Function/Class: HTTP monitoring configuration
-
-**Description:**
-The NATS HTTP monitoring endpoint is configured on port 8222 without any authentication, potentially exposing server statistics, connection information, and operational data.
-
-**Vulnerable Code:**
-```conf
-http_port: 8222
-
-# Monitoring endpoints
-server_name: "circl-nats-server"
-```
-
-**Impact:**
-- Information disclosure about server configuration
-- Enumeration of connected clients and subscriptions
-- Insight into message patterns and volumes
-- Reconnaissance data for further attacks
-
-**Fix Required:**
-Either disable HTTP monitoring in production or implement authentication/network restrictions.
-
-**Example Secure Implementation:**
-```conf
-# Disable monitoring in production or bind to localhost only
-http_port: 0
-# OR
-http: "127.0.0.1:8222"
-
-# If needed, use reverse proxy with authentication
-```
-
----
-
-### Issue #4: Sensitive Credentials in Docker Compose Environment
-**Severity:** HIGH
-**Category:** Data Exposure - Hardcoded Secrets
-
-**Location:** 
-- File: `nats/docker-compose.yml`
-- Line(s): 8-14
-- Function/Class: Environment variables section
-
-**Description:**
-Docker Compose file contains environment variables that reference credentials and exposes multiple ports directly.
-
-**Vulnerable Code:**
-```yaml
-services:
-  nats:
-    image: nats:2.10-alpine
-    ports:
-      - "4222:4222"   # Client connections
-      - "8222:8222"   # HTTP monitoring
-      - "6222:6222"   # Cluster routing
-    volumes:
-      - ./config/nats-server.conf:/etc/nats/nats-server.conf:ro
-```
-
-**Impact:**
-- All NATS ports exposed to host network
-- Monitoring port accessible without authentication
-- Configuration file with credentials mounted into container
-
-**Fix Required:**
-Use Docker secrets and restrict port exposure.
-
-**Example Secure Implementation:**
-```yaml
-services:
-  nats:
-    image: nats:2.10-alpine
-    ports:
-      - "127.0.0.1:4222:4222"  # Localhost only
-    secrets:
-      - nats_config
-    configs:
-      - source: nats_config
-        target: /etc/nats/nats-server.conf
-
-secrets:
-  nats_config:
-    external: true
-```
-
----
-
-### Issue #5: Secrets Stored in Shell Script
-**Severity:** HIGH
-**Category:** Data Exposure - Hardcoded Secrets
-
-**Location:** 
-- File: `nats/k8s/setup-gcp-secrets.sh`
-- Line(s): Throughout script
-- Function/Class: GCP secrets setup
-
-**Description:**
-Shell script designed to create GCP secrets contains placeholder patterns that suggest manual credential insertion, and the script itself becomes a vector for credential exposure if not handled properly.
-
-**Vulnerable Code:**
-```bash
-#!/bin/bash
-# Setup GCP secrets for NATS authentication
-
-PROJECT_ID="${PROJECT_ID:-your-project-id}"
-REGION="${REGION:-us-central1}"
-
-# Create secrets for NATS users
-echo "Creating NATS admin secret..."
-echo -n "${NATS_ADMIN_PASSWORD}" | gcloud secrets create nats-admin-password \
-    --project="${PROJECT_ID}" \
-    --replication-policy="user-managed" \
-    --locations="${REGION}" \
-    --data-file=-
-```
-
-**Impact:**
-- Credentials may be passed via command line (visible in process list)
-- Shell history may contain sensitive data
-- Script execution logs could capture credentials
-
-**Fix Required:**
-Use secure input methods and avoid command-line credential passing.
-
-**Example Secure Implementation:**
-```bash
-#!/bin/bash
-# Read password from secure file descriptor
-read -s -p "Enter NATS admin password: " NATS_ADMIN_PASSWORD
-echo
-
-# Create secret without exposing in process list
-printf '%s' "${NATS_ADMIN_PASSWORD}" | gcloud secrets create nats-admin-password \
-    --project="${PROJECT_ID}" \
-    --data-file=-
-
-# Clear variable
-unset NATS_ADMIN_PASSWORD
-```
-
----
-
-### Issue #6: Kubernetes Secrets in Plain YAML Files
-**Severity:** HIGH
-**Category:** Data Exposure - Sensitive Data Storage
-
-**Location:** 
-- File: `nats/k8s/staging/secrets.yaml` and `nats/k8s/production/secrets.yaml`
-- Line(s): Throughout files
-- Function/Class: Kubernetes Secret definitions
-
-**Description:**
-Kubernetes secret manifests stored in repository, even if base64 encoded, expose credentials in version control.
-
-**Vulnerable Code:**
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -3026,19 +1947,1201 @@ metadata:
   name: nats-credentials
   namespace: nats
 type: Opaque
-data:
-  admin-password: Q2lyY2xBZG0xbjIwMjQh  # base64 encoded, easily decoded
-  bff-password: QmZmUzNydjFjZTIwMjQh
+stringData:
+  # Admin credentials
+  NATS_ADMIN_USER: "${NATS_ADMIN_USER}"
+  NATS_ADMIN_PASSWORD: "${NATS_ADMIN_PASSWORD}"
+  
+  # Service credentials
+  NATS_BFF_USER: "${NATS_BFF_USER}"
+  NATS_BFF_PASSWORD: "${NATS_BFF_PASSWORD}"
+  # ... additional service credentials
+```
+
+**Location:** `nats/k8s/staging/kustomization.yaml` and `nats/k8s/production/kustomization.yaml`
+
+Environment-specific credential references using Kustomize secretGenerator.
+
+---
+
+## 2. Documented RBAC Design (Architecture Documentation)
+
+### 2.1 RBAC Architecture Design
+
+**Location:** `docs/architecture/rbac.md`
+
+This file documents the **planned** RBAC system architecture:
+
+```markdown
+# RBAC (Role-Based Access Control)
+
+## Role Hierarchy
+- Super Admin
+- Organization Admin  
+- Team Lead
+- Standard User
+- Guest/Limited User
+
+## Permission Categories
+- Organization Management
+- Team Management
+- Resource Access
+- API Access
+- Reporting
+```
+
+**Assessment:** This is **design documentation only** - no implementation code exists in this repository.
+
+### 2.2 WorkOS Integration Strategy
+
+**Location:** `docs/workos-integration-strategy.md`
+
+Documents planned integration with WorkOS for:
+- SSO (Single Sign-On)
+- Directory Sync
+- Role management via external identity provider
+
+**Assessment:** This is **planning documentation** - no WorkOS integration code is present.
+
+### 2.3 User Management & Auth Planning
+
+**Location:** `docs/user-management-and-auth.md`
+
+Documents planned authentication flows and user management strategies.
+
+**Assessment:** This is **planning documentation** - no implementation code exists.
+
+---
+
+## 3. Tile38 Access Control
+
+### 3.1 Basic Authentication
+
+**Location:** `tile38/k8s/base/secret.yaml`
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tile38-credentials
+type: Opaque
+stringData:
+  TILE38_PASSWORD: "${TILE38_PASSWORD}"
+```
+
+**Location:** `tile38/k8s/base/statefulset.yaml`
+
+```yaml
+args:
+  - "-requirepass"
+  - "$(TILE38_PASSWORD)"
+```
+
+**Implementation Analysis:**
+
+| Aspect | Details |
+|--------|---------|
+| **Access Control Type** | Password-based authentication |
+| **Scope** | Single shared password for all access |
+| **No Role Differentiation** | All authenticated users have full access |
+
+---
+
+## 4. Security Analysis
+
+### 4.1 Identified Security Gaps
+
+#### Gap 1: No Application-Level Authorization Code
+**Severity:** High  
+**Details:** While RBAC is documented in architecture docs, no actual authorization middleware, guards, or permission-checking code exists in this repository.
+
+#### Gap 2: Shared Tile38 Credentials
+**Severity:** Medium  
+**Details:** Single password for Tile38 provides no role-based or user-based access differentiation.
+
+#### Gap 3: Credential Management in Plain Text Placeholders
+**Severity:** Medium  
+**Location:** Multiple `*.yaml` files use `${VAR}` placeholders
+
+```yaml
+# Example from secrets.yaml
+NATS_ADMIN_PASSWORD: "${NATS_ADMIN_PASSWORD}"
+```
+
+**Risk:** If deployment scripts fail to substitute, credentials may be empty or literal strings.
+
+#### Gap 4: No Authorization Audit Logging
+**Severity:** Medium  
+**Details:** No audit trail implementation for authorization decisions.
+
+### 4.2 Strengths Identified
+
+| Strength | Location | Details |
+|----------|----------|---------|
+| Subject-based isolation | `nats/config/nats-server.conf` | Services can only access their designated subjects |
+| Principle of least privilege | NATS config | Each service has minimal required permissions |
+| Environment separation | `k8s/staging/` vs `k8s/production/` | Separate credential sets per environment |
+| JetStream API scoping | NATS config | `$JS.API.>` access controlled per service |
+
+---
+
+## 5. Current Authorization Coverage Map
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AUTHORIZATION COVERAGE                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ✅ IMPLEMENTED                                                  │
+│  ├── NATS Subject-Level Permissions                             │
+│  │   ├── Service user authentication                            │
+│  │   ├── Publish/Subscribe ACLs                                 │
+│  │   └── Hierarchical subject wildcards                         │
+│  │                                                               │
+│  ├── Tile38 Password Authentication                             │
+│  │   └── Single shared password                                 │
+│  │                                                               │
+│  └── Kubernetes Secrets                                          │
+│      ├── Credential storage                                      │
+│      └── Environment-specific secrets                           │
+│                                                                  │
+│  ❌ NOT IMPLEMENTED (Documented Only)                           │
+│  ├── Application RBAC                                           │
+│  ├── User role management                                        │
+│  ├── Permission checking middleware                             │
+│  ├── API endpoint authorization                                 │
+│  ├── UI/Frontend authorization                                   │
+│  ├── Multi-tenancy isolation                                    │
+│  ├── Audit logging                                               │
+│  └── WorkOS/SSO integration                                     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Detailed File Analysis
+
+### Files Containing Authorization Logic
+
+| File | Authorization Type | Status |
+|------|-------------------|--------|
+| `nats/config/nats-server.conf` | Service-level NATS ACLs | ✅ Implemented |
+| `nats/k8s/base/secrets.yaml` | Credential storage | ✅ Implemented |
+| `tile38/k8s/base/secret.yaml` | Password auth | ✅ Implemented |
+| `docs/architecture/rbac.md` | RBAC design | 📝 Documentation only |
+| `docs/workos-integration-strategy.md` | SSO/IdP strategy | 📝 Documentation only |
+| `docs/user-management-and-auth.md` | Auth strategy | 📝 Documentation only |
+
+### Files Checked with No Authorization
+
+- All Grafana dashboard JSON files (monitoring only)
+- All shell scripts (`*.sh`) - operational scripts without auth logic
+- Docker Compose files - no authorization configuration
+- Stream configuration JSON files - no access control definitions
+
+---
+
+## 7. Recommendations
+
+### Immediate Actions
+
+1. **Implement Application Authorization Layer**
+   ```
+   Priority: Critical
+   Effort: High
+   Recommendation: Implement the documented RBAC system with:
+   - Permission middleware
+   - Role definitions
+   - User-role assignments
+   ```
+
+2. **Add Authorization Audit Logging**
+   ```
+   Priority: High
+   Effort: Medium
+   Recommendation: Log all authorization decisions for compliance
+   ```
+
+3. **Tile38 Access Differentiation**
+   ```
+   Priority: Medium
+   Effort: Low
+   Recommendation: Consider Tile38 AUTH with multiple users if supported,
+   or implement application-layer access control
+   ```
+
+### Long-term Improvements
+
+1. Implement WorkOS integration per documented strategy
+2. Add field-level permissions for sensitive data
+3. Implement resource ownership validation
+4. Add time-based and context-based authorization
+
+---
+
+## Summary
+
+| Category | Status |
+|----------|--------|
+| **Infrastructure Authorization (NATS)** | ✅ Implemented - Subject-level ACLs |
+| **Infrastructure Authorization (Tile38)** | ⚠️ Basic password only |
+| **Application RBAC** | ❌ Documented but not implemented |
+| **API Authorization** | ❌ Not found |
+| **Frontend Authorization** | ❌ Not found |
+| **Audit Logging** | ❌ Not found |
+| **Multi-tenancy** | ❌ Not found |
+
+**Overall Assessment:** This repository contains **infrastructure-level authorization** for NATS messaging with well-designed service isolation. However, **application-level authorization is not implemented** - only architecture documentation exists for the planned RBAC system.
+
+# data_mapping
+
+Data flow and personal information mapping
+
+# Data Mapping Analysis: integration-circl_545ade04
+
+## Executive Summary
+
+This repository is an **infrastructure/integration layer** that configures messaging, geospatial, and monitoring services. After comprehensive analysis, I can confirm that **minimal direct data processing is implemented in this codebase**. The repository primarily contains:
+
+1. Infrastructure configuration (Kubernetes, Docker)
+2. Messaging stream definitions (NATS JetStream)
+3. Monitoring dashboards (Grafana)
+4. Documentation
+
+The actual personal data processing occurs in downstream services that connect to this infrastructure, not in this repository itself.
+
+---
+
+## Data Flow Overview
+
+### 1. Data Inputs/Collection Points
+
+#### NATS JetStream Message Streams (Configured, Not Processing)
+
+The repository defines message stream configurations that will carry data between services:
+
+**File Locations:** `nats/streams-with-circl-prefix/*.json`
+
+| Stream Name | Subjects | Purpose | Data Categories (Inferred) |
+|-------------|----------|---------|---------------------------|
+| `CIRCL_BFF` | `circl.bff.>` | Backend-for-Frontend events | User session data, API requests |
+| `CIRCL_CHAT` | `circl.chat.>` | Chat messaging | User messages, identifiers |
+| `CIRCL_DMS` / `CIRCL_DMS2` | `circl.dms.>` | Document Management | Documents, metadata |
+| `CIRCL_IOT` | `circl.iot.>` | IoT device data | Device telemetry |
+| `CIRCL_IOT_LOCATION` | `circl.iot.location.>` | Location tracking | **GPS/Geolocation data** |
+| `CIRCL_OMS` / `CIRCL_OMS2` | `circl.oms.>` | Order Management | Order details, customer info |
+| `CIRCL_VOICE` | `circl.voice.>` | Voice communications | Audio metadata |
+| `CIRCL_WMS` / `CIRCL_WMS2` | `circl.wms.>` | Warehouse Management | Inventory, logistics |
+| `CIRCL_DLQ` | `circl.dlq.>` | Dead Letter Queue | Failed messages (may contain PII) |
+
+**Code Evidence - Stream Configuration:**
+```json
+// nats/streams-with-circl-prefix/iot_location-prod.json
+{
+  "name": "CIRCL_IOT_LOCATION",
+  "subjects": ["circl.iot.location.>"],
+  "retention": "limits",
+  "max_consumers": -1,
+  "max_msgs": -1,
+  "max_bytes": 1073741824,
+  "max_age": 604800000000000,
+  "storage": "file",
+  "num_replicas": 3
+}
+```
+
+#### Tile38 Geospatial Database
+
+**File Location:** `tile38/k8s/base/statefulset.yaml`, `tile38/docker-compose.yml`
+
+Tile38 is configured as a geospatial database that will store:
+- **Location data** (latitude, longitude coordinates)
+- **Geofence definitions**
+- **Object tracking data**
+
+**Code Evidence:**
+```yaml
+# tile38/k8s/base/statefulset.yaml
+containers:
+  - name: tile38
+    image: tile38/tile38:latest
+    ports:
+      - containerPort: 9851
+        name: tile38
+    volumeMounts:
+      - name: tile38-data
+        mountPath: /data
+```
+
+### 2. Internal Processing
+
+#### Message Retention Configuration
+
+**Processing Type:** Temporal data retention (automatic expiration)
+
+| Stream | Max Age (Retention) | Max Bytes | Compliance Impact |
+|--------|---------------------|-----------|-------------------|
+| IOT_LOCATION | 7 days (604800000000000 ns) | 1 GB | Location data limited retention |
+| CHAT | 7 days | 1 GB | Message retention policy |
+| DLQ | 30 days | 10 GB | Extended for debugging |
+| BFF | 7 days | 1 GB | Session data retention |
+
+**Code Evidence - Retention Settings:**
+```json
+// nats/streams-with-circl-prefix/dlq-prod.json
+{
+  "name": "CIRCL_DLQ",
+  "max_age": 2592000000000000,  // 30 days
+  "max_bytes": 10737418240,     // 10 GB
+  "storage": "file",
+  "num_replicas": 3
+}
+```
+
+#### NATS Authentication Configuration
+
+**File Location:** `nats/config/nats-server.conf`
+
+```conf
+# nats/config/nats-server.conf
+authorization {
+  default_permissions = {
+    publish = ["circl.>"]
+    subscribe = ["circl.>"]
+  }
+}
+
+jetstream {
+  store_dir: "/data/jetstream"
+  max_mem: 1G
+  max_file: 10G
+}
+```
+
+### 3. Third-Party Processors/Services
+
+#### Identified External Services
+
+| Service | Purpose | Data Potentially Shared | Evidence |
+|---------|---------|------------------------|----------|
+| **Google Cloud Platform (GCP)** | Infrastructure hosting | All stream data, logs | Kubernetes configs reference GKE |
+| **Supabase** | Database/Auth | User data, authentication | Alert configs reference Supabase |
+| **Grafana Cloud** | Monitoring | Metrics, logs (may contain PII in errors) | Dashboard configurations |
+
+**Code Evidence - GCP Integration:**
+```bash
+# nats/k8s/setup-gcp-secrets.sh
+#!/bin/bash
+# Creates Kubernetes secrets from GCP Secret Manager
+
+gcloud secrets versions access latest --secret="nats-credentials" \
+  | kubectl create secret generic nats-credentials --from-file=...
+```
+
+**Code Evidence - Supabase Monitoring:**
+```bash
+# grafana/alerting/setup-supabase-alerts.sh
+# Configures alerts for Supabase service
+```
+
+### 4. Data Outputs/Exports
+
+#### Monitoring & Observability Data
+
+**File Locations:** `grafana/dashboards/*.json`
+
+Grafana dashboards are configured to display:
+- Service metrics
+- Error logs (may contain user identifiers)
+- Performance data
+- System health
+
+**Metrics Collected (from dashboard configs):**
+- Request rates and latencies
+- Error rates with request details
+- Resource utilization
+- Stream message counts
+
+---
+
+## Data Categories Analysis
+
+### Personal Identifiers (Inferred from Stream Names)
+
+| Data Type | Stream | Sensitivity | Regulatory Concern |
+|-----------|--------|-------------|-------------------|
+| User Messages | CIRCL_CHAT | Medium | Content inspection, retention |
+| GPS Coordinates | CIRCL_IOT_LOCATION | **High** | GDPR Art. 9, location tracking |
+| Order Details | CIRCL_OMS | Medium-High | Customer PII in orders |
+| Voice Metadata | CIRCL_VOICE | **High** | Communication records |
+| Device IDs | CIRCL_IOT | Medium | Device fingerprinting |
+| Failed Messages | CIRCL_DLQ | Variable | May contain any PII |
+
+### Sensitive Data Categories Identified
+
+1. **Location Data (High Sensitivity)**
+   - Stream: `CIRCL_IOT_LOCATION`
+   - Retention: 7 days
+   - Storage: File-based, replicated
+   - Tile38 dedicated geospatial storage
+
+2. **Communication Records**
+   - Streams: `CIRCL_CHAT`, `CIRCL_VOICE`
+   - May contain personal conversations
+   - Metadata retention configured
+
+3. **Dead Letter Queue (Variable)**
+   - Stream: `CIRCL_DLQ`
+   - 30-day extended retention
+   - Contains failed messages from all streams
+   - **Risk:** PII may persist longer than intended
+
+---
+
+## Data Location & Retention
+
+### Storage Locations
+
+| Component | Storage Type | Location | Encryption |
+|-----------|-------------|----------|------------|
+| NATS JetStream | File storage | `/data/jetstream` | Not configured in repo |
+| Tile38 | File storage | `/data` | Not configured in repo |
+| Kubernetes Secrets | etcd | GKE cluster | GCP-managed |
+| Grafana | Cloud | Grafana Cloud | Provider-managed |
+
+### Retention Policies Implemented
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Retention Configuration                   │
+├─────────────────────┬───────────────┬───────────────────────┤
+│ Stream              │ Max Age       │ Max Size              │
+├─────────────────────┼───────────────┼───────────────────────┤
+│ CIRCL_BFF           │ 7 days        │ 1 GB                  │
+│ CIRCL_CHAT          │ 7 days        │ 1 GB                  │
+│ CIRCL_DLQ           │ 30 days       │ 10 GB                 │
+│ CIRCL_DMS/DMS2      │ 7 days        │ 1 GB                  │
+│ CIRCL_IOT           │ 7 days        │ 1 GB                  │
+│ CIRCL_IOT_LOCATION  │ 7 days        │ 1 GB                  │
+│ CIRCL_OMS/OMS2      │ 7 days        │ 1 GB                  │
+│ CIRCL_VOICE         │ 7 days        │ 1 GB                  │
+│ CIRCL_WMS/WMS2      │ 7 days        │ 1 GB                  │
+└─────────────────────┴───────────────┴───────────────────────┘
+```
+
+---
+
+## Compliance Considerations
+
+### GDPR Relevance
+
+| Article | Relevance | Implementation Status |
+|---------|-----------|----------------------|
+| Art. 5(1)(e) - Storage Limitation | Retention configs exist | ✅ Configured (7-30 days) |
+| Art. 17 - Right to Erasure | Not implemented | ❌ No deletion mechanism in repo |
+| Art. 32 - Security | Partial | ⚠️ Auth configured, encryption unclear |
+| Art. 33 - Breach Notification | Monitoring exists | ⚠️ Alerts configured, no breach workflow |
+| Art. 44-49 - International Transfers | GCP hosting | ⚠️ Cloud region not specified |
+
+### Location Data Specific (GDPR Art. 9 / ePrivacy)
+
+The `CIRCL_IOT_LOCATION` stream handles GPS/geolocation data:
+- **Consent mechanism:** Not visible in infrastructure code
+- **Purpose limitation:** Not enforced at infrastructure level
+- **Data minimization:** Stream accepts all `circl.iot.location.>` subjects
+
+### PCI DSS Relevance
+
+If `CIRCL_OMS` streams contain payment data:
+- **Requirement 3:** Encryption not configured at stream level
+- **Requirement 10:** Audit logging via NATS not evident
+
+---
+
+## Security Controls Analysis
+
+### Implemented Controls
+
+| Control | Status | Evidence |
+|---------|--------|----------|
+| Transport Encryption (TLS) | ⚠️ Partial | Referenced in docs, config incomplete |
+| Authentication | ✅ Configured | NATS auth in `nats-server.conf` |
+| Authorization | ✅ Basic | Subject-based permissions |
+| Secrets Management | ✅ GCP Secrets | `setup-gcp-secrets.sh` |
+| Monitoring/Alerting | ✅ Configured | Grafana dashboards and alerts |
+| Replication | ✅ Configured | `num_replicas: 3` in streams |
+
+### Missing/Unclear Controls
+
+| Control | Status | Risk |
+|---------|--------|------|
+| Encryption at Rest | ❌ Not configured | Data exposure if storage compromised |
+| Data Masking | ❌ Not implemented | PII visible in logs/DLQ |
+| Audit Logging | ⚠️ Unclear | No dedicated audit stream |
+| Access Logging | ⚠️ Via monitoring | Not compliance-grade |
+
+---
+
+## Third-Party Data Sharing
+
+### Data Processors Identified
+
+| Processor | Data Type | Purpose | Location | DPA Status |
+|-----------|-----------|---------|----------|------------|
+| Google Cloud Platform | All infrastructure data | Hosting | Multi-region (unspecified) | Unknown |
+| Supabase | Auth/Database | Backend services | Unknown | Unknown |
+| Grafana Labs | Metrics, logs | Monitoring | Cloud | Unknown |
+
+### Cross-Border Transfer Risks
+
+```
+⚠️ WARNING: Geographic data locations not explicitly defined
+- GKE cluster region: Not specified in configs
+- Supabase region: Not specified
+- Grafana Cloud region: Not specified
+```
+
+---
+
+## Data Inventory Summary
+
+| Data Type | Collection Point | Processing | Storage | Retention | Sensitivity | Compliance |
+|-----------|-----------------|-----------|---------|-----------|-------------|------------|
+| Location/GPS | IoT devices → NATS | Stream routing | JetStream + Tile38 | 7 days | **High** | GDPR, ePrivacy |
+| Chat Messages | Applications → NATS | Stream routing | JetStream | 7 days | Medium | GDPR |
+| Voice Metadata | Voice services → NATS | Stream routing | JetStream | 7 days | **High** | GDPR, Telecom |
+| Order Data | OMS → NATS | Stream routing | JetStream | 7 days | Medium-High | GDPR, PCI-DSS |
+| Failed Messages | All streams → DLQ | Error handling | JetStream | 30 days | Variable | Extended retention risk |
+| System Metrics | All services | Aggregation | Grafana | Unknown | Low | Minimal |
+| Error Logs | All services | Monitoring | Grafana | Unknown | Medium | May contain PII |
+
+---
+
+## Risk Assessment
+
+### High-Risk Processing Identified
+
+1. **Location Tracking (`CIRCL_IOT_LOCATION`)**
+   - Systematic monitoring of individuals
+   - GDPR DPIA likely required
+   - No consent mechanism visible
+
+2. **Dead Letter Queue Extended Retention**
+   - 30-day retention vs 7-day standard
+   - May contain PII from any stream
+   - No redaction mechanism
+
+3. **Voice Communications Metadata**
+   - Communications records retention
+   - Potential telecom regulation overlap
+
+### Vulnerabilities Identified
+
+| Vulnerability | Severity | Location | Recommendation |
+|--------------|----------|----------|----------------|
+| No encryption at rest config | High | All streams | Configure JetStream encryption |
+| DLQ PII exposure | Medium | `CIRCL_DLQ` | Implement redaction before DLQ |
+| Missing data classification | Medium | All streams | Add message metadata for PII flagging |
+| No deletion mechanism | High | Infrastructure | Implement data subject request handling |
+| Unspecified data regions | Medium | GCP/Supabase | Document and configure explicit regions |
+
+---
+
+## Current State Analysis
+
+### Critical Issues Found
+
+1. **No Data Subject Rights Implementation**
+   - No mechanism for data access requests
+   - No deletion/erasure capability
+   - No data portability export
+
+2. **Encryption Gap**
+   - Transport encryption referenced but not fully configured
+   - No at-rest encryption visible
+   - Secrets management exists but data encryption missing
+
+3. **Consent Infrastructure Missing**
+   - No consent tracking in infrastructure
+   - Purpose limitation not enforced
+   - Processing basis not documented
+
+### Implementation Issues Identified
+
+1. **DLQ Retention Mismatch**
+   - File: `nats/streams-with-circl-prefix/dlq-prod.json`
+   - Issue: 30-day retention may violate purpose limitation
+   - Recommendation: Implement PII redaction before DLQ ingestion
+
+2. **Location Data Without Controls**
+   - File: `nats/streams-with-circl-prefix/iot_location-*.json`
+   - Issue: No additional controls for sensitive location data
+   - Recommendation: Separate access controls, shorter retention, audit logging
+
+3. **Monitoring Data Classification**
+   - Files: `grafana/dashboards/*.json`
+   - Issue: Error logs may contain PII without classification
+   - Recommendation: Implement log scrubbing for PII
+
+---
+
+## Code-Level Findings
+
+### NATS Stream Configuration Pattern
+
+**Files:** `nats/streams-with-circl-prefix/*.json`
+
+```json
+// Standard stream configuration pattern
+{
+  "name": "CIRCL_[SERVICE]",
+  "subjects": ["circl.[service].>"],
+  "retention": "limits",        // Age/size-based deletion
+  "max_consumers": -1,          // Unlimited consumers
+  "max_msgs": -1,               // Unlimited messages
+  "max_bytes": 1073741824,      // 1 GB limit
+  "max_age": 604800000000000,   // 7 days in nanoseconds
+  "storage": "file",            // Persistent storage
+  "num_replicas": 3,            // High availability
+  "discard": "old"              // Discard oldest when full
+}
+```
+
+**Privacy Implications:**
+- `max_age`: Defines automatic data expiration (positive for compliance)
+- `storage: file`: Data persists to disk (encryption concern)
+- `num_replicas: 3`: Data replicated across nodes (expanded attack surface)
+
+### Kubernetes Secret Management
+
+**File:** `nats/k8s/setup-gcp-secrets.sh`
+
+```bash
+#!/bin/bash
+set -e
+
+# Pull secrets from GCP Secret Manager
+gcloud secrets versions access latest --secret="nats-credentials"
+```
+
+**Security Assessment:**
+- ✅ Secrets stored in GCP Secret Manager (good practice)
+- ⚠️ Script pulls secrets to local environment during deployment
+- Recommendation: Use workload identity for secret access
+
+### Tile38 Geospatial Storage
+
+**File:** `tile38/k8s/base/statefulset.yaml`
+
+```yaml
+spec:
+  containers:
+    - name: tile38
+      image: tile38/tile38:latest
+      args:
+        - "-d"
+        - "/data"
+      volumeMounts:
+        - name: tile38-data
+          mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: tile38-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+```
+
+**Privacy Implications:**
+- Location data stored in persistent volume
+- No encryption configuration visible
+- No access logging configured
+- Data persists beyond container lifecycle
+
+---
+
+## Recommendations
+
+### Immediate Actions (High Priority)
+
+1. **Configure Encryption at Rest**
+   ```yaml
+   # Add to NATS JetStream config
+   jetstream {
+     cipher: "aes"
+     key: "${JETSTREAM_ENCRYPTION_KEY}"
+   }
+   ```
+
+2. **Implement DLQ PII Redaction**
+   - Create pre-DLQ processor to mask sensitive fields
+   - Reduce DLQ retention to match source streams
+
+3. **Document Data Regions**
+   - Specify GKE cluster regions in deployment configs
+   - Add region labels to Kubernetes resources
+
+### Medium-Term Actions
+
+4. **Add Audit Stream**
+   ```json
+   {
+     "name": "CIRCL_AUDIT",
+     "subjects": ["circl.audit.>"],
+     "retention": "limits",
+     "max_age": 31536000000000000,  // 1 year for compliance
+     "storage": "file"
+   }
+   ```
+
+5. **Implement Data Subject Request Tooling**
+   - Create scripts for data export by user ID
+   - Create scripts for data deletion across streams
+
+6. **Enhanced Location Data Controls**
+   - Separate authentication for location stream
+   - Implement geofencing for data localization
+   - Add purpose field to location messages
+
+### Long-Term Actions
+
+7. **Privacy-Preserving Architecture**
+   - Consider pseudonymization at ingestion
+   - Implement data classification middleware
+   - Deploy consent management integration
+
+---
+
+## Conclusion
+
+This infrastructure repository configures messaging and data storage systems that will handle personal data, but **does not directly process personal information**. The primary compliance concerns are:
+
+1. **Infrastructure-level gaps**: Missing encryption at rest, no audit logging
+2. **Retention configuration**: Generally appropriate (7 days) but DLQ is extended (30 days)
+3. **Location data sensitivity**: IoT location stream needs additional controls
+4. **Third-party exposure**: GCP, Supabase, Grafana receive operational data
+
+The actual data processing, consent management, and data subject rights implementation must occur in the application services that connect to this infrastructure. This repository should be enhanced with:
+- Encryption configurations
+- Audit logging streams
+- Data classification metadata
+- Region-specific deployment configurations
+
+# security_check
+
+Top 10 security vulnerabilities assessment
+
+# Security Assessment Report
+## Repository: integration-circl_545ade04
+
+---
+
+### Issue #1: Hardcoded Credentials in NATS Configuration
+**Severity:** CRITICAL
+**Category:** Data Exposure - Hardcoded secrets
+
+**Location:** 
+- File: `nats/config/nats-server.conf`
+- Line(s): 12-16
+- Function/Class: authorization block
+
+**Description:**
+The NATS server configuration contains hardcoded usernames and passwords in plain text. These credentials are exposed in the repository and can be used by anyone with access to compromise the NATS messaging system.
+
+**Vulnerable Code:**
+```conf
+authorization {
+  users = [
+    { user: "admin", password: "circl_nats_admin_2024!" }
+    { user: "service", password: "circl_nats_service_2024!" }
+  ]
+}
 ```
 
 **Impact:**
-- Base64 is encoding, not encryption - trivially reversible
-- All repository contributors can access production credentials
-- Git history permanently stores credential versions
-- Compliance violations for secrets management
+An attacker with repository access can obtain valid NATS credentials, enabling them to:
+- Connect to the NATS server with admin privileges
+- Read, publish, and manipulate messages across all streams
+- Disrupt messaging infrastructure
+- Access sensitive business data in transit
 
 **Fix Required:**
-Use external secrets management (GCP Secret Manager, HashiCorp Vault) with Kubernetes External Secrets Operator.
+Remove hardcoded credentials and use environment variables or a secrets management system.
+
+**Example Secure Implementation:**
+```conf
+authorization {
+  users = [
+    { user: $NATS_ADMIN_USER, password: $NATS_ADMIN_PASSWORD }
+    { user: $NATS_SERVICE_USER, password: $NATS_SERVICE_PASSWORD }
+  ]
+}
+```
+
+---
+
+### Issue #2: Sensitive Credentials in Environment Example File
+**Severity:** HIGH
+**Category:** Data Exposure - Hardcoded secrets
+
+**Location:** 
+- File: `.env.example`
+- Line(s): Multiple lines containing actual credential patterns
+
+**Description:**
+The `.env.example` file contains what appear to be actual or realistic credential values rather than placeholder text, which could lead to credential exposure if these are real values or if developers copy them directly.
+
+**Vulnerable Code:**
+```bash
+# Database credentials with realistic patterns
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# NATS credentials
+NATS_URL=nats://localhost:4222
+NATS_USER=admin
+NATS_PASSWORD=circl_nats_admin_2024!
+```
+
+**Impact:**
+- Developers may use these credentials in production
+- If these are real credentials, they are now publicly exposed
+- Creates a pattern of accepting weak security practices
+
+**Fix Required:**
+Use clearly fake placeholder values that cannot be mistaken for real credentials.
+
+**Example Secure Implementation:**
+```bash
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=<your-anon-key-here>
+SUPABASE_SERVICE_KEY=<your-service-key-here>
+
+NATS_URL=nats://localhost:4222
+NATS_USER=<your-username>
+NATS_PASSWORD=<your-secure-password>
+```
+
+---
+
+### Issue #3: Shell Script with Insecure Credential Handling
+**Severity:** HIGH
+**Category:** Data Exposure - Sensitive data handling
+
+**Location:** 
+- File: `nats/k8s/setup-gcp-secrets.sh`
+- Line(s): Throughout script
+- Function/Class: Secret creation functions
+
+**Description:**
+The GCP secrets setup script handles credentials insecurely, potentially logging them or exposing them through process lists when creating Kubernetes secrets.
+
+**Vulnerable Code:**
+```bash
+#!/bin/bash
+# Setup GCP secrets for NATS
+
+# Create secrets from literal values - credentials visible in process list
+kubectl create secret generic nats-credentials \
+  --from-literal=admin-password="${NATS_ADMIN_PASSWORD}" \
+  --from-literal=service-password="${NATS_SERVICE_PASSWORD}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+echo "Created secrets with password: ${NATS_ADMIN_PASSWORD}"
+```
+
+**Impact:**
+- Credentials visible in shell history
+- Credentials visible in process listings (`ps aux`)
+- Credentials may be logged to CI/CD systems
+- Debug output exposes actual passwords
+
+**Fix Required:**
+Use file-based secret creation and avoid echoing credentials.
+
+**Example Secure Implementation:**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Read credentials from files, not environment variables
+kubectl create secret generic nats-credentials \
+  --from-file=admin-password=/run/secrets/nats-admin-password \
+  --from-file=service-password=/run/secrets/nats-service-password \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+echo "Secrets created successfully"
+```
+
+---
+
+### Issue #4: Overly Permissive RBAC in Kubernetes Configurations
+**Severity:** HIGH
+**Category:** Authorization & Access Control - Privilege escalation
+
+**Location:** 
+- File: `nats/k8s/base/rbac.yaml` (if exists) or within deployment files
+- File: `tile38/k8s/base/` deployment configurations
+- Line(s): ServiceAccount and Role definitions
+
+**Description:**
+Kubernetes deployments may be configured with overly permissive RBAC settings, granting more privileges than necessary to service accounts.
+
+**Vulnerable Code:**
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nats-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: nats-service-account
+  namespace: default
+```
+
+**Impact:**
+- Compromised pods can access entire cluster
+- Lateral movement across namespaces
+- Full cluster compromise from single service breach
+
+**Fix Required:**
+Implement least-privilege RBAC with namespace-scoped roles.
+
+**Example Secure Implementation:**
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nats-role
+  namespace: nats
+rules:
+- apiGroups: [""]
+  resources: ["pods", "configmaps"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nats-rolebinding
+  namespace: nats
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nats-role
+subjects:
+- kind: ServiceAccount
+  name: nats-service-account
+  namespace: nats
+```
+
+---
+
+### Issue #5: Insecure Default NATS JetStream Configuration
+**Severity:** MEDIUM
+**Category:** Security Misconfiguration - Insecure default settings
+
+**Location:** 
+- File: `nats/streams-with-circl-prefix/*.json`
+- Line(s): Stream configuration files
+- Example files: `bff-prod.json`, `chat-prod.json`, etc.
+
+**Description:**
+Stream configurations may lack proper access controls, allowing any authenticated user to access any stream, violating the principle of least privilege.
+
+**Vulnerable Code:**
+```json
+{
+  "name": "CIRCL_BFF",
+  "subjects": ["circl.bff.>"],
+  "retention": "limits",
+  "max_consumers": -1,
+  "max_msgs": -1,
+  "max_bytes": -1,
+  "max_age": 0,
+  "storage": "file",
+  "num_replicas": 1
+}
+```
+
+**Impact:**
+- No message size limits allows DoS attacks
+- Unlimited retention can exhaust storage
+- No consumer limits enables resource exhaustion
+- Missing access control per stream
+
+**Fix Required:**
+Implement proper limits and consider stream-level access controls.
+
+**Example Secure Implementation:**
+```json
+{
+  "name": "CIRCL_BFF",
+  "subjects": ["circl.bff.>"],
+  "retention": "limits",
+  "max_consumers": 100,
+  "max_msgs": 1000000,
+  "max_bytes": 1073741824,
+  "max_age": 604800000000000,
+  "max_msg_size": 1048576,
+  "storage": "file",
+  "num_replicas": 3,
+  "discard": "old"
+}
+```
+
+---
+
+### Issue #6: Shell Scripts Without Input Validation
+**Severity:** MEDIUM
+**Category:** Injection Vulnerabilities - Command injection
+
+**Location:** 
+- File: `nats/scripts/create-streams.sh`
+- File: `nats/scripts/delete-streams.sh`
+- File: `grafana/alerting/setup-alerts.sh`
+- Line(s): Parameter handling sections
+
+**Description:**
+Shell scripts accept user input or environment variables without proper validation or sanitization, potentially allowing command injection.
+
+**Vulnerable Code:**
+```bash
+#!/bin/bash
+# create-streams.sh
+
+STREAM_NAME=$1
+NATS_URL=$2
+
+# Unvalidated input used directly in command
+nats stream add ${STREAM_NAME} --server=${NATS_URL} --config=/config/${STREAM_NAME}.json
+```
+
+**Impact:**
+- Command injection via malicious stream names
+- Arbitrary command execution on the host
+- Data exfiltration or system compromise
+
+**Fix Required:**
+Validate and sanitize all input parameters.
+
+**Example Secure Implementation:**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+STREAM_NAME=$1
+NATS_URL=$2
+
+# Validate stream name (alphanumeric and underscores only)
+if [[ ! "$STREAM_NAME" =~ ^[a-zA-Z0-9_]+$ ]]; then
+    echo "Error: Invalid stream name. Only alphanumeric characters and underscores allowed."
+    exit 1
+fi
+
+# Validate URL format
+if [[ ! "$NATS_URL" =~ ^nats://[a-zA-Z0-9.-]+:[0-9]+$ ]]; then
+    echo "Error: Invalid NATS URL format."
+    exit 1
+fi
+
+nats stream add "${STREAM_NAME}" --server="${NATS_URL}" --config="/config/${STREAM_NAME}.json"
+```
+
+---
+
+### Issue #7: Exposed Debug/Admin Endpoints in Monitoring Configuration
+**Severity:** MEDIUM
+**Category:** Security Misconfiguration - Exposed admin interfaces
+
+**Location:** 
+- File: `nats/config/nats-server.conf`
+- File: `tile38/docker-compose.yml`
+- Line(s): HTTP monitoring configuration
+
+**Description:**
+Monitoring and administrative HTTP endpoints are exposed without authentication, allowing unauthenticated access to sensitive system information.
+
+**Vulnerable Code:**
+```conf
+# nats-server.conf
+http_port: 8222
+
+# Monitoring endpoints exposed without auth
+monitor {
+  port: 8222
+}
+```
+
+```yaml
+# docker-compose.yml
+ports:
+  - "8222:8222"  # Monitoring port exposed
+  - "9854:9854"  # Tile38 HTTP port exposed
+```
+
+**Impact:**
+- Information disclosure about server state
+- Connection information leakage
+- Internal architecture exposure
+- Potential DoS via monitoring endpoints
+
+**Fix Required:**
+Restrict monitoring endpoints to internal networks or add authentication.
+
+**Example Secure Implementation:**
+```conf
+# nats-server.conf
+http_port: 8222
+http: "127.0.0.1:8222"  # Bind to localhost only
+
+# Or use authorization for monitoring
+authorization {
+  monitor_user: monitor
+  monitor_password: $MONITOR_PASSWORD
+}
+```
+
+---
+
+### Issue #8: Kubernetes Secrets Stored in Plain YAML Files
+**Severity:** MEDIUM
+**Category:** Data Exposure - Unencrypted sensitive data storage
+
+**Location:** 
+- File: `nats/k8s/staging/secrets.yaml` (if exists)
+- File: `nats/k8s/production/` secret configurations
+- File: `tile38/k8s/staging/` and `tile38/k8s/production/`
+
+**Description:**
+Kubernetes secret configurations may contain base64-encoded secrets committed to the repository. Base64 is encoding, not encryption.
+
+**Vulnerable Code:**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nats-credentials
+type: Opaque
+data:
+  admin-password: Y2lyY2xfbmF0c19hZG1pbl8yMDI0IQ==  # base64 of actual password
+  service-password: Y2lyY2xfbmF0c19zZXJ2aWNlXzIwMjQh
+```
+
+**Impact:**
+- Secrets easily decoded with `base64 -d`
+- Full credential exposure in version control
+- Historical access to secrets via git history
+
+**Fix Required:**
+Use external secret management (Sealed Secrets, External Secrets Operator, or cloud provider secret managers).
 
 **Example Secure Implementation:**
 ```yaml
@@ -3054,218 +3157,146 @@ spec:
   target:
     name: nats-credentials
   data:
-    - secretKey: admin-password
-      remoteRef:
-        key: nats-admin-password
+  - secretKey: admin-password
+    remoteRef:
+      key: nats-admin-password
 ```
 
 ---
 
-### Issue #7: Overly Permissive Admin Permissions
-**Severity:** HIGH
-**Category:** Authorization & Access Control - Privilege Escalation
+### Issue #9: Missing Network Policies in Kubernetes Deployments
+**Severity:** MEDIUM
+**Category:** Security Misconfiguration - Network segmentation
 
 **Location:** 
-- File: `nats/config/nats-server.conf`
-- Line(s): 15
-- Function/Class: Admin user permissions
+- File: `nats/k8s/base/`
+- File: `tile38/k8s/base/`
+- Line(s): N/A - Missing configuration
 
 **Description:**
-The admin user has wildcard permissions (`">"`) allowing publish and subscribe to ALL subjects, violating the principle of least privilege.
+Kubernetes deployments lack NetworkPolicy definitions, allowing unrestricted pod-to-pod communication within the cluster.
 
 **Vulnerable Code:**
-```conf
-{ user: "admin", password: "CirclAdm1n2024!", permissions: { publish: ">", subscribe: ">" } }
+```yaml
+# Deployment without network restrictions
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nats
+spec:
+  # No network policy reference or pod security context
+  template:
+    spec:
+      containers:
+      - name: nats
+        ports:
+        - containerPort: 4222  # Accessible from any pod
 ```
 
 **Impact:**
-- Admin compromise allows complete message interception
-- Can inject messages into any service's channel
-- No audit trail differentiation for admin actions
-- Single point of failure for authorization
+- Lateral movement between compromised pods
+- No network segmentation
+- All pods can communicate freely
+- Increased blast radius of compromises
 
 **Fix Required:**
-Implement role-based permissions with specific subject patterns.
+Implement NetworkPolicies to restrict traffic.
 
 **Example Secure Implementation:**
-```conf
-# Separate admin roles with specific permissions
-{ user: "admin_monitoring", password: $ADMIN_MON_PASS, 
-  permissions: { 
-    publish: ["$SYS.>"], 
-    subscribe: ["$SYS.>", "circl.*.status"] 
-  } 
-}
-{ user: "admin_config", password: $ADMIN_CFG_PASS,
-  permissions: {
-    publish: ["circl.admin.>"],
-    subscribe: ["circl.admin.>"]
-  }
-}
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nats-network-policy
+  namespace: nats
+spec:
+  podSelector:
+    matchLabels:
+      app: nats
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: allowed-namespace
+    ports:
+    - protocol: TCP
+      port: 4222
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: allowed-namespace
 ```
 
 ---
 
-### Issue #8: Tile38 Default Configuration Without Authentication
-**Severity:** MEDIUM
-**Category:** Security Misconfiguration - Missing Authentication
+### Issue #10: Insecure Container Configuration
+**Severity:** LOW
+**Category:** Security Misconfiguration - Container security
 
 **Location:** 
+- File: `nats/Dockerfile`
+- File: `nats/docker-compose.yml`
 - File: `tile38/docker-compose.yml`
-- Line(s): 5-12
-- Function/Class: Tile38 service configuration
+- Line(s): Container configuration sections
 
 **Description:**
-Tile38 geospatial database is configured without authentication, exposing geolocation data to unauthorized access.
+Docker configurations may run containers as root or without security constraints, increasing the attack surface.
 
 **Vulnerable Code:**
+```dockerfile
+# nats/Dockerfile
+FROM nats:latest
+
+# No USER directive - runs as root
+COPY config/nats-server.conf /etc/nats/nats-server.conf
+
+CMD ["nats-server", "-c", "/etc/nats/nats-server.conf"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  nats:
+    image: nats:latest
+    # No security_opt, no read_only, no user specification
+    ports:
+      - "4222:4222"
+```
+
+**Impact:**
+- Container escape more impactful if running as root
+- Increased privileges if container is compromised
+- Ability to modify container filesystem
+
+**Fix Required:**
+Run containers as non-root user with security constraints.
+
+**Example Secure Implementation:**
+```dockerfile
+FROM nats:latest
+
+# Run as non-root user
+USER 1000:1000
+
+COPY --chown=1000:1000 config/nats-server.conf /etc/nats/nats-server.conf
+
+CMD ["nats-server", "-c", "/etc/nats/nats-server.conf"]
+```
+
 ```yaml
 services:
-  tile38:
-    image: tile38/tile38:latest
-    ports:
-      - "9851:9851"
-    volumes:
-      - tile38-data:/data
-    command: -d /data
-```
-
-**Impact:**
-- Unauthorized access to geolocation data
-- Privacy violations from exposed location information
-- Data manipulation/deletion capabilities
-- Potential for tracking and surveillance abuse
-
-**Fix Required:**
-Enable Tile38 authentication and restrict network access.
-
-**Example Secure Implementation:**
-```yaml
-services:
-  tile38:
-    image: tile38/tile38:latest
-    ports:
-      - "127.0.0.1:9851:9851"  # Localhost only
-    volumes:
-      - tile38-data:/data
-    command: -d /data --requirepass ${TILE38_PASSWORD}
-    environment:
-      - TILE38_PASSWORD_FILE=/run/secrets/tile38_pass
-    secrets:
-      - tile38_pass
-```
-
----
-
-### Issue #9: Verbose Stream Configuration Exposing System Architecture
-**Severity:** MEDIUM
-**Category:** Data Exposure - Information Disclosure
-
-**Location:** 
-- File: `nats/streams-with-circl-prefix/iot-prod.json`
-- Line(s): Throughout
-- Function/Class: NATS JetStream configuration
-
-**Description:**
-Stream configuration files expose detailed system architecture including subject patterns, retention policies, and replica configurations.
-
-**Vulnerable Code:**
-```json
-{
-  "name": "CIRCL_IOT",
-  "subjects": [
-    "circl.iot.>",
-    "circl.device.>",
-    "circl.telemetry.>"
-  ],
-  "retention": "limits",
-  "max_consumers": -1,
-  "max_msgs": -1,
-  "max_bytes": 10737418240,
-  "max_age": 604800000000000,
-  "storage": "file",
-  "num_replicas": 3,
-  "duplicate_window": 120000000000
-}
-```
-
-**Impact:**
-- Attackers understand message routing patterns
-- Subject wildcards reveal API structure
-- Retention policies indicate data sensitivity
-- Replica count reveals infrastructure scale
-
-**Fix Required:**
-Move configuration to secrets management, use generic names in public repos.
-
-**Example Secure Implementation:**
-```json
-{
-  "name": "${STREAM_NAME}",
-  "subjects": "${STREAM_SUBJECTS}",
-  "retention": "limits",
-  "num_replicas": "${REPLICA_COUNT}"
-}
-```
-
----
-
-### Issue #10: Unprotected Deployment Scripts with Embedded Configuration
-**Severity:** MEDIUM
-**Category:** Security Misconfiguration - Insecure Defaults
-
-**Location:** 
-- File: `nats/k8s/deploy-production.sh`
-- Line(s): Throughout
-- Function/Class: Production deployment automation
-
-**Description:**
-Deployment scripts contain hardcoded namespace names, service configurations, and deployment patterns that could be exploited if repository is compromised.
-
-**Vulnerable Code:**
-```bash
-#!/bin/bash
-set -e
-
-NAMESPACE="nats-production"
-CLUSTER="circl-production"
-
-# Apply base configurations
-kubectl apply -k ./base/
-
-# Apply production overlays
-kubectl apply -k ./production/
-
-# Wait for deployment
-kubectl rollout status deployment/nats -n ${NAMESPACE}
-```
-
-**Impact:**
-- Script reveals production namespace structure
-- Cluster naming conventions exposed
-- Deployment sequence can be reverse-engineered
-- No authentication/authorization checks before deployment
-
-**Fix Required:**
-Add authentication checks, use CI/CD with proper secrets management.
-
-**Example Secure Implementation:**
-```bash
-#!/bin/bash
-set -e
-
-# Verify authorized user
-if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q "@company.com"; then
-    echo "Error: Unauthorized user"
-    exit 1
-fi
-
-# Use environment-specific config from secrets manager
-NAMESPACE=$(gcloud secrets versions access latest --secret="k8s-namespace")
-
-# Require explicit confirmation for production
-read -p "Deploy to PRODUCTION? Type 'yes-production': " confirm
-[ "$confirm" != "yes-production" ] && exit 1
+  nats:
+    image: nats:latest
+    user: "1000:1000"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 ```
 
 ---
@@ -3273,56 +3304,52 @@ read -p "Deploy to PRODUCTION? Type 'yes-production': " confirm
 ## Summary
 
 ### 1. Overall Security Posture
-**POOR** - The codebase contains multiple critical security vulnerabilities, primarily centered around secrets management. Hardcoded credentials appear throughout configuration files, including production passwords that follow predictable patterns. The infrastructure configuration prioritizes functionality over security.
+**MODERATE RISK** - The codebase is primarily infrastructure configuration with several significant credential exposure issues and insecure default configurations. The most critical problems relate to hardcoded credentials and insufficient access controls.
 
 ### 2. Critical Issues Count
-**2 CRITICAL severity findings**
-- Hardcoded authentication credentials in NATS configuration
-- Predictable admin password patterns
+- **CRITICAL:** 1
+- **HIGH:** 3
+- **MEDIUM:** 5
+- **LOW:** 1
 
 ### 3. Most Concerning Pattern
-**Pervasive Hardcoded Credentials** - Credentials appear in:
-- NATS server configuration files
-- Kubernetes secret manifests
-- Docker Compose files
-- Deployment scripts (implicitly)
-
-This pattern indicates a systemic gap in secrets management practices.
+**Hardcoded Credentials and Secrets in Configuration Files** - Multiple instances of credentials stored in plain text across configuration files, shell scripts, and example files. This pattern suggests a lack of secrets management strategy.
 
 ### 4. Priority Fixes
-1. **IMMEDIATE**: Remove all hardcoded credentials from `nats/config/nats-server.conf` and implement external secrets management
-2. **URGENT**: Delete Kubernetes secrets YAML files from repository and use External Secrets Operator
-3. **HIGH**: Add authentication to Tile38 and restrict monitoring port access on NATS
+1. **IMMEDIATE:** Remove all hardcoded credentials from `nats/config/nats-server.conf` and implement proper secrets management
+2. **URGENT:** Implement Kubernetes Secrets management using External Secrets Operator or Sealed Secrets
+3. **HIGH:** Add input validation to all shell scripts to prevent command injection
 
 ### 5. Implementation Issues
-- No secrets management integration (GCP Secret Manager referenced but not implemented)
-- Base64 encoding confused with encryption
-- Wildcard permissions violate least privilege
-- Development convenience prioritized over security in Docker Compose configurations
+- No centralized secrets management strategy
+- Shell scripts lack defensive programming practices
+- Kubernetes configurations missing security hardening (NetworkPolicies, SecurityContexts)
+- Monitoring endpoints exposed without authentication
+- Container security best practices not followed
 
 ---
 
 ## Additional Security Issues Found
 
 ### Configuration Vulnerabilities Present:
-- NATS cluster routing port (6222) exposed without clear inter-cluster authentication
-- JetStream storage configured as "file" without encryption-at-rest specification
-- No TLS configuration visible for NATS client connections
+- Stream configurations lack rate limiting
+- No TLS enforcement visible in NATS configuration
+- Docker Compose files expose multiple ports to host network
 
 ### Architecture Security Flaws Identified:
-- Single admin user instead of role-based admin accounts
-- No evident service mesh or mTLS between services
-- Missing network policies in Kubernetes configurations
+- No apparent service mesh or mTLS between services
+- Monitoring infrastructure may be over-exposed
+- No evidence of log sanitization for sensitive data
 
 ### Development Implementation Issues:
-- `.env.example` file exists but actual `.env` may contain production values
-- No pre-commit hooks evident for secrets scanning
-- Deployment scripts lack rollback mechanisms
+- `.env.example` contains realistic credential patterns
+- No pre-commit hooks for secret scanning visible
+- Scripts lack error handling that could leak information
 
 ### Insecure Coding Patterns Found:
-- Shell scripts use `set -e` but no trap for cleanup on failure
-- No input validation in deployment scripts
-- Environment variable fallbacks use revealing default values (`your-project-id`)
+- Use of `set -e` missing in several scripts (silent failures)
+- Inconsistent quoting of variables in shell scripts
+- No validation of JSON configuration files before deployment
 
 # monitoring
 
@@ -3332,26 +3359,111 @@ Monitoring, logging, metrics, and observability analysis
 
 ## Executive Summary
 
-After thorough analysis of this codebase, **limited monitoring and observability mechanisms were detected**. The repository primarily contains infrastructure configuration for NATS messaging and Tile38 geospatial services, with basic health checks and Kubernetes monitoring configurations. No application-level logging frameworks, APM tools, or comprehensive observability platforms are actively implemented in the code.
+This codebase is an **infrastructure-focused repository** containing configuration for NATS messaging, Tile38 geospatial database, and Kubernetes deployments. The repository implements **comprehensive monitoring and observability** through Grafana dashboards, Prometheus metrics, and alerting configurations for both staging and production environments.
 
 ---
 
-## 1. Health Checks & Probes
+## Observability Platforms Detected
 
-### 1.1 Docker Health Checks
+### Integrated Observability Solutions
 
-**NATS Service** (`/nats/Dockerfile`, `/nats/docker-compose.yml`):
+| Platform | Status | Implementation Details |
+|----------|--------|------------------------|
+| **Grafana** | ✅ IMPLEMENTED | Central dashboarding platform with dedicated dashboard configurations |
+| **Prometheus** | ✅ IMPLEMENTED | Metrics collection via ServiceMonitor CRDs in Kubernetes |
+| **GCP Cloud Monitoring** | ✅ IMPLEMENTED | Cloud Run and GKE monitoring dashboards configured |
+
+---
+
+## Monitoring Infrastructure
+
+### 1. Grafana Dashboards
+
+**Location:** `/grafana/dashboards/`
+
+The following pre-configured dashboards are implemented:
+
+| Dashboard | Environment | File |
+|-----------|-------------|------|
+| GCP Cloud Run Monitoring | Production | `gcp-cloud-run-monitoring-production.json` |
+| GCP Cloud Run Monitoring | Staging | `gcp-cloud-run-monitoring-staging.json` |
+| GKE Kubernetes Monitoring | Production | `gke-kubernetes-monitoring-production.json` |
+| GKE Kubernetes Monitoring | Staging | `gke-kubernetes-monitoring-staging.json` |
+| NATS JetStream Monitoring | Production | `nats-jetstream-monitoring-production.json` |
+| NATS JetStream Monitoring | Staging | `nats-jetstream-monitoring-staging.json` |
+| Tile38 Monitoring | Production | `tile38-monitoring-production.json` |
+| Tile38 Monitoring | Staging | `tile38-monitoring-staging.json` |
+
+### 2. Alerting Configuration
+
+**Location:** `/grafana/alerting/`
+
+| Script | Purpose |
+|--------|---------|
+| `setup-alerts.sh` | General alerting setup |
+| `setup-supabase-alerts.sh` | Supabase-specific alerting configuration |
+
+---
+
+## Metrics Collection
+
+### 1. Prometheus ServiceMonitor Configuration
+
+**NATS Monitoring (Kubernetes)**
+
+**Location:** `/nats/k8s/monitoring/`
+
+- Production: `/nats/k8s/monitoring/production/servicemonitor.yaml`
+- Staging: `/nats/k8s/monitoring/staging/servicemonitor.yaml`
+
+**Tile38 Monitoring (Kubernetes)**
+
+**Location:** `/tile38/k8s/monitoring/`
+
+- Production: `/tile38/k8s/monitoring/production/servicemonitor.yaml`
+- Staging: `/tile38/k8s/monitoring/staging/servicemonitor.yaml`
+
+### 2. NATS Monitoring Endpoints
+
+From `/nats/config/nats-server.conf` and Docker configuration:
+
+| Port | Purpose |
+|------|---------|
+| 4222 | Client connections |
+| 8222 | HTTP monitoring endpoint |
+| 6222 | Cluster routing |
+
+**Health Check Endpoint:** `http://localhost:8222/healthz`
+
+### 3. Tile38 Monitoring
+
+**Port:** 9851 (TCP + HTTP)
+
+**Health Check:** `tile38-cli PING` command
+
+---
+
+## Health Checks & Probes
+
+### 1. NATS Health Checks
+
+**Docker Implementation** (from `/nats/Dockerfile` and `/nats/docker-compose.yml`):
+
 ```dockerfile
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --spider -q http://localhost:8222/healthz || exit 1
 ```
 
-- **Type**: Liveness probe
-- **Endpoint**: `http://localhost:8222/healthz`
-- **Tool**: wget HTTP spider check
-- **Configuration**: 10s interval, 5s timeout, 3 retries, 10s start period
+**Configuration:**
+- Interval: 10 seconds
+- Timeout: 5 seconds
+- Start period: 10 seconds
+- Retries: 3
 
-**Tile38 Service** (`/tile38/docker-compose.yml`):
+### 2. Tile38 Health Checks
+
+**Docker Implementation** (from `/tile38/docker-compose.yml`):
+
 ```yaml
 healthcheck:
   test: ["CMD", "tile38-cli", "-a", "${TILE38_PASSWORD:-tile38secret}", "PING"]
@@ -3361,281 +3473,199 @@ healthcheck:
   start_period: 10s
 ```
 
-- **Type**: Liveness probe
-- **Tool**: Native tile38-cli PING command
-- **Configuration**: 10s interval, 5s timeout, 3 retries, 10s start period
+### 3. Kubernetes Probes
 
-### 1.2 Kubernetes Probes
+Based on the Kubernetes deployment structure, liveness and readiness probes are configured in:
 
-**NATS Kubernetes Deployment** (`/nats/k8s/base/statefulset.yaml`):
-```yaml
-livenessProbe:
-  httpGet:
-    path: /healthz
-    port: 8222
-  initialDelaySeconds: 10
-  periodSeconds: 30
-
-readinessProbe:
-  httpGet:
-    path: /healthz
-    port: 8222
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
-
-**Tile38 Kubernetes Deployment** (`/tile38/k8s/base/statefulset.yaml`):
-```yaml
-livenessProbe:
-  exec:
-    command: ["tile38-cli", "PING"]
-  initialDelaySeconds: 10
-  periodSeconds: 30
-  
-readinessProbe:
-  exec:
-    command: ["tile38-cli", "PING"]
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
+- `/nats/k8s/base/`
+- `/tile38/k8s/base/`
+- Production and staging specific configurations
 
 ---
 
-## 2. Monitoring Infrastructure (Kubernetes)
+## Infrastructure Monitoring Categories
 
-### 2.1 NATS Monitoring Configuration
+### 1. NATS JetStream Metrics
 
-**ServiceMonitor for Prometheus** (`/nats/k8s/monitoring/servicemonitor.yaml`):
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: circl-nats
-spec:
-  endpoints:
-  - port: monitoring
-    path: /metrics
-    interval: 30s
-```
+Monitored via dedicated Grafana dashboards:
+- Stream metrics
+- Consumer metrics
+- Message throughput
+- Connection statistics
+- JetStream storage utilization
 
-- **Integration**: Prometheus Operator (ServiceMonitor CRD)
-- **Metrics Endpoint**: `/metrics` on port 8222
-- **Scrape Interval**: 30 seconds
+### 2. Tile38 Geospatial Metrics
 
-### 2.2 Tile38 Monitoring Configuration
+Monitored via dedicated Grafana dashboards:
+- Geospatial query performance
+- Storage metrics
+- Connection statistics
 
-**ServiceMonitor for Prometheus** (`/tile38/k8s/monitoring/servicemonitor.yaml` - staging/production):
-- Similar Prometheus ServiceMonitor configuration for Tile38 metrics collection
+### 3. GCP Cloud Run Metrics
 
-### 2.3 Exposed Monitoring Ports
+Monitored via GCP Cloud Run dashboards:
+- Container instance metrics
+- Request latency
+- Memory utilization
+- CPU utilization
+- Error rates
 
-**NATS**:
-- Port `8222`: HTTP monitoring interface
-- Exposed in Docker, Kubernetes Service, and StatefulSet configurations
+### 4. GKE Kubernetes Metrics
 
-**Tile38**:
-- Port `9851`: Combined TCP + HTTP interface (includes monitoring)
-
----
-
-## 3. Metrics Collection
-
-### 3.1 NATS Built-in Metrics
-
-The NATS server configuration (`/nats/config/nats-server.conf`) exposes:
-```
-http: 0.0.0.0:8222
-```
-
-This enables NATS's built-in HTTP monitoring endpoints:
-- `/healthz` - Health status
-- `/varz` - General server statistics
-- `/connz` - Connection information
-- `/routez` - Route information
-- `/subsz` - Subscription information
-- `/jsz` - JetStream information
-
-### 3.2 JetStream Monitoring
-
-JetStream is enabled with observability configuration:
-```
-jetstream {
-    store_dir: "/data/jetstream"
-    max_mem: 256MB
-    max_file: 1GB
-}
-```
+Monitored via GKE Kubernetes dashboards:
+- Pod metrics
+- Node metrics
+- Deployment status
+- Resource utilization
 
 ---
 
-## 4. Logging Configuration
+## Environment-Specific Monitoring
 
-### 4.1 NATS Server Logging
+### Production Environment
 
-**Configuration** (`/nats/config/nats-server.conf`):
-```
-debug: false
-trace: false
-logtime: true
-log_file: "/var/log/nats/nats-server.log"
-```
+| Component | Monitoring Configuration |
+|-----------|-------------------------|
+| NATS | `/nats/k8s/production/` + `/nats/k8s/monitoring/production/` |
+| Tile38 | `/tile38/k8s/production/` + `/tile38/k8s/monitoring/production/` |
+| Cloud Run | `gcp-cloud-run-monitoring-production.json` |
+| GKE | `gke-kubernetes-monitoring-production.json` |
 
-- **Log Location**: `/var/log/nats/nats-server.log`
-- **Timestamp**: Enabled (`logtime: true`)
-- **Debug/Trace**: Disabled in production
-- **Log Volume**: Docker volume `nats-logs` mounted
+### Staging Environment
 
-### 4.2 Log Storage
-
-**Docker Volumes**:
-- `nats-logs:/var/log/nats` - NATS server logs
-- `nats-data:/data/jetstream` - JetStream data (includes operational metadata)
+| Component | Monitoring Configuration |
+|-----------|-------------------------|
+| NATS | `/nats/k8s/staging/` + `/nats/k8s/monitoring/staging/` |
+| Tile38 | `/tile38/k8s/staging/` + `/tile38/k8s/monitoring/staging/` |
+| Cloud Run | `gcp-cloud-run-monitoring-staging.json` |
+| GKE | `gke-kubernetes-monitoring-staging.json` |
 
 ---
 
-## 5. Alerting Configuration
+## Operational Scripts
 
-### 5.1 Prometheus AlertManager Rules
+### NATS Operational Tools
 
-**NATS Alerts** (`/nats/k8s/monitoring/staging/alerts.yaml`, `/nats/k8s/monitoring/production/alerts.yaml`):
+**Location:** `/nats/scripts/`
 
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: circl-nats-alerts
-spec:
-  groups:
-  - name: nats.rules
-    rules:
-    - alert: NATSDown
-      expr: up{job="circl-nats"} == 0
-      for: 1m
-      labels:
-        severity: critical
-      annotations:
-        summary: "NATS server is down"
-```
-
-**Tile38 Alerts** (`/tile38/k8s/monitoring/staging/alerts.yaml`, `/tile38/k8s/monitoring/production/alerts.yaml`):
-- Similar PrometheusRule configurations for Tile38 service monitoring
-
-**Alert Types Detected**:
-- Service availability alerts (up/down)
-- Severity levels: critical
+| Script | Purpose |
+|--------|---------|
+| `test-connection.sh` | Connection testing/verification |
+| `stream-info.sh` | Stream information retrieval |
+| `get-last-message.sh` | Message retrieval for debugging |
+| `create-streams.sh` | Stream creation |
+| `update-streams.sh` | Stream updates |
+| `delete-streams.sh` | Stream deletion |
 
 ---
 
-## 6. Documentation References
+## Documentation for Observability
 
-### 6.1 Observability Guide
+**Location:** `/docs/guides/observability.md`
 
-**File**: `/docs/guides/observability.md`
-
-This documentation file indicates planned observability strategy but represents **documentation only**, not implemented code:
-- References to logging patterns
-- Metrics collection strategies
-- Tracing considerations
-
-### 6.2 Operations Documentation
-
-**Files**:
+Additional operational documentation:
 - `/docs/operations/nats-overview.md`
 - `/docs/operations/nats-dlq-operations.md`
-- `/docs/operations/nats-authentication.md`
-
-These document operational procedures for monitoring NATS but don't contain implementation code.
+- `/docs/DLQ_OPERATIONS_GUIDE.md`
 
 ---
 
-## 7. What is NOT Present
+## Deployment Scripts with Monitoring
 
-The following monitoring/observability tools were **NOT detected** in this codebase:
+### NATS Deployment
 
-- ❌ Application-level logging frameworks (Winston, Pino, Bunyan, etc.)
-- ❌ APM tools (New Relic, DataDog, Dynatrace, etc.)
-- ❌ Distributed tracing (OpenTelemetry, Jaeger, Zipkin, etc.)
-- ❌ Error tracking services (Sentry, Rollbar, Bugsnag, etc.)
-- ❌ Log aggregation platforms (ELK, Splunk, Loki, etc.)
-- ❌ Custom metrics libraries (prom-client, statsd, etc.)
-- ❌ RUM/Session replay tools
-- ❌ Synthetic monitoring
-- ❌ Dashboard configurations (Grafana dashboards, etc.)
+- `/nats/k8s/deploy-production.sh`
+- `/nats/k8s/deploy-staging.sh`
+
+### Tile38 Deployment
+
+- `/tile38/k8s/deploy-production.sh`
+- `/tile38/k8s/deploy-staging.sh`
 
 ---
 
-## 8. Summary Table
+## Message Queue Monitoring (NATS JetStream)
 
-| Category | Tool/Mechanism | Status | Location |
-|----------|---------------|--------|----------|
-| Health Checks | Docker HEALTHCHECK | ✅ Implemented | `/nats/Dockerfile`, `/nats/docker-compose.yml`, `/tile38/docker-compose.yml` |
-| Health Checks | Kubernetes Probes | ✅ Implemented | `/nats/k8s/base/statefulset.yaml`, `/tile38/k8s/base/statefulset.yaml` |
-| Metrics | Prometheus ServiceMonitor | ✅ Configured | `/nats/k8s/monitoring/`, `/tile38/k8s/monitoring/` |
-| Metrics | NATS HTTP Monitoring | ✅ Enabled | `/nats/config/nats-server.conf` |
-| Logging | NATS File Logging | ✅ Configured | `/nats/config/nats-server.conf` |
-| Alerting | PrometheusRule | ✅ Configured | K8s monitoring directories |
-| APM | None | ❌ Not present | - |
-| Tracing | None | ❌ Not present | - |
-| Error Tracking | None | ❌ Not present | - |
+### Stream Configurations
+
+**Location:** `/nats/streams-with-circl-prefix/`
+
+Configured streams for both production and staging:
+
+| Stream | Production Config | Staging Config |
+|--------|-------------------|----------------|
+| BFF | `bff-prod.json` | `bff-staging.json` |
+| Chat | `chat-prod.json` | `chat-staging.json` |
+| DLQ (Dead Letter Queue) | `dlq-prod.json` | `dlq-staging.json` |
+| DMS | `dms-prod.json` | `dms-staging.json` |
+| DMS2 | `dms2-prod.json` | `dms2-staging.json` |
+| IoT | `iot-prod.json` | `iot-staging.json` |
+| IoT Location | `iot_location-prod.json` | `iot_location-staging.json` |
+| OMS | `oms-prod.json` | `oms-staging.json` |
+| OMS2 | `oms2-prod.json` | `oms2-staging.json` |
+| Voice | `voice-prod.json` | `voice-staging.json` |
+| WMS | `wms-prod.json` | `wms-staging.json` |
+| WMS2 | `wms2-prod.json` | `wms2-staging.json` |
+
+### Dead Letter Queue Monitoring
+
+Dedicated DLQ operations documented in:
+- `/docs/DLQ_OPERATIONS_GUIDE.md`
+- `/docs/operations/nats-dlq-operations.md`
+
+---
+
+## Summary of Implemented Monitoring Tools
+
+| Category | Tool/Technology | Status |
+|----------|-----------------|--------|
+| **Dashboarding** | Grafana | ✅ Implemented |
+| **Metrics Collection** | Prometheus (via ServiceMonitor) | ✅ Implemented |
+| **Cloud Monitoring** | GCP Cloud Monitoring | ✅ Implemented |
+| **Container Health** | Docker HEALTHCHECK | ✅ Implemented |
+| **Kubernetes Probes** | Liveness/Readiness Probes | ✅ Implemented |
+| **Alerting** | Grafana Alerting | ✅ Implemented |
+| **Message Queue Metrics** | NATS JetStream native + Prometheus | ✅ Implemented |
+| **Geospatial DB Metrics** | Tile38 native + Prometheus | ✅ Implemented |
 
 ---
 
 ## Raw Dependencies Section
 
-### package.json (Root)
+### NATS Dockerfile Dependencies
 
-```json
-{
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.9.2",
-    "js-yaml": "^4.1.0",
-    "json-schema-to-typescript": "^15.0.4",
-    "ts-json-schema-generator": "^2.4.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3",
-    "yaml": "^2.8.1"
-  }
-}
+```dockerfile
+FROM nats:2.10-alpine
+RUN apk add --no-cache wget
 ```
 
-### Analysis of Dependencies
+**Base Image:** `nats:2.10-alpine`
+**Additional Packages:** `wget` (for healthchecks)
 
-After reviewing all dependencies:
+### NATS Docker Compose Dependencies
 
-| Package | Type | Monitoring/Observability Related? |
-|---------|------|-----------------------------------|
-| @types/js-yaml | TypeScript types | ❌ No |
-| @types/node | TypeScript types | ❌ No |
-| js-yaml | YAML parsing | ❌ No |
-| json-schema-to-typescript | Schema tooling | ❌ No |
-| ts-json-schema-generator | Schema tooling | ❌ No |
-| tsx | TypeScript execution | ❌ No |
-| typescript | TypeScript compiler | ❌ No |
-| yaml | YAML parsing | ❌ No |
+```yaml
+image: nats:2.10-alpine
+image: natsio/nats-box:latest
+```
 
-**Conclusion**: No monitoring, logging, metrics, or observability-related packages are present in the dependencies.
+### Tile38 Docker Compose Dependencies
 
-### Docker Images Used
+```yaml
+image: tile38/tile38:latest
+```
 
-| Image | Purpose | Built-in Monitoring |
-|-------|---------|---------------------|
-| `nats:2.10-alpine` | NATS messaging server | ✅ HTTP monitoring on port 8222 |
-| `natsio/nats-box:latest` | NATS CLI tools | ❌ Management only |
-| `tile38/tile38:latest` | Geospatial database | ✅ Basic stats via CLI |
+### Infrastructure Dependencies Summary
+
+| Component | Image/Version |
+|-----------|---------------|
+| NATS Server | `nats:2.10-alpine` |
+| NATS CLI/Tools | `natsio/nats-box:latest` |
+| Tile38 | `tile38/tile38:latest` |
 
 ---
 
-## Conclusion
-
-This codebase has **minimal but functional monitoring** focused on infrastructure health:
-
-1. **Health checks** are properly implemented for both Docker and Kubernetes deployments
-2. **Prometheus integration** is configured via ServiceMonitor CRDs
-3. **Basic alerting** is set up through PrometheusRule resources
-4. **NATS native monitoring** is enabled via HTTP interface
-
-The observability setup is infrastructure-focused, appropriate for this repository which contains deployment configurations rather than application code. Application-level monitoring would typically be implemented in the actual service codebases that connect to these infrastructure components.
+**Note:** This repository does not contain `package.json`, `requirements.txt`, or `pyproject.toml` files as it is primarily an infrastructure configuration repository rather than an application codebase. The monitoring and observability tools detected are infrastructure-level configurations for Grafana, Prometheus, and cloud-native monitoring solutions.
 
 # ml_services
 
@@ -3645,23 +3675,23 @@ The observability setup is infrastructure-focused, appropriate for this reposito
 
 ## Executive Summary
 
-After thorough analysis of the provided codebase dependencies, **no machine learning services, AI technologies, or ML-related integrations were identified** in this codebase.
+After thorough analysis of the provided codebase, **no machine learning services, AI technologies, or ML-related integrations were identified**. The codebase consists entirely of infrastructure configuration files for non-ML services.
 
 ---
 
 ## Analysis Results
 
 ### 1. External ML Service Providers
-**Status: None Found**
+**Status**: ❌ None Found
 
 No usage detected of:
 - Cloud ML Services (AWS SageMaker, Azure ML, Google AI Platform, Databricks)
-- AI APIs (OpenAI, Anthropic, Groq, Cohere, Hugging Face Inference API)
-- Specialized Services (speech recognition, computer vision APIs)
+- AI APIs (OpenAI, Anthropic, Groq, Cohere, Hugging Face)
+- Specialized Services (Speech recognition, Computer vision)
 - MLOps Platforms (MLflow, Weights & Biases, Neptune, ClearML)
 
 ### 2. ML Libraries and Frameworks
-**Status: None Found**
+**Status**: ❌ None Found
 
 No usage detected of:
 - Deep Learning frameworks (PyTorch, TensorFlow, JAX, Keras)
@@ -3671,64 +3701,57 @@ No usage detected of:
 - Audio/Speech libraries (Whisper, librosa, speechbrain)
 
 ### 3. Pre-trained Models and Model Hubs
-**Status: None Found**
+**Status**: ❌ None Found
 
 No usage detected of:
-- Hugging Face Models or transformers
-- TensorFlow Hub or PyTorch Hub
-- Custom model repositories
-- Specific models (BERT, GPT variants, Whisper, CLIP)
+- Hugging Face Models
+- TensorFlow Hub
+- PyTorch Hub
+- Any pre-trained model downloads or references
 
 ### 4. AI Infrastructure and Deployment
-**Status: None Found**
+**Status**: ❌ None Found
 
-No usage detected of:
-- Model Serving solutions (TorchServe, TensorFlow Serving)
-- GPU/CUDA dependencies
-- ML-specific containerization
+No ML-specific infrastructure detected:
+- No model serving configurations (TorchServe, TensorFlow Serving)
+- No GPU/CUDA requirements
+- No ML-specific containerization
 
 ---
 
-## Identified Technologies (Non-ML)
+## Technologies Actually Present in Codebase
 
-The codebase contains the following infrastructure components:
+The analyzed files contain only infrastructure services unrelated to ML:
 
-### NATS Message Queue
-- **Type**: Message broker / Event streaming
-- **Purpose**: Inter-service communication
-- **Image**: `nats:2.10-alpine`, `natsio/nats-box:latest`
-- **Not ML-related**: Message queuing system for microservices architecture
+### NATS Message Broker
+| Attribute | Value |
+|-----------|-------|
+| **Type** | Message Queue / Pub-Sub System |
+| **Image** | `nats:2.10-alpine` |
+| **Purpose** | Inter-service communication, event streaming |
+| **ML Relevance** | None - General messaging infrastructure |
 
 ### Tile38
-- **Type**: Geospatial database
-- **Purpose**: Location-based data storage and queries
-- **Image**: `tile38/tile38:latest`
-- **Not ML-related**: Geofencing and spatial indexing (rule-based, not ML)
-
-### Development Dependencies (JavaScript/TypeScript)
-| Package | Purpose | ML-Related |
-|---------|---------|------------|
-| typescript | TypeScript compiler | No |
-| tsx | TypeScript execution | No |
-| @types/node | Node.js type definitions | No |
-| @types/js-yaml | YAML type definitions | No |
-| js-yaml | YAML parsing | No |
-| yaml | YAML parsing | No |
-| json-schema-to-typescript | Schema conversion | No |
-| ts-json-schema-generator | Schema generation | No |
+| Attribute | Value |
+|-----------|-------|
+| **Type** | Geospatial Database |
+| **Image** | `tile38/tile38:latest` |
+| **Purpose** | Geofencing, real-time location tracking |
+| **ML Relevance** | None - Geospatial data storage only |
 
 ---
 
 ## Security and Compliance Considerations
 
-### API Keys/Credentials
-- **NATS**: Password-based authentication via environment variables
-- **Tile38**: Password-based authentication via environment variables
-- **No ML service credentials** present in the codebase
+### Current State
+- **ML API Keys/Credentials**: Not applicable - no ML services present
+- **ML Data Privacy**: Not applicable - no data sent to ML services
+- **Model Security**: Not applicable - no models deployed
 
-### Data Privacy
-- **No data** is sent to 3rd party ML services
-- All identified services (NATS, Tile38) are self-hosted
+### Non-ML Security Observations
+The infrastructure files do contain credentials that should be properly secured:
+- NATS service passwords (environment variables)
+- Tile38 authentication password
 
 ---
 
@@ -3739,29 +3762,33 @@ The codebase contains the following infrastructure components:
 | **Total 3rd Party ML Services** | 0 |
 | **ML Libraries/Frameworks** | 0 |
 | **Pre-trained Models** | 0 |
-| **AI Infrastructure Components** | 0 |
+| **ML Infrastructure Components** | 0 |
 | **Major ML Dependencies** | None |
-| **Architecture Pattern** | N/A (No ML components) |
+| **Architecture Pattern** | No ML architecture present |
 
 ### Risk Assessment
 
 | Risk Category | Assessment |
-|---------------|------------|
-| ML Vendor Lock-in | **None** - No ML services used |
-| ML API Cost Exposure | **None** - No external ML APIs |
-| Model Security Risks | **None** - No models deployed |
-| Data Privacy (ML) | **None** - No data sent to ML services |
+|--------------|------------|
+| **ML Vendor Lock-in** | No risk - no ML vendors |
+| **ML Service Costs** | No costs - no ML services |
+| **ML Data Privacy** | No concerns - no ML data flows |
+| **ML Model Dependencies** | None identified |
 
 ---
 
-## Conclusion
+## Recommendations
 
-This codebase is a **non-ML application** focused on:
-- TypeScript/JavaScript development tooling
-- Message queue infrastructure (NATS)
-- Geospatial data handling (Tile38)
+1. **Scope Verification**: The provided codebase appears to be a subset focused on infrastructure. If ML services exist in this project, they may be in files not included in this analysis.
 
-There are **no machine learning services, AI technologies, or ML-related integrations** present in the analyzed dependencies and configuration files.
+2. **Additional Files to Review**: To complete ML analysis, consider providing:
+   - `requirements.txt` or `pyproject.toml` (Python dependencies)
+   - `package.json` (Node.js dependencies)
+   - Application source code files (`.py`, `.js`, `.ts`)
+   - Additional Dockerfiles for application services
+   - Environment configuration files
+
+3. **Service Names Suggesting Potential ML**: The NATS configuration references services named `voice` and `chat` which *might* use ML in their implementations, but no ML code was found in the provided files.
 
 # feature_flags
 
@@ -3769,76 +3796,72 @@ Feature flag frameworks and usage patterns analysis
 
 # Feature Flag Analysis Report
 
-## Repository: integration-circl_ebe63a26
-
----
-
-## Analysis Summary
+## Summary
 
 **no feature flag usage detected**
 
 ---
 
-## Detailed Analysis
+## Analysis Details
 
-After a comprehensive review of the codebase, I found no evidence of feature flag implementations:
+After thoroughly analyzing the repository structure and all provided files, I found no evidence of feature flag implementations in this codebase.
 
-### 1. Dependency Analysis
+### What Was Checked
 
-**No feature flag libraries found in `/package.json`:**
-- No `launchdarkly-*` packages
-- No `flagsmith-*` packages
-- No `@splitsoftware/*` packages
-- No `@unleash/*` packages
-- No `configcat-*` packages
-- No custom feature flag utilities
+#### 1. Commercial Platform SDKs
+- ❌ No Flagsmith integration found
+- ❌ No LaunchDarkly SDK (`launchdarkly-*`)
+- ❌ No Split.io SDK (`@splitsoftware/*`)
+- ❌ No Optimizely SDK
+- ❌ No ConfigCat SDK (`configcat-*`)
+- ❌ No Unleash SDK (`@unleash/*`)
 
-The devDependencies only contain TypeScript tooling, YAML parsing, and schema generation utilities.
+#### 2. Dependencies Analysis
+The repository contains only infrastructure-related dependencies:
+- **NATS** - Message streaming (not feature flags)
+- **Tile38** - Geospatial database (not feature flags)
+- **Docker/Kubernetes** - Container orchestration (not feature flags)
+- **Grafana** - Monitoring dashboards (not feature flags)
 
-### 2. Configuration Files Analysis
+#### 3. Environment Variables
+Reviewed `.env.example` patterns - all environment variables are for:
+- Service passwords (`NATS_*_PASSWORD`, `TILE38_PASSWORD`)
+- Connection strings
+- Infrastructure configuration
 
-**`.env.example` contents were not provided**, but based on the infrastructure configuration files reviewed:
+No feature flag-related environment variables were detected (e.g., no `FEATURE_*`, `FF_*`, `FLAG_*` patterns).
 
-- `/nats/docker-compose.yml` - Contains only NATS authentication passwords
-- `/tile38/docker-compose.yml` - Contains only Tile38 authentication passwords
-- `/nats/config/nats-server.conf` - NATS server configuration (not feature flags)
-
-No feature flag SDK keys, feature flag endpoints, or toggle configurations were detected.
-
-### 3. Repository Structure Analysis
-
-This repository appears to be an **infrastructure/integration layer** containing:
-
-- **NATS messaging infrastructure** (JetStream configuration, Kubernetes deployments)
-- **Tile38 geospatial database** (Docker and Kubernetes deployments)
-- **Documentation** (architecture guides, deployment docs, operations runbooks)
-- **Deployment scripts** (Railway, Kubernetes, GCP)
-
-The codebase contains **no application code** where feature flags would typically be evaluated. It consists primarily of:
-- Docker/Docker Compose configurations
-- Kubernetes manifests
-- Shell scripts for deployment
-- Documentation in Markdown format
-
-### 4. Code Pattern Search
-
-No evidence of common feature flag patterns:
-- No `isFeatureEnabled()` calls
-- No `getFeatureFlag()` implementations
-- No conditional rendering based on flags
-- No A/B test implementations
-- No gradual rollout mechanisms
-- No kill switch implementations
+#### 4. Custom Implementation Search
+- ❌ No database-driven feature flag tables
+- ❌ No feature flag configuration files (JSON/YAML)
+- ❌ No feature flag middleware or evaluation logic
+- ❌ No A/B testing frameworks
 
 ---
 
-## Recommendation
+## Repository Context
 
-If feature flags are needed for this integration layer in the future, consider:
+This repository (`integration-circl`) appears to be an **infrastructure/integration layer** focused on:
 
-1. **For infrastructure toggles** (e.g., enabling/disabling NATS streams): Use environment variables in Kubernetes ConfigMaps
-2. **For service-level flags**: Implement in the actual application services (BFF, OMS, DMS, IOT) that consume this infrastructure
-3. **For deployment flags**: Use CI/CD pipeline variables (Railway environment variables are already configured for secrets)
+1. **NATS JetStream** - Event streaming configuration
+2. **Tile38** - Geospatial data services
+3. **Kubernetes deployments** - For staging/production environments
+4. **Grafana monitoring** - Dashboards and alerting
+
+The codebase is primarily configuration-driven (YAML, JSON, shell scripts) for infrastructure services rather than application code where feature flags would typically be implemented.
+
+---
+
+## Recommendations
+
+If feature flags are needed for this integration layer, consider:
+
+1. **For Infrastructure Toggles**: Use Kubernetes ConfigMaps with environment variable injection
+2. **For Application-Level Flags**: Implement in the consuming services (BFF, OMS, DMS, etc.) rather than this infrastructure repository
+3. **Recommended Platforms** for the overall system:
+   - **Unleash** (self-hosted) - Good for microservices architecture
+   - **LaunchDarkly** - Enterprise-grade with strong SDK support
+   - **Flagsmith** - Open-source option with good pricing
 
 # prompt_security_check
 
@@ -3850,133 +3873,645 @@ LLM and prompt injection vulnerability assessment
 
 ### 1.1 LLM Infrastructure Identification
 
-After comprehensive scanning of the repository using all detection strategies, I performed the following analysis:
+After comprehensive analysis of the repository using all detection strategies, I have scanned:
 
 #### Detection Strategy 1: Library and Package Detection
-
-**package.json analysis:**
-```json
-{
-  "name": "integration-circl",
-  "version": "1.0.0",
-  "description": "CIRCL Integration Layer - NATS and Tile38 infrastructure",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {},
-  "devDependencies": {}
-}
-```
-
-**Finding:** No LLM-related dependencies found. The package.json has empty dependencies.
+- **No package/dependency files found** containing LLM libraries
+- No `requirements.txt`, `package.json`, `go.mod`, `Cargo.toml`, or similar dependency manifests with LLM packages
+- No vector database dependencies (Pinecone, Weaviate, Chroma, FAISS)
 
 #### Detection Strategy 2: Import/Include Pattern Matching
-
-Searched all files for:
-- `openai`, `anthropic`, `google.generativeai`, `transformers`
-- `langchain`, `llamaindex`, `semantic-kernel`
-- Any AI/ML SDK imports
-
-**Finding:** No LLM-related imports detected in any files.
+- **No imports detected** for: `anthropic`, `openai`, `google.generativeai`, `transformers`, `langchain`, `llama_index`
+- No JavaScript/TypeScript imports of LLM SDKs
+- No Go, Java, C#, Ruby, PHP, or Rust LLM library imports
 
 #### Detection Strategy 3: API Client Instantiation Patterns
-
-Searched for patterns like:
-- `new OpenAI(`, `new Anthropic(`, `Anthropic(`
-- Any LLM client instantiation
-
-**Finding:** No LLM client instantiation patterns found.
+- **No LLM client instantiations found** (`Anthropic(`, `OpenAI(`, `GoogleGenerativeAI(`, etc.)
+- Repository contains only shell scripts, JSON configurations, and YAML/Markdown documentation
 
 #### Detection Strategy 4: API Method Call Patterns
-
-Searched for:
-- `.messages.create(`, `.chat.completions.create(`
-- `.generateContent(`, `.generate(`
-- HTTP calls to `api.openai.com`, `api.anthropic.com`
-
-**Finding:** No LLM API calls detected.
+- **No LLM API calls detected** (`.messages.create(`, `.chat.completions.create(`, `.generateContent(`, etc.)
+- No HTTP requests to `api.openai.com`, `api.anthropic.com`, or `generativelanguage.googleapis.com`
 
 #### Detection Strategy 5: Configuration and Environment Variables
-
-**.env.example analysis:**
+Examined `.env.example`:
 ```
+# Environment variables template
+# Copy this file to .env and fill in your values
+
 # NATS Configuration
 NATS_URL=nats://localhost:4222
 NATS_USER=
 NATS_PASSWORD=
 
-# Tile38 Configuration  
+# Tile38 Configuration
 TILE38_URL=localhost:9851
 
 # Environment
-NODE_ENV=development
+ENVIRONMENT=development
 ```
 
-**Finding:** Environment variables are for NATS and Tile38 infrastructure only. No `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or similar LLM API keys.
+**Finding:** No LLM-related environment variables (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_API_KEY`, etc.)
 
 #### Detection Strategy 6: Prompt-Related Patterns
-
-Searched for:
-- Variables named `prompt`, `system_prompt`, `messages`
-- Template files with `.prompt` extension
-- Directories named `prompts`
-
-**Finding:** No prompt-related patterns found.
+- **No prompt templates** or prompt management systems
+- No files with `.prompt` or `.tmpl` extensions related to LLMs
+- No directories named `prompts`, `ai`, `ml`, or `llm`
 
 #### Detection Strategy 7: Custom Implementation Patterns
+- **No custom LLM wrapper classes** detected
+- No files with names containing `llm`, `ai`, `ml`, `claude`, `gpt`, `analyzer`, `generator` in an LLM context
+- Files named "analyzer" or similar refer to infrastructure monitoring, not AI
 
-Analyzed file naming patterns:
-- No files contain `llm`, `ai`, `ml`, `claude`, `gpt`, `analyzer`, `generator` in AI/ML context
-- The repository contains infrastructure configuration only
+### 1.2 Repository Content Analysis
 
-### 1.2 Repository Purpose Analysis
+This repository is an **infrastructure integration layer** containing:
 
-Based on the file structure and content, this repository is:
+| Component | Description | Technology |
+|-----------|-------------|------------|
+| NATS | Message streaming configuration | JetStream, Shell scripts |
+| Tile38 | Geospatial database deployment | Kubernetes, Docker |
+| Grafana | Monitoring dashboards | JSON configurations |
+| Documentation | Architecture and operations docs | Markdown |
 
-1. **NATS Messaging Infrastructure** - Message streaming configuration
-   - Dockerfile, docker-compose.yml for NATS server
-   - Kubernetes deployments for staging/production
-   - Stream configurations (IoT, OMS)
-   - Authentication guides
+**Key Files Examined:**
 
-2. **Tile38 Geospatial Database** - Location services infrastructure
-   - Docker and Kubernetes configurations
-   - Monitoring setup
-
-3. **Documentation** - Architecture and operations guides
-   - BFF (Backend-for-Frontend) design
-   - RBAC documentation
-   - Deployment guides (Railway)
-   - Integration strategies (WorkOS for auth)
+1. **`nats/config/nats-server.conf`** - NATS server configuration (no LLM)
+2. **`nats/scripts/*.sh`** - Stream management scripts (shell only)
+3. **`tile38/docker-compose.yml`** - Container orchestration (no LLM)
+4. **`grafana/dashboards/*.json`** - Monitoring dashboards (metrics only)
+5. **All Kubernetes manifests** - Infrastructure deployment (no LLM)
 
 ### 1.3 LLM Usage Summary
 
 **Total LLM Integrations Found:** 0
 
-The repository contains:
-- Infrastructure-as-code (Kubernetes manifests, Docker configurations)
-- Shell scripts for deployment and operations
-- Configuration files (NATS, Tile38)
-- Documentation (Markdown files)
+**Repository Purpose:** This is a DevOps/infrastructure repository for:
+- NATS JetStream message streaming configuration
+- Tile38 geospatial database deployment
+- Grafana monitoring and alerting setup
+- Kubernetes deployment manifests for staging/production
 
 ---
 
-## Assessment Result
+## Final Determination
 
 **No LLM usage detected - prompt injection review not relevant for this repository.**
 
-This is an infrastructure configuration repository for NATS messaging and Tile38 geospatial services. It contains:
-- Container orchestration configurations
-- Message stream definitions
-- Authentication/authorization documentation
-- Deployment scripts and guides
+This repository contains:
+- Infrastructure-as-Code (Kubernetes manifests, Docker Compose)
+- Message streaming configuration (NATS JetStream)
+- Geospatial database setup (Tile38)
+- Monitoring configuration (Grafana dashboards and alerts)
+- Shell scripts for operations
+- Documentation (Markdown)
 
-There are no:
-- LLM API integrations
-- AI/ML model usage
-- Prompt templates or processing
-- Vector database integrations for RAG
-- Agent frameworks
+There are no AI/ML models, LLM API integrations, prompt templates, vector databases, or any other LLM-related infrastructure in this codebase. The security focus for this repository should be on:
+- Kubernetes security best practices
+- Secret management for NATS/Tile38 credentials
+- Network policies and access controls
+- Infrastructure hardening
 
-The security considerations for this repository would fall under traditional infrastructure security (secrets management, network policies, access controls) rather than LLM/prompt injection security.
+# data_layer
+
+Data persistence and access patterns
+
+# Data Layer Architecture Analysis
+
+## Executive Summary
+
+This repository (`integration-circl_545ade04`) is an **infrastructure/integration layer** codebase, NOT a traditional application backend. It contains configuration and deployment specifications for messaging and geospatial data infrastructure. **No traditional database, ORM, or data access layer code is present.**
+
+---
+
+## Database Architecture
+
+### 1. Primary Data Stores Identified
+
+#### NATS JetStream (Message Streaming)
+| Attribute | Value |
+|-----------|-------|
+| **Type** | Distributed message streaming (event-driven) |
+| **Purpose** | Event sourcing, inter-service communication, message persistence |
+| **Connection Configuration** | Port 4222 (clients), 8222 (HTTP monitoring), 6222 (cluster routing) |
+| **Persistence** | JetStream with append-only storage at `/data/jetstream` |
+
+**Connection Pooling:** Handled by NATS client libraries (not configured in this repo)
+
+#### Tile38 (Geospatial Database)
+| Attribute | Value |
+|-----------|-------|
+| **Type** | In-memory geospatial database with persistence |
+| **Purpose** | Location/geofencing data storage and queries |
+| **Connection Configuration** | Port 9851 (TCP + HTTP) |
+| **Persistence** | Append-only file at `/data` |
+
+---
+
+### 2. Data Models/Entities
+
+#### NATS JetStream Streams (Message Collections)
+
+Based on stream configuration files in `/nats/streams-with-circl-prefix/`:
+
+| Stream Name | Environments | Domain Purpose |
+|-------------|--------------|----------------|
+| `bff` | prod, staging | Backend-for-Frontend events |
+| `chat` | prod, staging | Chat messaging events |
+| `dlq` | prod, staging | Dead Letter Queue |
+| `dms` / `dms2` | prod, staging | Document Management System events |
+| `iot` | prod, staging | IoT device events |
+| `iot_location` | prod, staging | IoT location-specific events |
+| `oms` / `oms2` | prod, staging | Order Management System events |
+| `voice` | prod, staging | Voice communication events |
+| `wms` / `wms2` | prod, staging | Warehouse Management System events |
+
+**Entity Relationships:** Event-driven (pub/sub), no direct relationships - consumers subscribe to subjects
+
+#### Tile38 Geospatial Data
+
+| Data Type | Purpose |
+|-----------|---------|
+| Points/Objects | Location coordinates for tracking |
+| Geofences | Geographic boundary definitions |
+
+*Note: No schema definitions present in repository - Tile38 is schemaless*
+
+---
+
+### 3. Data Access Layer
+
+**No ORM/ODM implementation present.** This is infrastructure-as-code, not application code.
+
+#### NATS Access Patterns
+```
+# Authentication-based access (from nats-server.conf pattern)
+Users: admin, bff, oms, oms2, dms, iot, voice, chat
+Protocol: nats://username:password@host:4222
+```
+
+#### Tile38 Access Patterns
+```
+# Password-protected access
+Protocol: tile38-cli -a $TILE38_PASSWORD
+```
+
+**Query Builders:** Not applicable - clients connect via protocol-specific drivers
+
+---
+
+### 4. Caching Layer
+
+**No dedicated caching layer (Redis/Memcached) is implemented.**
+
+However, both data stores have caching characteristics:
+- **NATS JetStream:** In-memory with disk persistence
+- **Tile38:** In-memory geospatial index with append-only persistence
+
+---
+
+## Data Operations
+
+### 1. CRUD Operations
+
+#### NATS Stream Management Scripts
+Located in `/nats/scripts/`:
+
+| Script | Operation |
+|--------|-----------|
+| `create-streams.sh` | Create stream definitions |
+| `delete-streams.sh` | Remove streams |
+| `update-streams.sh` | Modify stream configurations |
+| `stream-info.sh` | Read stream metadata |
+| `get-last-message.sh` | Retrieve latest message |
+
+**Bulk Operations:** Stream creation/deletion via shell scripts iterating over JSON configs
+
+**Soft Deletes:** Not implemented - streams use retention policies
+
+#### Dead Letter Queue (DLQ) Pattern
+From `/docs/DLQ_OPERATIONS_GUIDE.md`:
+- Failed messages routed to `dlq` stream
+- Operational procedures documented for retry/inspection
+
+---
+
+### 2. Transactions
+
+**No traditional transaction implementation.** 
+
+NATS JetStream provides:
+- At-least-once delivery guarantees
+- Message acknowledgment patterns
+- No distributed transaction or saga patterns visible in configuration
+
+---
+
+### 3. Data Validation
+
+**No schema validation implemented at infrastructure level.**
+
+- NATS streams accept any message payload (validation responsibility of publishers)
+- Tile38 validates geospatial coordinate formats at protocol level
+
+---
+
+### 4. Query Optimization
+
+**Not applicable** - No query layer implemented. Performance handled by:
+- NATS: Stream partitioning by subject, consumer groups
+- Tile38: Spatial indexing built into engine
+
+---
+
+## Data Migration & Seeding
+
+### 1. Migration Strategy
+
+#### NATS Stream Versioning
+```
+streams-with-circl-prefix/
+├── bff-prod.json        # Production stream config
+├── bff-staging.json     # Staging stream config
+├── dms-prod.json        # v1 DMS
+├── dms2-prod.json       # v2 DMS (parallel stream)
+```
+
+**Pattern Observed:** New stream versions created alongside existing (`dms` → `dms2`, `oms` → `oms2`, `wms` → `wms2`)
+
+**Deployment Scripts:**
+- `/nats/k8s/deploy-production.sh`
+- `/nats/k8s/deploy-staging.sh`
+- `/tile38/k8s/deploy-production.sh`
+- `/tile38/k8s/deploy-staging.sh`
+
+**Rollback:** Manual via `delete-streams.sh` and `create-streams.sh`
+
+---
+
+### 2. Data Seeding
+
+**No seed data present.** Test data generation is responsibility of consuming services.
+
+---
+
+## Data Security
+
+### 1. Data Protection
+
+#### Encryption at Rest
+| System | Status |
+|--------|--------|
+| NATS JetStream | Volume-level (depends on infrastructure) |
+| Tile38 | Volume-level (depends on infrastructure) |
+
+**No field-level encryption configured.**
+
+#### Authentication Credentials
+From `docker-compose.yml` and `.env.example`:
+
+```yaml
+# NATS Users
+NATS_ADMIN_PASSWORD
+NATS_BFF_PASSWORD
+NATS_OMS_PASSWORD
+NATS_OMS2_PASSWORD
+NATS_DMS_PASSWORD
+NATS_IOT_PASSWORD
+NATS_VOICE_PASSWORD
+NATS_CHAT_PASSWORD
+
+# Tile38
+TILE38_PASSWORD
+```
+
+**Secret Management:** 
+- GCP Secrets: `/nats/k8s/setup-gcp-secrets.sh`
+- Kubernetes Secrets in `/nats/k8s/production/` and `/nats/k8s/staging/`
+
+---
+
+### 2. Access Control
+
+#### NATS User-Based Access
+Per-service credentials isolate access:
+- `bff` user → BFF service only
+- `oms` user → Order Management only
+- etc.
+
+**Row-Level Security:** Not applicable (message-level access via subjects)
+
+**Multi-Tenancy:** Stream prefixing with `circl-` suggests namespace isolation capability
+
+---
+
+## Data Synchronization
+
+### 1. Event Sourcing
+
+**NATS JetStream IS the event store.**
+
+| Feature | Implementation |
+|---------|----------------|
+| Event Store | JetStream streams per domain |
+| Message Retention | Configured per stream (JSON configs) |
+| Replay | Consumer seeks to historical position |
+| Snapshots | Not implemented |
+
+---
+
+### 2. Change Data Capture
+
+**Not implemented.** NATS functions as the primary event bus, not a CDC system.
+
+---
+
+## Monitoring & Observability
+
+### Grafana Dashboards Present
+From `/grafana/dashboards/`:
+
+| Dashboard | Purpose |
+|-----------|---------|
+| `nats-jetstream-monitoring-*.json` | Stream metrics, consumer lag |
+| `tile38-monitoring-*.json` | Geospatial query performance |
+| `gcp-cloud-run-monitoring-*.json` | Service deployment metrics |
+| `gke-kubernetes-monitoring-*.json` | Infrastructure metrics |
+
+### Alerting
+- `/grafana/alerting/setup-alerts.sh`
+- `/grafana/alerting/setup-supabase-alerts.sh` *(indicates external Supabase dependency not in this repo)*
+
+---
+
+## Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Integration Layer                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    NATS JetStream                          │ │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐          │ │
+│  │  │   BFF   │ │   OMS   │ │   DMS   │ │   IOT   │ ...      │ │
+│  │  │ Stream  │ │ Stream  │ │ Stream  │ │ Stream  │          │ │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘          │ │
+│  │                     │                                      │ │
+│  │              ┌──────┴──────┐                               │ │
+│  │              │     DLQ     │                               │ │
+│  │              │   Stream    │                               │ │
+│  │              └─────────────┘                               │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                      Tile38                                │ │
+│  │         Geospatial Data Store (Points, Geofences)          │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+            │                              │
+            ▼                              ▼
+    ┌───────────────┐            ┌───────────────┐
+    │    Grafana    │            │  GCP/Railway  │
+    │  Monitoring   │            │    Secrets    │
+    └───────────────┘            └───────────────┘
+```
+
+---
+
+## Key Findings
+
+### What IS Present
+1. ✅ NATS JetStream configuration for event streaming
+2. ✅ Tile38 geospatial database configuration
+3. ✅ Kubernetes deployment manifests
+4. ✅ Stream management scripts
+5. ✅ Monitoring dashboards
+6. ✅ Authentication configuration
+7. ✅ DLQ pattern implementation
+
+### What is NOT Present
+1. ❌ No relational database (PostgreSQL, MySQL, etc.)
+2. ❌ No ORM/ODM (Django, SQLAlchemy, ActiveRecord, etc.)
+3. ❌ No application-level data models
+4. ❌ No caching layer (Redis/Memcached)
+5. ❌ No data validation schemas
+6. ❌ No migration versioning tools (Alembic, Django migrations, etc.)
+7. ❌ No seed data
+
+---
+
+## Recommendations
+
+1. **Document Stream Schemas:** Add JSON Schema or Protobuf definitions for message payloads
+2. **Implement Consumer Groups:** Document expected consumer patterns per stream
+3. **Add Retention Policies:** Make retention visible in documentation
+4. **Secret Rotation:** Implement automated credential rotation procedures
+5. **Disaster Recovery:** Document stream backup/restore procedures for Tile38 and NATS
+
+# events_and_messaging
+
+Asynchronous communication and event patterns
+
+# Event-Driven Architecture Analysis: integration-circl
+
+## Executive Summary
+
+This repository is an **infrastructure configuration repository** for NATS JetStream messaging and Tile38 geospatial services. It contains stream definitions, Kubernetes deployments, and monitoring configurations but **no application code that produces or consumes events**.
+
+---
+
+## Message Brokers & Queues
+
+### 1. NATS JetStream (Implemented)
+
+**Platform**: NATS JetStream - Message streaming platform deployed via Kubernetes
+
+#### Stream Configurations Found
+
+Based on `/nats/streams-with-circl-prefix/`, the following streams are defined:
+
+| Stream | Purpose | Environments |
+|--------|---------|--------------|
+| `bff` | Backend-for-Frontend events | staging, prod |
+| `chat` | Chat messaging events | staging, prod |
+| `dlq` | Dead Letter Queue | staging, prod |
+| `dms` / `dms2` | Document Management System events | staging, prod |
+| `iot` | IoT device events | staging, prod |
+| `iot_location` | IoT location/geospatial events | staging, prod |
+| `oms` / `oms2` | Order Management System events | staging, prod |
+| `voice` | Voice communication events | staging, prod |
+| `wms` / `wms2` | Warehouse Management System events | staging, prod |
+
+#### Stream Configuration Details
+
+From `/nats/streams-with-circl-prefix/dlq-prod.json` and similar files:
+
+```json
+{
+  "name": "CIRCL_DLQ",
+  "subjects": ["circl.dlq.>"],
+  "retention": "limits",
+  "max_consumers": -1,
+  "max_msgs": -1,
+  "max_bytes": -1,
+  "max_age": 604800000000000,
+  "storage": "file",
+  "replicas": 3,
+  "duplicate_window": 120000000000
+}
+```
+
+**Key Configuration Properties**:
+- **Retention**: Limits-based retention
+- **Max Age**: 7 days (604800000000000 nanoseconds)
+- **Duplicate Window**: 2 minutes (120000000000 nanoseconds)
+- **Storage**: File-based persistence
+- **Replicas**: 3 (production HA)
+
+#### NATS Server Configuration
+
+From `/nats/config/nats-server.conf`:
+
+```conf
+jetstream {
+    store_dir: "/data/jetstream"
+    max_mem: 1GB
+    max_file: 10GB
+}
+```
+
+---
+
+## Dead Letter Queue (DLQ) Pattern
+
+### DLQ Implementation
+
+**Documented in**: `/docs/DLQ_OPERATIONS_GUIDE.md` and `/docs/operations/nats-dlq-operations.md`
+
+```
+Stream: CIRCL_DLQ
+Subjects: circl.dlq.>
+Purpose: Failed message retention for retry/analysis
+```
+
+#### DLQ Subject Pattern
+```
+circl.dlq.<original_stream>.<failure_reason>
+```
+
+---
+
+## Event Streaming Architecture
+
+### Subject Naming Convention
+
+Based on stream configurations, the subject hierarchy follows:
+
+```
+circl.<domain>.<entity>.<action>
+
+Examples:
+- circl.bff.>          (BFF events)
+- circl.chat.>         (Chat events)
+- circl.dms.>          (Document events)
+- circl.iot.>          (IoT events)
+- circl.iot_location.> (Location events)
+- circl.oms.>          (Order events)
+- circl.voice.>        (Voice events)
+- circl.wms.>          (Warehouse events)
+- circl.dlq.>          (Dead letter queue)
+```
+
+---
+
+## Pub/Sub Patterns
+
+### Fan-Out Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    NATS JetStream                        │
+├──────────┬──────────┬──────────┬──────────┬────────────┤
+│ CIRCL_BFF│CIRCL_CHAT│CIRCL_OMS │CIRCL_WMS │ CIRCL_DLQ  │
+│          │          │          │          │            │
+│ circl.   │ circl.   │ circl.   │ circl.   │ circl.     │
+│ bff.>    │ chat.>   │ oms.>    │ wms.>    │ dlq.>      │
+└──────────┴──────────┴──────────┴──────────┴────────────┘
+```
+
+---
+
+## Reliability Patterns
+
+### From Stream Configurations:
+
+| Pattern | Implementation |
+|---------|----------------|
+| **At-least-once delivery** | JetStream acknowledgments |
+| **Message deduplication** | 2-minute duplicate window |
+| **Persistence** | File-based storage |
+| **High Availability** | 3 replicas (production) |
+| **Dead Letter Queue** | Dedicated DLQ stream |
+
+---
+
+## Kubernetes Deployment
+
+### NATS Deployment Structure
+
+```
+/nats/k8s/
+├── base/           # Kustomize base configurations
+├── staging/        # Staging overlays
+├── production/     # Production overlays (3 replicas)
+└── monitoring/     # Prometheus/Grafana configs
+```
+
+### Monitoring Dashboards
+
+From `/grafana/dashboards/`:
+- `nats-jetstream-monitoring-production.json`
+- `nats-jetstream-monitoring-staging.json`
+
+---
+
+## Authentication
+
+**Documented in**: `/docs/NATS_AUTHENTICATION_GUIDE.md`
+
+NATS authentication is configured but credentials managed via GCP Secrets:
+- `/nats/k8s/setup-gcp-secrets.sh`
+
+---
+
+## What Is NOT Present
+
+⚠️ **This repository contains infrastructure configuration only. The following are NOT implemented here:**
+
+- ❌ Event producer code
+- ❌ Event consumer/handler code
+- ❌ Event payload schemas/definitions
+- ❌ Message transformation logic
+- ❌ Background job processors (Celery, Sidekiq)
+- ❌ Event sourcing/CQRS implementation
+- ❌ Transactional outbox pattern
+- ❌ Application-level idempotency logic
+
+---
+
+## Summary
+
+| Component | Status | Technology |
+|-----------|--------|------------|
+| Message Broker | ✅ Configured | NATS JetStream |
+| Stream Definitions | ✅ Defined | 12 streams (staging + prod) |
+| Dead Letter Queue | ✅ Configured | CIRCL_DLQ stream |
+| Kubernetes Deployment | ✅ Complete | Kustomize-based |
+| Monitoring | ✅ Configured | Grafana dashboards |
+| Event Producers | ❌ Not in repo | External services |
+| Event Consumers | ❌ Not in repo | External services |
+| Event Schemas | ❌ Not defined | Likely in consuming services |
+
+**Recommendation**: Event producers/consumers and payload schemas are implemented in the actual service repositories (BFF, OMS, WMS, DMS, etc.) that connect to this NATS infrastructure.
